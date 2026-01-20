@@ -1,0 +1,157 @@
+/* =========================================
+   RESPONSIVE FIXES (Added by UI Professional)
+   ========================================= */
+
+/* Fix for Banner Grid (Islamic Books) */
+@media (max-width: 1200px) {
+    .banner-books-grid {
+        grid-template-columns: repeat(6, 1fr);
+        gap: 10px;
+    }
+}
+
+@media (max-width: 992px) {
+    .banner-wrapper {
+        flex-direction: column;
+        padding: 20px 0;
+        min-height: auto;
+    }
+
+    .banner-books-grid {
+        grid-template-columns: repeat(4, 1fr);
+        grid-template-rows: auto;
+        max-width: 100%;
+    }
+
+    /* Reset tailored grid placements for tablet/mobile */
+    .banner-books-grid .book-cover-item:nth-child(n) {
+        grid-column: span 1;
+        grid-row: span 1;
+    }
+
+    .banner-badge {
+        position: relative;
+        right: auto;
+        top: auto;
+        transform: none;
+        margin-top: 30px;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+
+    .badge-content {
+        min-width: 200px;
+        max-width: 300px;
+    }
+}
+
+@media (max-width: 576px) {
+    .banner-books-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+
+    .banner-books-grid .book-cover-item {
+        border-width: 1px;
+    }
+}
+
+@media (max-width: 400px) {
+    .banner-books-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Fix for Horizontal Scroll / Overflow Issues */
+body {
+    overflow-x: hidden;
+    width: 100%;
+}
+
+.container {
+    padding-left: 20px;
+    padding-right: 20px;
+    width: 100%;
+}
+
+/* Typography Fluidity */
+@media (max-width: 768px) {
+
+    h1,
+    .hero-title {
+        font-size: 28px !important;
+    }
+
+    h2,
+    .section-header-fancy h2 {
+        font-size: 22px !important;
+    }
+
+    .hero-subtitle {
+        font-size: 14px;
+    }
+
+    .section-description {
+        font-size: 14px;
+        padding: 0 10px;
+    }
+}
+
+/* Mobile Navigation Drawer Fixes */
+@media (max-width: 768px) {
+    .mobile-nav-sidebar {
+        width: 280px;
+    }
+
+    .auth-buttons .action-btn span {
+        display: none;
+        /* Hide text in header buttons on mobile to save space */
+    }
+
+    .auth-buttons .action-btn {
+        min-width: auto;
+        padding: 8px;
+    }
+
+    .header-actions {
+        gap: 5px;
+    }
+}
+
+/* Button Touch Targets */
+@media (max-width: 768px) {
+
+    button,
+    a.btn,
+    .action-btn,
+    .nav-link {
+        min-height: 44px;
+        /* Accessible touch targets */
+        display: inline-flex;
+        align-items: center;
+    }
+}
+
+/* Hero Slider Mobile Adjustment */
+@media (max-width: 768px) {
+    .hero-books-slider {
+        padding: 0 30px;
+        /* Make room for arrows */
+    }
+
+    .slider-arrow {
+        width: 36px;
+        height: 36px;
+        font-size: 14px;
+    }
+
+    .book-card {
+        min-width: 130px;
+        max-width: 130px;
+    }
+
+    .book-card .book-cover {
+        height: 180px;
+    }
+}

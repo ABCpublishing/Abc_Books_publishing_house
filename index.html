@@ -14,6 +14,7 @@
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/styles-responsive.css">
     <link rel="stylesheet" href="css/user-ui.css">
 </head>
 
@@ -41,6 +42,10 @@
     <header class="header">
         <div class="container">
             <div class="header-content">
+                <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+                    <i class="fas fa-bars"></i>
+                </button>
+
                 <a href="index.html" class="logo">
                     <div class="logo-icon"><i class="fas fa-book-open"></i></div>
                     <div class="logo-text">
@@ -97,6 +102,50 @@
             </div>
         </div>
     </header>
+
+    <!-- Mobile Navigation Sidebar -->
+    <div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="toggleMobileMenu()"></div>
+    <div class="mobile-nav-sidebar" id="mobileNavSidebar">
+        <div class="mobile-nav-header">
+            <div class="logo">
+                <div class="logo-icon"><i class="fas fa-book-open"></i></div>
+                <div class="logo-text">
+                    <span class="logo-main">ABC</span>
+                    <span class="logo-sub">BOOKS</span>
+                </div>
+            </div>
+            <button class="close-mobile-nav" onclick="toggleMobileMenu()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="mobile-nav-content">
+            <ul class="mobile-nav-list">
+                <li><a href="index.html" class="mobile-nav-link active"><i class="fas fa-home"></i> Home</a></li>
+                <li class="mobile-has-submenu">
+                    <a href="#" class="mobile-nav-link" onclick="toggleMobileSubmenu(this)">Categories <i
+                            class="fas fa-chevron-down"></i></a>
+                    <ul class="mobile-submenu">
+                        <li><a href="pages/search.html?q=quran"><i class="fas fa-mosque"></i> Islamic Books</a></li>
+                        <li><a href="pages/search.html?q=fiction"><i class="fas fa-book"></i> English Fiction</a></li>
+                        <li><a href="pages/search.html?q=arabic"><i class="fas fa-language"></i> Arabic Books</a></li>
+                        <li><a href="pages/search.html?q=children"><i class="fas fa-child"></i> Children's Books</a>
+                        </li>
+                        <li><a href="pages/search.html?q=academic"><i class="fas fa-graduation-cap"></i> Academic</a>
+                        </li>
+                    </ul>
+                </li>
+                <li><a href="pages/search.html?q=bestseller" class="mobile-nav-link"><i class="fas fa-star"></i>
+                        Bestsellers</a></li>
+                <li><a href="pages/search.html?q=new" class="mobile-nav-link"><i class="fas fa-sparkles"></i> New
+                        Arrivals</a></li>
+                <li><a href="pages/about.html" class="mobile-nav-link"><i class="fas fa-info-circle"></i> About Us</a>
+                </li>
+                <li><a href="pages/contact.html" class="mobile-nav-link"><i class="fas fa-envelope"></i> Contact</a>
+                </li>
+            </ul>
+            <div class="mobile-nav-footer">
+                <a href="#" class="btn-primary btn-block">Download App</a>
+            </div>
+        </div>
+    </div>
 
     <!-- Navigation -->
     <nav class="main-nav">
@@ -249,8 +298,10 @@
             </div>
             <div class="hero-books-slider">
                 <button class="slider-arrow prev"><i class="fas fa-chevron-left"></i></button>
-                <div class="books-track" id="heroBooks">
-                    <!-- Books will be loaded dynamically -->
+                <div class="slider-viewport">
+                    <div class="books-track" id="heroBooks">
+                        <!-- Books will be loaded dynamically -->
+                    </div>
                 </div>
                 <button class="slider-arrow next"><i class="fas fa-chevron-right"></i></button>
             </div>
@@ -970,6 +1021,7 @@
     <script src="js/services/api.js"></script>
     <script src="js/data/books-data.js"></script>
     <script src="js/script.js"></script>
+    <script src="js/mobile-menu.js"></script>
     <script src="js/auth/user-auth-api.js"></script>
 </body>
 

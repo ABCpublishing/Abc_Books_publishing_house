@@ -12,6 +12,7 @@
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/styles-responsive.css">
     <link rel="stylesheet" href="../css/components/top100.css">
 </head>
 
@@ -30,6 +31,7 @@
     <header class="header">
         <div class="container">
             <div class="header-content">
+                <button class="mobile-menu-btn"><i class="fas fa-bars"></i></button>
                 <a href="../index.html" class="logo">
                     <div class="logo-icon"><i class="fas fa-book-open"></i></div>
                     <div class="logo-text">
@@ -64,6 +66,44 @@
             </div>
         </div>
     </header>
+
+    <!-- Mobile Navigation Sidebar -->
+    <div class="mobile-nav-overlay" id="mobileNavOverlay"></div>
+    <aside class="mobile-nav-sidebar" id="mobileNavSidebar">
+        <div class="mobile-nav-header">
+            <div class="logo">
+                <div class="logo-icon"><i class="fas fa-book-open"></i></div>
+                <div class="logo-text">
+                    <span class="logo-main">ABC</span>
+                    <span class="logo-sub">BOOKS</span>
+                </div>
+            </div>
+            <button class="close-mobile-nav" id="closeMobileNav"><i class="fas fa-times"></i></button>
+        </div>
+
+        <div class="mobile-nav-content">
+            <ul class="mobile-nav-list">
+                <li><a href="../index.html"><i class="fas fa-home"></i> Home</a></li>
+                <li class="mobile-dropdown-item">
+                    <a href="#"><i class="fas fa-book"></i> Categories <i
+                            class="fas fa-chevron-down dropdown-arrow"></i></a>
+                    <ul class="mobile-submenu">
+                        <li><a href="#">English Books</a></li>
+                        <li><a href="#">Arabic Books</a></li>
+                        <li><a href="#">Urdu Books</a></li>
+                    </ul>
+                </li>
+                <li><a href="top100.html" class="active"><i class="fas fa-crown"></i> Top 100</a></li>
+                <li><a href="search.html"><i class="fas fa-search"></i> Advanced Search</a></li>
+                <li><a href="about.html"><i class="fas fa-info-circle"></i> About Us</a></li>
+                <li><a href="contact.html"><i class="fas fa-envelope"></i> Contact</a></li>
+            </ul>
+        </div>
+
+        <div class="mobile-nav-footer">
+            <a href="my-account.html" class="btn-mobile-auth"><i class="fas fa-user"></i> My Account</a>
+        </div>
+    </aside>
 
     <!-- Main Content -->
     <main class="top100-page">
@@ -133,6 +173,7 @@
         </div>
     </footer>
 
+    <script src="../js/mobile-menu.js"></script>
     <script src="../js/script.js"></script>
     <script>
         // Load Top 100 Books
