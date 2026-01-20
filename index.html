@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ABC Books | India's Premier Online Bookstore</title>
+    <meta name="description"
+        content="ABC Books - Discover your next great read. India's most trusted online bookstore with millions of books at amazing prices.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/user-ui.css">
+</head>
+
+<body>
+    <!-- Decorative Elements -->
+    <div class="floating-leaves">
+        <div class="leaf leaf-1"></div>
+        <div class="leaf leaf-2"></div>
+        <div class="leaf leaf-3"></div>
+        <div class="leaf leaf-4"></div>
+        <div class="leaf leaf-5"></div>
+    </div>
+
+    <!-- Top Announcement Bar -->
+    <div class="announcement-bar">
+        <div class="container">
+            <div class="announcement-content">
+                <span><i class="fas fa-gift"></i> New Year Special: Extra 20% OFF on all orders! Use code:
+                    <strong>NEWYEAR2025</strong></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <a href="index.html" class="logo">
+                    <div class="logo-icon"><i class="fas fa-book-open"></i></div>
+                    <div class="logo-text">
+                        <span class="logo-main">ABC</span>
+                        <span class="logo-sub">BOOKS</span>
+                    </div>
+                </a>
+
+                <div class="search-wrapper">
+                    <div class="search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Search books, authors, ISBN...">
+                        <button class="search-btn">Search</button>
+                    </div>
+                </div>
+
+                <div class="header-actions">
+                    <!-- User Account - Shows Login/Signup OR User icon when logged in -->
+                    <div id="authButtons" class="auth-buttons">
+                        <button class="action-btn" onclick="showLoginModal()" title="Sign In">
+                            <i class="fas fa-sign-in-alt"></i>
+                            <span>Login</span>
+                        </button>
+                        <button class="action-btn signup-btn" onclick="showSignupModal()" title="Sign Up">
+                            <i class="fas fa-user-plus"></i>
+                            <span>Sign Up</span>
+                        </button>
+                    </div>
+                    <!-- User Account When Logged In (hidden by default) -->
+                    <div id="userAccount" class="user-account" style="display: none;">
+                        <button class="action-btn" onclick="toggleUserMenu()" title="My Account">
+                            <i class="fas fa-user-circle"></i>
+                            <span id="userName">Account</span>
+                        </button>
+                        <div class="user-dropdown" id="userDropdown">
+                            <a href="#" onclick="viewOrders()"><i class="fas fa-box"></i> My Orders</a>
+                            <a href="#" onclick="viewWishlist()"><i class="fas fa-heart"></i> My Wishlist</a>
+                            <a href="#" onclick="viewProfile()"><i class="fas fa-user-edit"></i> Edit Profile</a>
+                            <a href="#" onclick="userLogout()"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                        </div>
+                    </div>
+
+                    <button class="action-btn" onclick="toggleWishlist()" title="Wishlist">
+                        <i class="fas fa-heart"></i>
+                        <span>Wishlist</span>
+                        <span class="badge" id="wishlistCount">0</span>
+                    </button>
+                    <button class="action-btn cart-btn" onclick="toggleCart()" title="Shopping Cart">
+                        <i class="fas fa-shopping-bag"></i>
+                        <span>Cart</span>
+                        <span class="badge" id="cartCount">0</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="main-nav">
+        <div class="container">
+            <ul class="nav-list">
+                <li><a href="index.html" class="nav-link active"><i class="fas fa-home"></i> Home</a></li>
+                <li class="has-mega">
+                    <a href="#" class="nav-link">Categories <i class="fas fa-chevron-down"></i></a>
+                    <div class="mega-dropdown">
+                        <div class="mega-grid">
+                            <div class="mega-col">
+                                <h4><i class="fas fa-mosque"></i> Islamic Books</h4>
+                                <ul>
+                                    <li><a href="pages/search.html?q=quran">Quran & Tafsir</a></li>
+                                    <li><a href="pages/search.html?q=hadith">Hadith Collections</a></li>
+                                    <li><a href="pages/search.html?q=seerah">Seerah (Prophet's Life)</a></li>
+                                    <li><a href="pages/search.html?q=fiqh">Fiqh & Islamic Law</a></li>
+                                    <li><a href="pages/search.html?q=dua">Dua & Supplications</a></li>
+                                </ul>
+                            </div>
+                            <div class="mega-col">
+                                <h4><i class="fas fa-book"></i> English Books</h4>
+                                <ul>
+                                    <li><a href="pages/search.html?q=fiction">Islamic Fiction</a></li>
+                                    <li><a href="pages/search.html?q=children">Children's Books</a></li>
+                                    <li><a href="pages/search.html?q=history">Islamic History</a></li>
+                                    <li><a href="pages/search.html?q=self-help">Self-Help & Growth</a></li>
+                                    <li><a href="pages/search.html?q=biography">Biographies</a></li>
+                                </ul>
+                            </div>
+                            <div class="mega-col">
+                                <h4><i class="fas fa-language"></i> Arabic Books</h4>
+                                <ul>
+                                    <li><a href="pages/search.html?q=arabic%20quran">Arabic Quran</a></li>
+                                    <li><a href="pages/search.html?q=arabic%20literature">Arabic Literature</a></li>
+                                    <li><a href="pages/search.html?q=arabic%20grammar">Arabic Grammar</a></li>
+                                    <li><a href="pages/search.html?q=arabic%20learning">Learn Arabic</a></li>
+                                    <li><a href="pages/search.html?q=arabic%20poetry">Arabic Poetry</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                <li><a href="pages/search.html?q=bestseller" class="nav-link">Bestsellers</a></li>
+                <li><a href="pages/search.html?q=new" class="nav-link">New Arrivals</a></li>
+                <li><a href="pages/search.html" class="nav-link highlight"><i class="fas fa-fire"></i> All Books</a>
+                </li>
+                <li><a href="pages/about.html" class="nav-link">About Us</a></li>
+                <li><a href="pages/contact.html" class="nav-link">Contact</a></li>
+            </ul>
+        </div>
+    </nav>
+    <!-- Quick Category Strip -->
+    <section class="quick-categories">
+        <div class="container">
+            <div class="categories-strip-wrapper">
+                <button class="strip-arrow strip-prev"><i class="fas fa-chevron-left"></i></button>
+                <div class="categories-strip" id="categoriesStrip">
+                    <a href="pages/search.html?q=quran" class="category-item">
+                        <div class="category-icon-box">
+                            <i class="fas fa-quran"></i>
+                        </div>
+                        <span>Quran & Tafsir</span>
+                    </a>
+                    <a href="pages/search.html?q=hadith" class="category-item">
+                        <div class="category-icon-box">
+                            <i class="fas fa-book-open"></i>
+                        </div>
+                        <span>Hadith Books</span>
+                    </a>
+                    <a href="pages/search.html?q=seerah" class="category-item">
+                        <div class="category-icon-box">
+                            <i class="fas fa-mosque"></i>
+                        </div>
+                        <span>Seerah</span>
+                    </a>
+                    <a href="pages/search.html?q=fiqh" class="category-item">
+                        <div class="category-icon-box">
+                            <i class="fas fa-balance-scale"></i>
+                        </div>
+                        <span>Fiqh & Law</span>
+                    </a>
+                    <a href="pages/search.html?q=dua" class="category-item">
+                        <div class="category-icon-box">
+                            <i class="fas fa-hands-praying"></i>
+                        </div>
+                        <span>Dua & Adhkar</span>
+                    </a>
+                    <a href="pages/search.html?q=arabic" class="category-item">
+                        <div class="category-icon-box">
+                            <i class="fas fa-language"></i>
+                        </div>
+                        <span>Arabic Books</span>
+                    </a>
+                    <a href="pages/search.html?q=english" class="category-item">
+                        <div class="category-icon-box">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <span>English Books</span>
+                    </a>
+                    <a href="pages/search.html?q=children" class="category-item">
+                        <div class="category-icon-box">
+                            <i class="fas fa-child"></i>
+                        </div>
+                        <span>Kids Islamic</span>
+                    </a>
+                    <a href="pages/search.html?q=history" class="category-item">
+                        <div class="category-icon-box">
+                            <i class="fas fa-landmark"></i>
+                        </div>
+                        <span>Islamic History</span>
+                    </a>
+                    <!-- Top 100 Card -->
+                    <a href="#" class="category-item top-100-card" id="top100Trigger">
+                        <div class="top-100-badge">
+                            <span class="bw-text">ABC</span>
+                            <span class="top-text">TOP 100</span>
+                        </div>
+                    </a>
+                </div>
+                <button class="strip-arrow strip-next"><i class="fas fa-chevron-right"></i></button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Top 100 Modal -->
+    <div class="top100-modal" id="top100Modal">
+        <div class="top100-modal-content">
+            <div class="top100-modal-header">
+                <div class="top100-title">
+                    <span class="bw-badge">BW</span>
+                    <h2>TOP 100 Books</h2>
+                </div>
+                <button class="close-modal" id="closeTop100"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="top100-modal-body" id="top100Books">
+                <!-- Books will be loaded dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Hero Section - Islamic Books Collection -->
+    <section class="hero-section">
+        <div class="hero-bg"></div>
+        <div class="container">
+            <div class="hero-header">
+                <span class="hero-year">2025</span>
+                <h1 class="hero-title">Islamic Books Collection</h1>
+                <p class="hero-subtitle">Discover Spiritual Wisdom and Islamic Literature</p>
+            </div>
+            <div class="hero-books-slider">
+                <button class="slider-arrow prev"><i class="fas fa-chevron-left"></i></button>
+                <div class="books-track" id="heroBooks">
+                    <!-- Books will be loaded dynamically -->
+                </div>
+                <button class="slider-arrow next"><i class="fas fa-chevron-right"></i></button>
+            </div>
+            <div class="slider-dots" id="heroDots"></div>
+        </div>
+    </section>
+
+    <!-- Islamic Books Collection Banner -->
+    <section class="islamic-books-banner">
+        <div class="container">
+            <div class="banner-wrapper">
+                <div class="banner-books-grid" id="islamicBooksGrid">
+                    <!-- Books will be loaded dynamically -->
+                </div>
+                <a href="pages/top100.html" class="banner-badge-link">
+                    <div class="banner-badge top100-badge">
+                        <div class="badge-content">
+                            <span class="badge-label">ABC</span>
+                            <span class="badge-title">TOP 100<br>BOOKS</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+        <div class="container">
+            <div class="content-grid">
+                <!-- Left Content - 70% -->
+                <div class="content-left">
+                    <!-- Rewrite Your Story Section -->
+                    <section class="featured-section">
+                        <div class="section-header-fancy">
+                            <div class="header-line"></div>
+                            <h2><i class="fas fa-feather-alt"></i> Rewrite Your Story With The Right Reads</h2>
+                            <div class="header-line"></div>
+                        </div>
+                        <div class="featured-books-grid" id="featuredBooks">
+                            <!-- Books loaded dynamically -->
+                        </div>
+                        <div class="section-nav">
+                            <span class="nav-dot active"></span>
+                            <span class="nav-dot"></span>
+                            <span class="nav-dot"></span>
+                            <span class="nav-dot"></span>
+                            <span class="nav-dot"></span>
+                        </div>
+                    </section>
+
+                    <!-- Bottom Sections Grid -->
+                    <div class="bottom-sections">
+                        <!-- Academic Guides -->
+                        <section class="promo-card academic-card">
+                            <div class="promo-content">
+                                <h3><i class="fas fa-graduation-cap"></i> Study Smarter With Trusted Academic Guides
+                                </h3>
+                                <a href="#" class="btn-explore">Explore <i class="fas fa-arrow-right"></i></a>
+                            </div>
+                            <div class="promo-books" id="academicBooks"></div>
+                        </section>
+
+                        <!-- CTET & CSAT -->
+                        <section class="promo-card exam-card">
+                            <div class="promo-content">
+                                <h3><i class="fas fa-award"></i> Master CTET & CSAT</h3>
+                                <a href="#" class="btn-explore">Shop Now <i class="fas fa-arrow-right"></i></a>
+                            </div>
+                            <div class="promo-books" id="examBooks"></div>
+                        </section>
+
+                        <!-- Gift Section -->
+                        <section class="promo-card gift-card">
+                            <div class="gift-boxes">
+                                <div class="gift-box box-1"><i class="fas fa-gift"></i></div>
+                                <div class="gift-box box-2"><i class="fas fa-gift"></i></div>
+                                <div class="gift-box box-3"><i class="fas fa-gift"></i></div>
+                            </div>
+                            <div class="promo-content">
+                                <span class="gift-label">Perfect Presents</span>
+                                <h3>Gift a Book, Share a World</h3>
+                                <a href="#" class="btn-gift">Send as Gift <i class="fas fa-heart"></i></a>
+                            </div>
+                        </section>
+
+                        <!-- Book Crushes -->
+                        <section class="promo-card crushes-card">
+                            <div class="promo-content">
+                                <h3><i class="fas fa-heart"></i> Our January Book Crushes</h3>
+                                <a href="#" class="btn-explore">View All <i class="fas fa-arrow-right"></i></a>
+                            </div>
+                            <div class="promo-books" id="crushBooks"></div>
+                        </section>
+                    </div>
+                </div>
+
+                <!-- Right Sidebar - 30% -->
+                <aside class="content-right">
+                    <!-- Author Spotlight -->
+                    <div class="sidebar-card author-spotlight">
+                        <div class="author-image">
+                            <div class="author-placeholder"><i class="fas fa-user-edit"></i></div>
+                        </div>
+                        <div class="author-info">
+                            <span class="spotlight-label">Author Spotlight</span>
+                            <h3>Sudha Murty's World of Wonder and Wisdom</h3>
+                        </div>
+                        <div class="author-books" id="authorBooks"></div>
+                        <a href="#" class="btn-view-all">Explore Collection <i class="fas fa-arrow-right"></i></a>
+                    </div>
+
+                    <!-- Learning Shelf -->
+                    <div class="sidebar-card learning-shelf">
+                        <div class="shelf-header">
+                            <i class="fas fa-book-reader"></i>
+                            <h3>Your One-Stop Shelf for Learning</h3>
+                        </div>
+                        <div class="shelf-books" id="learningBooks"></div>
+                        <a href="#" class="btn-view-all">Browse All <i class="fas fa-arrow-right"></i></a>
+                    </div>
+
+                    <!-- Economics Section -->
+                    <div class="sidebar-card economics-card">
+                        <span class="card-tag">Business & Economics</span>
+                        <h3>Business Economics Books</h3>
+                        <div class="economics-books" id="economicsBooks"></div>
+                        <a href="#" class="btn-view-all">Shop Now <i class="fas fa-arrow-right"></i></a>
+                    </div>
+
+                    <!-- Ask Expert -->
+                    <div class="sidebar-card ask-expert">
+                        <div class="expert-badge"><i class="fas fa-comments"></i></div>
+                        <h3>Ask ABC</h3>
+                        <p>Have questions? Chat with us on WhatsApp!</p>
+                        <a href="https://wa.me/917006798511" target="_blank" class="btn-ask">
+                            <i class="fab fa-whatsapp"></i> Chat Now <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </aside>
+            </div>
+        </div>
+    </main>
+
+    <!-- Trending Now Section -->
+    <section class="trending-section">
+        <div class="container">
+            <div class="section-header-fancy">
+                <div class="header-line"></div>
+                <h2><i class="fas fa-fire-alt"></i> Trending Now</h2>
+                <div class="header-line"></div>
+            </div>
+            <div class="trending-slider">
+                <button class="slider-arrow prev trending-prev"><i class="fas fa-chevron-left"></i></button>
+                <div class="trending-books-track" id="trendingBooks">
+                    <!-- Books loaded dynamically -->
+                </div>
+                <button class="slider-arrow next trending-next"><i class="fas fa-chevron-right"></i></button>
+            </div>
+        </div>
+    </section>
+
+    <!-- New Releases Section -->
+    <section class="new-releases-section">
+        <div class="container">
+            <div class="section-header-fancy">
+                <div class="header-line"></div>
+                <h2><i class="fas fa-sparkles"></i> New Releases - January 2025</h2>
+                <div class="header-line"></div>
+            </div>
+            <div class="new-releases-slider">
+                <button class="slider-arrow prev releases-prev"><i class="fas fa-chevron-left"></i></button>
+                <div class="new-releases-track" id="newReleasesBooks">
+                    <!-- Books loaded dynamically -->
+                </div>
+                <button class="slider-arrow next releases-next"><i class="fas fa-chevron-right"></i></button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Indian Authors Section -->
+    <section class="indian-authors-section">
+        <div class="container">
+            <div class="section-header-fancy">
+                <div class="header-line"></div>
+                <h2><i class="fas fa-flag"></i> Celebrate Indian Authors</h2>
+                <div class="header-line"></div>
+            </div>
+            <p class="section-description">Discover the finest voices from India - from Booker Prize winners to
+                contemporary bestsellers</p>
+            <div class="indian-authors-grid" id="indianAuthorsBooks">
+                <!-- Books loaded dynamically -->
+            </div>
+            <div class="section-cta">
+                <a href="#" class="btn-primary">Explore All Indian Authors <i class="fas fa-arrow-right"></i></a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Box Sets Section -->
+    <section class="box-sets-section">
+        <div class="container">
+            <div class="box-sets-banner">
+                <div class="box-sets-content">
+                    <span class="special-tag"><i class="fas fa-percentage"></i> Special Offer</span>
+                    <h2>Complete Box Sets</h2>
+                    <p>Get entire series at unbeatable prices - Save up to 40% on bestselling collections</p>
+                    <a href="#" class="btn-shop-now">Shop Box Sets <i class="fas fa-shopping-cart"></i></a>
+                </div>
+                <div class="box-sets-books" id="boxSetsBooks">
+                    <!-- Books loaded dynamically -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Children's Corner Section -->
+    <section class="children-section">
+        <div class="container">
+            <div class="section-header-fancy">
+                <div class="header-line"></div>
+                <h2><i class="fas fa-child"></i> Children's Corner</h2>
+                <div class="header-line"></div>
+            </div>
+            <div class="children-books-slider">
+                <button class="slider-arrow prev children-prev"><i class="fas fa-chevron-left"></i></button>
+                <div class="children-books-track" id="childrenBooks">
+                    <!-- Books loaded dynamically -->
+                </div>
+                <button class="slider-arrow next children-next"><i class="fas fa-chevron-right"></i></button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Fiction Favorites Section -->
+    <section class="fiction-section">
+        <div class="container">
+            <div class="section-header-fancy">
+                <div class="header-line"></div>
+                <h2><i class="fas fa-book-open"></i> Fiction Favorites</h2>
+                <div class="header-line"></div>
+            </div>
+            <div class="fiction-books-grid" id="fictionBooks">
+                <!-- Books loaded dynamically -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Trust Badges Section -->
+    <section class="trust-section">
+        <div class="container">
+            <div class="trust-grid">
+                <div class="trust-item">
+                    <div class="trust-icon"><i class="fas fa-shipping-fast"></i></div>
+                    <h4>Free Shipping</h4>
+                    <p>On orders above ₹499</p>
+                </div>
+                <div class="trust-item">
+                    <div class="trust-icon"><i class="fas fa-shield-alt"></i></div>
+                    <h4>Secure Payment</h4>
+                    <p>100% protected transactions</p>
+                </div>
+                <div class="trust-item">
+                    <div class="trust-icon"><i class="fas fa-undo-alt"></i></div>
+                    <h4>Easy Returns</h4>
+                    <p>30-day return policy</p>
+                </div>
+                <div class="trust-item">
+                    <div class="trust-icon"><i class="fas fa-headset"></i></div>
+                    <h4>24/7 Support</h4>
+                    <p>Dedicated customer service</p>
+                </div>
+                <div class="trust-item">
+                    <div class="trust-icon"><i class="fas fa-certificate"></i></div>
+                    <h4>Authentic Books</h4>
+                    <p>100% genuine products</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Top Categories Section -->
+    <section class="categories-showcase">
+        <div class="container">
+            <div class="section-header-fancy">
+                <div class="header-line"></div>
+                <h2><i class="fas fa-th-large"></i> Explore by Category</h2>
+                <div class="header-line"></div>
+            </div>
+            <div class="categories-grid">
+                <div class="category-card">
+                    <div class="category-icon fiction-icon"><i class="fas fa-book"></i></div>
+                    <h3>Fiction</h3>
+                    <p>5,000+ Books</p>
+                    <a href="#" class="category-link">Browse Now →</a>
+                </div>
+                <div class="category-card">
+                    <div class="category-icon nonfiction-icon"><i class="fas fa-lightbulb"></i></div>
+                    <h3>Non-Fiction</h3>
+                    <p>3,500+ Books</p>
+                    <a href="#" class="category-link">Browse Now →</a>
+                </div>
+                <div class="category-card">
+                    <div class="category-icon academic-icon"><i class="fas fa-graduation-cap"></i></div>
+                    <h3>Academic</h3>
+                    <p>8,000+ Books</p>
+                    <a href="#" class="category-link">Browse Now →</a>
+                </div>
+                <div class="category-card">
+                    <div class="category-icon children-icon"><i class="fas fa-child"></i></div>
+                    <h3>Children's Books</h3>
+                    <p>4,200+ Books</p>
+                    <a href="#" class="category-link">Browse Now →</a>
+                </div>
+                <div class="category-card">
+                    <div class="category-icon business-icon"><i class="fas fa-briefcase"></i></div>
+                    <h3>Business</h3>
+                    <p>2,800+ Books</p>
+                    <a href="#" class="category-link">Browse Now →</a>
+                </div>
+                <div class="category-card">
+                    <div class="category-icon selfhelp-icon"><i class="fas fa-heart"></i></div>
+                    <h3>Self-Help</h3>
+                    <p>3,100+ Books</p>
+                    <a href="#" class="category-link">Browse Now →</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Customer Testimonials -->
+    <section class="testimonials-section">
+        <div class="container">
+            <div class="section-header-fancy">
+                <div class="header-line"></div>
+                <h2><i class="fas fa-quote-left"></i> What Our Readers Say</h2>
+                <div class="header-line"></div>
+            </div>
+            <div class="testimonials-grid">
+                <div class="testimonial-card">
+                    <div class="stars">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <p class="testimonial-text">"ABC Books has been my go-to bookstore for years. Amazing collection,
+                        fast delivery, and excellent customer service. Highly recommended!"</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar"><i class="fas fa-user-circle"></i></div>
+                        <div class="author-details">
+                            <h4>Priya Sharma</h4>
+                            <span>Mumbai, Maharashtra</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="stars">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <p class="testimonial-text">"Best prices in the market! I've compared with other stores and ABC
+                        Books always offers the best deals. Plus, their packaging is excellent."</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar"><i class="fas fa-user-circle"></i></div>
+                        <div class="author-details">
+                            <h4>Rajesh Kumar</h4>
+                            <span>Delhi, NCR</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="stars">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <p class="testimonial-text">"The book recommendations are spot-on! Their AI-powered suggestion
+                        system helped me discover so many great reads I wouldn't have found otherwise."</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar"><i class="fas fa-user-circle"></i></div>
+                        <div class="author-details">
+                            <h4>Ananya Reddy</h4>
+                            <span>Bangalore, Karnataka</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Publishers -->
+    <section class="publishers-section">
+        <div class="container">
+            <h2 class="section-title-center">Trusted by Leading Publishers</h2>
+            <div class="publishers-grid">
+                <div class="publisher-logo">
+                    <div class="publisher-placeholder">Penguin Random House</div>
+                </div>
+                <div class="publisher-logo">
+                    <div class="publisher-placeholder">HarperCollins</div>
+                </div>
+                <div class="publisher-logo">
+                    <div class="publisher-placeholder">Oxford University</div>
+                </div>
+                <div class="publisher-logo">
+                    <div class="publisher-placeholder">Scholastic</div>
+                </div>
+                <div class="publisher-logo">
+                    <div class="publisher-placeholder">McGraw-Hill</div>
+                </div>
+                <div class="publisher-logo">
+                    <div class="publisher-placeholder">Wiley</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Blog Section -->
+    <section class="blog-section">
+        <div class="container">
+            <div class="section-header-fancy">
+                <div class="header-line"></div>
+                <h2><i class="fas fa-newspaper"></i> From Our Reading Room</h2>
+                <div class="header-line"></div>
+            </div>
+            <div class="blog-grid">
+                <article class="blog-card">
+                    <div class="blog-image">
+                        <div class="blog-placeholder"><i class="fas fa-book-reader"></i></div>
+                        <span class="blog-category">Reading Tips</span>
+                    </div>
+                    <div class="blog-content">
+                        <h3>10 Books That Will Change Your Perspective in 2025</h3>
+                        <p>Discover transformative reads that challenge conventional thinking and open new horizons...
+                        </p>
+                        <div class="blog-footer">
+                            <span class="blog-date"><i class="fas fa-calendar"></i> Jan 5, 2025</span>
+                            <a href="#" class="blog-link">Read More →</a>
+                        </div>
+                    </div>
+                </article>
+                <article class="blog-card">
+                    <div class="blog-image">
+                        <div class="blog-placeholder"><i class="fas fa-pen-fancy"></i></div>
+                        <span class="blog-category">Author Interview</span>
+                    </div>
+                    <div class="blog-content">
+                        <h3>In Conversation with Ruskin Bond: A Literary Journey</h3>
+                        <p>We sit down with India's beloved storyteller to discuss his latest work and writing
+                            process...</p>
+                        <div class="blog-footer">
+                            <span class="blog-date"><i class="fas fa-calendar"></i> Jan 3, 2025</span>
+                            <a href="#" class="blog-link">Read More →</a>
+                        </div>
+                    </div>
+                </article>
+                <article class="blog-card">
+                    <div class="blog-image">
+                        <div class="blog-placeholder"><i class="fas fa-trophy"></i></div>
+                        <span class="blog-category">Book Awards</span>
+                    </div>
+                    <div class="blog-content">
+                        <h3>Booker Prize 2024: Complete Winners List & Reviews</h3>
+                        <p>Explore the award-winning books that captivated readers and critics worldwide...</p>
+                        <div class="blog-footer">
+                            <span class="blog-date"><i class="fas fa-calendar"></i> Dec 28, 2024</span>
+                            <a href="#" class="blog-link">Read More →</a>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <!-- Newsletter Section -->
+    <section class="newsletter-section">
+        <div class="container">
+            <div class="newsletter-content">
+                <div class="newsletter-icon"><i class="fas fa-envelope-open-text"></i></div>
+                <div class="newsletter-text">
+                    <h2>Stay Updated with ABC Books</h2>
+                    <p>Subscribe to get exclusive deals, new releases, and reading recommendations</p>
+                </div>
+                <form class="newsletter-form">
+                    <input type="email" placeholder="Enter your email address">
+                    <button type="submit"><i class="fas fa-paper-plane"></i> Subscribe</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-top">
+            <div class="container">
+                <div class="footer-grid">
+                    <div class="footer-col brand-col">
+                        <div class="footer-logo">
+                            <div class="logo-icon"><i class="fas fa-book-open"></i></div>
+                            <div class="logo-text">
+                                <span class="logo-main">ABC</span>
+                                <span class="logo-sub">BOOKS</span>
+                            </div>
+                        </div>
+                        <p>India's most trusted online bookstore. Discover millions of books at unbeatable prices with
+                            free shipping nationwide.</p>
+                        <div class="social-links">
+                            <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                            <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                            <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                            <a href="#" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                        </div>
+                    </div>
+                    <div class="footer-col">
+                        <h4>Quick Links</h4>
+                        <ul>
+                            <li><a href="about.html">About Us</a></li>
+                            <li><a href="contact.html">Contact Us</a></li>
+
+                        </ul>
+                    </div>
+                    <div class="footer-col">
+                        <h4>Customer Service</h4>
+                        <ul>
+                            <li><a href="#">My Account</a></li>
+                            <li><a href="#">Track Order</a></li>
+                            <li><a href="#">Shipping Policy</a></li>
+                            <li><a href="#">Returns & Refunds</a></li>
+                            <li><a href="#">FAQs</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-col">
+                        <h4>Contact Us</h4>
+                        <ul class="contact-list">
+                            <li><i class="fas fa-map-marker-alt"></i> 13 Custodial Building, Srinagar
+                            </li>
+                            <li><i class="fas fa-phone"></i> +91 9622827363, 8492927363</li>
+                            <li><i class="fas fa-envelope"></i> abcpublishinghouse@gmail.com</li>
+                            <li><i class="fas fa-clock"></i> Mon-Sat: 9AM - 8PM</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <div class="container">
+                <div class="footer-bottom-content">
+                    <p>&copy; 2025 ABC Books. All rights reserved.</p>
+                    <div class="payment-icons">
+                        <span>We Accept:</span>
+                        <i class="fab fa-cc-visa"></i>
+                        <i class="fab fa-cc-mastercard"></i>
+                        <i class="fab fa-cc-amex"></i>
+                        <i class="fab fa-google-pay"></i>
+                        <i class="fab fa-cc-paypal"></i>
+                    </div>
+                    <div class="footer-links">
+                        <a href="#">Privacy Policy</a>
+                        <a href="#">Terms of Service</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Back to Top -->
+    <button class="back-to-top" id="backToTop">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
+
+    <!-- Login Modal -->
+    <div class="auth-modal" id="loginModal">
+        <div class="auth-modal-content">
+            <button class="close-auth" onclick="closeLoginModal()"><i class="fas fa-times"></i></button>
+            <div class="auth-header">
+                <i class="fas fa-sign-in-alt"></i>
+                <h2>Welcome Back!</h2>
+                <p>Login to your ABC Books account</p>
+            </div>
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-error-banner" id="loginFormError" style="display: none;">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span></span>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-envelope"></i> Email</label>
+                    <input type="email" id="loginEmail" placeholder="Enter your email" required autocomplete="email">
+                    <span class="error-message" id="loginEmailError"></span>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-lock"></i> Password</label>
+                    <input type="password" id="loginPassword" placeholder="Enter your password" required
+                        autocomplete="current-password">
+                    <span class="error-message" id="loginPasswordError"></span>
+                </div>
+                <div class="form-options">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="rememberMe">
+                        <span>Remember me</span>
+                    </label>
+                    <a href="#" class="forgot-link">Forgot Password?</a>
+                </div>
+                <button type="submit" class="btn-auth">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </button>
+            </form>
+            <div class="auth-footer">
+                <p>Don't have an account? <a href="#" onclick="switchToSignup()">Sign Up</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sign Up Modal -->
+    <div class="auth-modal" id="signupModal">
+        <div class="auth-modal-content">
+            <button class="close-auth" onclick="closeSignupModal()"><i class="fas fa-times"></i></button>
+            <div class="auth-header">
+                <i class="fas fa-user-plus"></i>
+                <h2>Create Account</h2>
+                <p>Join ABC Books today</p>
+            </div>
+            <form id="signupForm" onsubmit="handleSignup(event)">
+                <div class="form-error-banner" id="signupFormError" style="display: none;">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span></span>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-user"></i> Full Name</label>
+                    <input type="text" id="signupName" placeholder="Enter your full name" required autocomplete="name">
+                    <span class="error-message" id="signupNameError"></span>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-envelope"></i> Email</label>
+                    <input type="email" id="signupEmail" placeholder="Enter your email" required autocomplete="email">
+                    <span class="error-message" id="signupEmailError"></span>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-phone"></i> Phone Number</label>
+                    <input type="tel" id="signupPhone" placeholder="Enter your phone number" required
+                        autocomplete="tel">
+                    <span class="error-message" id="signupPhoneError"></span>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-lock"></i> Password</label>
+                    <input type="password" id="signupPassword" placeholder="Create a password" required minlength="6"
+                        autocomplete="new-password">
+                    <span class="error-message" id="signupPasswordError"></span>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-lock"></i> Confirm Password</label>
+                    <input type="password" id="signupConfirmPassword" placeholder="Confirm your password" required
+                        autocomplete="new-password">
+                    <span class="error-message" id="signupConfirmPasswordError"></span>
+                </div>
+                <div class="form-options">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="agreeTerms" required>
+                        <span>I agree to the <a href="#">Terms & Conditions</a></span>
+                    </label>
+                </div>
+                <button type="submit" class="btn-auth">
+                    <i class="fas fa-user-plus"></i> Create Account
+                </button>
+            </form>
+            <div class="auth-footer">
+                <p>Already have an account? <a href="#" onclick="switchToLogin()">Login</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wishlist Sidebar -->
+    <div class="sidebar-overlay" id="wishlistOverlay" onclick="closeWishlist()"></div>
+    <div class="sidebar-panel wishlist-panel" id="wishlistPanel">
+        <div class="sidebar-header">
+            <h3><i class="fas fa-heart"></i> My Wishlist</h3>
+            <button class="close-sidebar" onclick="closeWishlist()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="sidebar-content" id="wishlistContent">
+            <p class="empty-message"><i class="fas fa-heart-broken"></i> Your wishlist is empty</p>
+        </div>
+        <div class="sidebar-footer">
+            <button class="btn-primary" onclick="window.location.href='#'">View All Wishlist</button>
+        </div>
+    </div>
+
+    <!-- Cart Sidebar -->
+    <div class="sidebar-overlay" id="cartOverlay" onclick="closeCart()"></div>
+    <div class="sidebar-panel cart-panel" id="cartPanel">
+        <div class="sidebar-header">
+            <h3><i class="fas fa-shopping-bag"></i> Shopping Cart</h3>
+            <button class="close-sidebar" onclick="closeCart()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="sidebar-content" id="cartContent">
+            <p class="empty-message"><i class="fas fa-shopping-cart"></i> Your cart is empty</p>
+        </div>
+        <div class="sidebar-footer cart-footer">
+            <div class="cart-total">
+                <span>Subtotal:</span>
+                <strong id="cartTotal">₹0</strong>
+            </div>
+            <button class="btn-primary btn-block" onclick="proceedToCheckout()">
+                <i class="fas fa-credit-card"></i> Proceed to Checkout
+            </button>
+            <button class="btn-secondary btn-block" onclick="closeCart()">Continue Shopping</button>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="js/services/api.js"></script>
+    <script src="js/data/books-data.js"></script>
+    <script src="js/script.js"></script>
+    <script src="js/auth/user-auth-api.js"></script>
+</body>
+
+</html>

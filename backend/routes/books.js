@@ -1,0 +1,158 @@
+// ===== Books Routes =====
+const express = require('express');
+const router = express.Router();
+
+// Get all books
+router.get('/', async (req, res) => {
+    try {
+        const sql = req.sql;
+        const { category, search, limit = 50 } = req.query;
+
+        let books;
+        if (search) {
+            books = await sql`
+                SELECT * FROM books 
+                WHERE title ILIKE ${'%' + search + '%'} 
+                   OR author ILIKE ${'%' + search + '%'}
+                   OR description ILIKE ${'%' + search + '%'}
+                ORDER BY created_at DESC
+                LIMIT ${parseInt(limit)}
+            `;
+        } else if (category) {
+            books = await sql`
+                SELECT * FROM books 
+                WHERE category = ${category}
+                ORDER BY created_at DESC
+                LIMIT ${parseInt(limit)}
+            `;
+        } else {
+            books = await sql`
+                SELECT * FROM books 
+                ORDER BY created_at DESC
+                LIMIT ${parseInt(limit)}
+            `;
+        }
+
+        res.json({ books });
+    } catch (error) {
+        console.error('Get books error:', error);
+        res.status(500).json({ error: 'Failed to get books' });
+    }
+});
+
+// Get book by ID
+router.get('/:id', async (req, res) => {
+    try {
+        const sql = req.sql;
+        const { id } = req.params;
+
+        const books = await sql`
+            SELECT * FROM books WHERE id = ${id}
+        `;
+
+        if (books.length === 0) {
+            return res.status(404).json({ error: 'Book not found' });
+        }
+
+        res.json({ book: books[0] });
+    } catch (error) {
+        console.error('Get book error:', error);
+        res.status(500).json({ error: 'Failed to get book' });
+    }
+});
+
+// Get books by section (hero, featured, trending, etc.)
+router.get('/section/:section', async (req, res) => {
+    try {
+        const sql = req.sql;
+        const { section } = req.params;
+
+        const books = await sql`
+            SELECT b.* FROM books b
+            INNER JOIN book_sections bs ON b.id = bs.book_id
+            WHERE bs.section_name = ${section}
+            ORDER BY bs.display_order ASC
+        `;
+
+        res.json({ books });
+    } catch (error) {
+        console.error('Get section books error:', error);
+        res.status(500).json({ error: 'Failed to get section books' });
+    }
+});
+
+// Add new book (admin only)
+router.post('/', async (req, res) => {
+    try {
+        const sql = req.sql;
+        const { title, author, price, original_price, image, description, category, isbn, publish_year, rating } = req.body;
+
+        const result = await sql`
+            INSERT INTO books (title, author, price, original_price, image, description, category, isbn, publish_year, rating)
+            VALUES (${title}, ${author}, ${price}, ${original_price || null}, ${image}, ${description || ''}, ${category || 'General'}, ${isbn || ''}, ${publish_year || null}, ${rating || 4.5})
+            RETURNING *
+        `;
+
+        res.status(201).json({ book: result[0], message: 'Book added successfully' });
+    } catch (error) {
+        console.error('Add book error:', error);
+        res.status(500).json({ error: 'Failed to add book' });
+    }
+});
+
+// Update book (admin only)
+router.put('/:id', async (req, res) => {
+    try {
+        const sql = req.sql;
+        const { id } = req.params;
+        const { title, author, price, original_price, image, description, category, isbn, publish_year, rating } = req.body;
+
+        const result = await sql`
+            UPDATE books SET
+                title = ${title},
+                author = ${author},
+                price = ${price},
+                original_price = ${original_price || null},
+                image = ${image},
+                description = ${description || ''},
+                category = ${category || 'General'},
+                isbn = ${isbn || ''},
+                publish_year = ${publish_year || null},
+                rating = ${rating || 4.5},
+                updated_at = NOW()
+            WHERE id = ${id}
+            RETURNING *
+        `;
+
+        if (result.length === 0) {
+            return res.status(404).json({ error: 'Book not found' });
+        }
+
+        res.json({ book: result[0], message: 'Book updated successfully' });
+    } catch (error) {
+        console.error('Update book error:', error);
+        res.status(500).json({ error: 'Failed to update book' });
+    }
+});
+
+// Delete book (admin only)
+router.delete('/:id', async (req, res) => {
+    try {
+        const sql = req.sql;
+        const { id } = req.params;
+
+        await sql`DELETE FROM book_sections WHERE book_id = ${id}`;
+        const result = await sql`DELETE FROM books WHERE id = ${id} RETURNING id`;
+
+        if (result.length === 0) {
+            return res.status(404).json({ error: 'Book not found' });
+        }
+
+        res.json({ message: 'Book deleted successfully' });
+    } catch (error) {
+        console.error('Delete book error:', error);
+        res.status(500).json({ error: 'Failed to delete book' });
+    }
+});
+
+module.exports = router;

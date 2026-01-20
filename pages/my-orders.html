@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Orders | ABC Books</title>
+    <meta name="description" content="View your order history at ABC Books.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/components/orders.css">
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <a href="../index.html" class="logo">
+                    <div class="logo-icon"><i class="fas fa-book-open"></i></div>
+                    <div class="logo-text">
+                        <span class="logo-main">ABC</span>
+                        <span class="logo-sub">BOOKS</span>
+                    </div>
+                </a>
+                <div class="search-wrapper">
+                    <div class="search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Search books, authors, ISBN...">
+                        <button class="search-btn">Search</button>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <a href="my-account.html" class="action-btn" title="My Account">
+                        <i class="fas fa-user"></i>
+                        <span>Account</span>
+                    </a>
+                    <a href="../index.html" class="action-btn" title="Home">
+                        <i class="fas fa-home"></i>
+                        <span>Home</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Page Header -->
+    <section class="page-header">
+        <div class="container">
+            <nav class="breadcrumb">
+                <a href="../index.html">Home</a>
+                <i class="fas fa-chevron-right"></i>
+                <a href="my-account.html">My Account</a>
+                <i class="fas fa-chevron-right"></i>
+                <span>My Orders</span>
+            </nav>
+            <h1><i class="fas fa-box"></i> My Orders</h1>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="orders-main">
+        <div class="container">
+            <!-- Filters -->
+            <div class="orders-filters">
+                <div class="filter-tabs">
+                    <button class="filter-tab active" data-filter="all">All Orders</button>
+                    <button class="filter-tab" data-filter="confirmed">Confirmed</button>
+                    <button class="filter-tab" data-filter="processing">Processing</button>
+                    <button class="filter-tab" data-filter="shipped">Shipped</button>
+                    <button class="filter-tab" data-filter="delivered">Delivered</button>
+                    <button class="filter-tab" data-filter="cancelled">Cancelled</button>
+                </div>
+                <div class="filter-search">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="orderSearch" placeholder="Search by Order ID...">
+                </div>
+            </div>
+
+            <!-- Orders List -->
+            <div id="ordersList" class="orders-list">
+                <div class="loading-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading orders...</p>
+                </div>
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <div class="empty-icon">
+                    <i class="fas fa-box-open"></i>
+                </div>
+                <h2>No Orders Yet</h2>
+                <p>Looks like you haven't placed any orders yet. Start shopping to see your orders here!</p>
+                <a href="../index.html" class="btn-shop">
+                    <i class="fas fa-shopping-bag"></i> Start Shopping
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-bottom">
+            <div class="container">
+                <p>&copy; 2025 ABC Books. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../js/pages/my-orders.js"></script>
+</body>
+
+</html>

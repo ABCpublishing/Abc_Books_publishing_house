@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Wishlist | ABC Books</title>
+    <meta name="description" content="View and manage your wishlist at ABC Books.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/components/wishlist.css">
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <a href="../index.html" class="logo">
+                    <div class="logo-icon"><i class="fas fa-book-open"></i></div>
+                    <div class="logo-text">
+                        <span class="logo-main">ABC</span>
+                        <span class="logo-sub">BOOKS</span>
+                    </div>
+                </a>
+                <div class="search-wrapper">
+                    <div class="search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Search books, authors, ISBN...">
+                        <button class="search-btn">Search</button>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <a href="my-account.html" class="action-btn" title="My Account">
+                        <i class="fas fa-user"></i>
+                        <span>Account</span>
+                    </a>
+                    <a href="../index.html" class="action-btn" title="Home">
+                        <i class="fas fa-home"></i>
+                        <span>Home</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Page Header -->
+    <section class="page-header">
+        <div class="container">
+            <nav class="breadcrumb">
+                <a href="../index.html">Home</a>
+                <i class="fas fa-chevron-right"></i>
+                <span>My Wishlist</span>
+            </nav>
+            <div class="page-title-row">
+                <h1><i class="fas fa-heart"></i> My Wishlist</h1>
+                <span id="wishlistCount" class="item-count">0 items</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="wishlist-main">
+        <div class="container">
+            <!-- Wishlist Actions -->
+            <div class="wishlist-actions" id="wishlistActions" style="display: none;">
+                <button class="btn-add-all" onclick="addAllToCart()">
+                    <i class="fas fa-cart-plus"></i> Add All to Cart
+                </button>
+                <button class="btn-clear-all" onclick="clearWishlist()">
+                    <i class="fas fa-trash"></i> Clear Wishlist
+                </button>
+            </div>
+
+            <!-- Wishlist Grid -->
+            <div id="wishlistGrid" class="wishlist-grid">
+                <!-- Items will be loaded here -->
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <div class="empty-icon">
+                    <i class="fas fa-heart-broken"></i>
+                </div>
+                <h2>Your Wishlist is Empty</h2>
+                <p>Save your favorite books here for later!</p>
+                <a href="../index.html" class="btn-shop">
+                    <i class="fas fa-shopping-bag"></i> Browse Books
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-bottom">
+            <div class="container">
+                <p>&copy; 2025 ABC Books. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../js/pages/wishlist.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Flow Test - ABC Books</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .test-section {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .test-section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: auto;
+        }
+
+        .status-badge.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-badge.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-badge.pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .result-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .result-box.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .result-box.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .checklist {
+            list-style: none;
+            padding: 0;
+        }
+
+        .checklist li {
+            padding: 10px;
+            margin: 5px 0;
+            background: #f8f9fa;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .checklist li.checked {
+            background: #d4edda;
+        }
+
+        .checklist li.failed {
+            background: #f8d7da;
+        }
+
+        .icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .icon.success {
+            background: #28a745;
+            color: white;
+        }
+
+        .icon.error {
+            background: #dc3545;
+            color: white;
+        }
+
+        .icon.pending {
+            background: #ffc107;
+            color: white;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .info-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-card h3 {
+            color: #667eea;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .info-card p {
+            color: #666;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Order Flow Diagnostic Tool</h1>
+            <p class="subtitle">Test and verify the complete order placement flow</p>
+        </div>
+
+        <!-- Test 1: Backend Connection -->
+        <div class="test-section">
+            <h2>
+                1. Backend Connection
+                <span class="status-badge pending" id="backend-status">Pending</span>
+            </h2>
+            <button onclick="testBackendConnection()">Test Connection</button>
+            <div id="backend-result" class="result-box" style="display:none;"></div>
+        </div>
+
+        <!-- Test 2: Database Schema -->
+        <div class="test-section">
+            <h2>
+                2. Database Schema
+                <span class="status-badge pending" id="schema-status">Pending</span>
+            </h2>
+            <button onclick="testDatabaseSchema()">Check Schema</button>
+            <div id="schema-result" class="result-box" style="display:none;"></div>
+        </div>
+
+        <!-- Test 3: User Authentication -->
+        <div class="test-section">
+            <h2>
+                3. User Authentication
+                <span class="status-badge pending" id="auth-status">Pending</span>
+            </h2>
+            <button onclick="testAuthentication()">Check Auth</button>
+            <div id="auth-result" class="result-box" style="display:none;"></div>
+        </div>
+
+        <!-- Test 4: Create Test Order -->
+        <div class="test-section">
+            <h2>
+                4. Create Test Order
+                <span class="status-badge pending" id="order-status">Pending</span>
+            </h2>
+            <button onclick="createTestOrder()">Create Order</button>
+            <div id="order-result" class="result-box" style="display:none;"></div>
+        </div>
+
+        <!-- Test 5: Verify in Database -->
+        <div class="test-section">
+            <h2>
+                5. Verify in Database
+                <span class="status-badge pending" id="verify-status">Pending</span>
+            </h2>
+            <button onclick="verifyInDatabase()">Verify Orders</button>
+            <div id="verify-result" class="result-box" style="display:none;"></div>
+        </div>
+
+        <!-- System Status -->
+        <div class="test-section">
+            <h2>System Status</h2>
+            <ul class="checklist" id="system-checklist">
+                <li id="check-frontend">
+                    <span class="icon pending">⏳</span>
+                    Frontend Server (Port 5000)
+                </li>
+                <li id="check-backend">
+                    <span class="icon pending">⏳</span>
+                    Backend Server (Port 3001)
+                </li>
+                <li id="check-database">
+                    <span class="icon pending">⏳</span>
+                    Database Connection
+                </li>
+                <li id="check-user">
+                    <span class="icon pending">⏳</span>
+                    User Logged In
+                </li>
+            </ul>
+        </div>
+
+        <!-- Quick Info -->
+        <div class="grid">
+            <div class="info-card">
+                <h3>📍 Frontend URL</h3>
+                <p>http://localhost:5000</p>
+            </div>
+            <div class="info-card">
+                <h3>🔌 Backend API</h3>
+                <p>http://localhost:3001/api</p>
+            </div>
+            <div class="info-card">
+                <h3>👨‍💼 Admin Panel</h3>
+                <p>http://localhost:5000/admin/admin.html</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Test 1: Backend Connection
+        async function testBackendConnection() {
+            const resultDiv = document.getElementById('backend-result');
+            const statusBadge = document.getElementById('backend-status');
+
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result-box';
+            resultDiv.textContent = 'Testing connection...';
+
+            try {
+                const response = await fetch('http://localhost:3001/api/health');
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultDiv.className = 'result-box success';
+                    resultDiv.textContent = `✅ Backend is running!\n\nResponse: ${JSON.stringify(data, null, 2)}`;
+                    statusBadge.className = 'status-badge success';
+                    statusBadge.textContent = 'Connected';
+                    updateChecklist('check-backend', true);
+                } else {
+                    throw new Error('Backend returned error');
+                }
+            } catch (error) {
+                resultDiv.className = 'result-box error';
+                resultDiv.textContent = `❌ Backend connection failed!\n\nError: ${error.message}\n\nMake sure backend is running on port 3001`;
+                statusBadge.className = 'status-badge error';
+                statusBadge.textContent = 'Failed';
+                updateChecklist('check-backend', false);
+            }
+        }
+
+        // Test 2: Database Schema
+        async function testDatabaseSchema() {
+            const resultDiv = document.getElementById('schema-result');
+            const statusBadge = document.getElementById('schema-status');
+
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result-box';
+            resultDiv.textContent = 'Checking database schema...';
+
+            try {
+                const response = await fetch('http://localhost:3001/api/orders');
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultDiv.className = 'result-box success';
+                    resultDiv.textContent = `✅ Database schema is correct!\n\nOrders found: ${data.orders?.length || 0}\n\nNote: If this works, the order_items table has the required columns.`;
+                    statusBadge.className = 'status-badge success';
+                    statusBadge.textContent = 'Valid';
+                    updateChecklist('check-database', true);
+                } else {
+                    throw new Error(data.error || 'Schema check failed');
+                }
+            } catch (error) {
+                resultDiv.className = 'result-box error';
+                resultDiv.textContent = `❌ Database schema check failed!\n\nError: ${error.message}\n\nRun: node update-order-items.js`;
+                statusBadge.className = 'status-badge error';
+                statusBadge.textContent = 'Failed';
+                updateChecklist('check-database', false);
+            }
+        }
+
+        // Test 3: User Authentication
+        function testAuthentication() {
+            const resultDiv = document.getElementById('auth-result');
+            const statusBadge = document.getElementById('auth-status');
+
+            resultDiv.style.display = 'block';
+
+            const jwtToken = localStorage.getItem('jwt_token');
+            const currentUser = JSON.parse(localStorage.getItem('abc_books_current_user') || 'null');
+
+            if (jwtToken && currentUser) {
+                resultDiv.className = 'result-box success';
+                resultDiv.textContent = `✅ User is authenticated!\n\nUser: ${currentUser.name}\nEmail: ${currentUser.email}\nUser ID: ${currentUser.id}\n\nJWT Token: ${jwtToken.substring(0, 50)}...`;
+                statusBadge.className = 'status-badge success';
+                statusBadge.textContent = 'Authenticated';
+                updateChecklist('check-user', true);
+            } else {
+                resultDiv.className = 'result-box error';
+                resultDiv.textContent = `❌ User not authenticated!\n\nJWT Token: ${jwtToken ? 'Found' : 'Missing'}\nCurrent User: ${currentUser ? 'Found' : 'Missing'}\n\nPlease login at: http://localhost:5000`;
+                statusBadge.className = 'status-badge error';
+                statusBadge.textContent = 'Not Logged In';
+                updateChecklist('check-user', false);
+            }
+        }
+
+        // Test 4: Create Test Order
+        async function createTestOrder() {
+            const resultDiv = document.getElementById('order-result');
+            const statusBadge = document.getElementById('order-status');
+
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result-box';
+            resultDiv.textContent = 'Creating test order...';
+
+            const jwtToken = localStorage.getItem('jwt_token');
+            const currentUser = JSON.parse(localStorage.getItem('abc_books_current_user') || 'null');
+
+            if (!jwtToken || !currentUser) {
+                resultDiv.className = 'result-box error';
+                resultDiv.textContent = '❌ Please login first!';
+                statusBadge.className = 'status-badge error';
+                statusBadge.textContent = 'Failed';
+                return;
+            }
+
+            const testOrder = {
+                user_id: currentUser.id,
+                items: [{
+                    book_id: null,
+                    quantity: 1,
+                    price: 299,
+                    title: 'Test Book - Diagnostic',
+                    author: 'Test Author',
+                    image: 'https://via.placeholder.com/150'
+                }],
+                subtotal: 299,
+                discount: 0,
+                total: 299,
+                shipping_first_name: 'Test',
+                shipping_last_name: 'User',
+                shipping_email: currentUser.email,
+                shipping_phone: '1234567890',
+                shipping_address1: '123 Test Street',
+                shipping_address2: '',
+                shipping_city: 'Mumbai',
+                shipping_state: 'MH',
+                shipping_pincode: '400001',
+                payment_method: 'COD'
+            };
+
+            try {
+                const response = await fetch('http://localhost:3001/api/orders', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${jwtToken}`
+                    },
+                    body: JSON.stringify(testOrder)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultDiv.className = 'result-box success';
+                    resultDiv.textContent = `✅ Test order created successfully!\n\nOrder ID: ${data.order.order_id}\nDatabase ID: ${data.order.id}\nTotal: ₹${data.order.total}\n\nFull Response:\n${JSON.stringify(data, null, 2)}`;
+                    statusBadge.className = 'status-badge success';
+                    statusBadge.textContent = 'Success';
+                } else {
+                    throw new Error(data.error || 'Order creation failed');
+                }
+            } catch (error) {
+                resultDiv.className = 'result-box error';
+                resultDiv.textContent = `❌ Order creation failed!\n\nError: ${error.message}\n\nCheck backend terminal for detailed error logs.`;
+                statusBadge.className = 'status-badge error';
+                statusBadge.textContent = 'Failed';
+            }
+        }
+
+        // Test 5: Verify in Database
+        async function verifyInDatabase() {
+            const resultDiv = document.getElementById('verify-result');
+            const statusBadge = document.getElementById('verify-status');
+
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result-box';
+            resultDiv.textContent = 'Fetching orders from database...';
+
+            try {
+                const response = await fetch('http://localhost:3001/api/orders');
+                const data = await response.json();
+
+                if (response.ok) {
+                    const orders = data.orders || [];
+
+                    if (orders.length > 0) {
+                        const orderList = orders.slice(0, 5).map(o =>
+                            `• ${o.order_id} - ${o.shipping_first_name} ${o.shipping_last_name} - ₹${o.total} (${o.status})`
+                        ).join('\n');
+
+                        resultDiv.className = 'result-box success';
+                        resultDiv.textContent = `✅ Found ${orders.length} orders in database!\n\nRecent orders:\n${orderList}\n\nAll orders are being saved correctly!`;
+                        statusBadge.className = 'status-badge success';
+                        statusBadge.textContent = `${orders.length} Orders`;
+                    } else {
+                        resultDiv.className = 'result-box';
+                        resultDiv.textContent = '⚠️ No orders found in database.\n\nTry creating a test order first.';
+                        statusBadge.className = 'status-badge pending';
+                        statusBadge.textContent = 'No Orders';
+                    }
+                } else {
+                    throw new Error(data.error || 'Failed to fetch orders');
+                }
+            } catch (error) {
+                resultDiv.className = 'result-box error';
+                resultDiv.textContent = `❌ Failed to verify orders!\n\nError: ${error.message}`;
+                statusBadge.className = 'status-badge error';
+                statusBadge.textContent = 'Failed';
+            }
+        }
+
+        // Update checklist item
+        function updateChecklist(id, success) {
+            const item = document.getElementById(id);
+            const icon = item.querySelector('.icon');
+
+            if (success) {
+                item.classList.add('checked');
+                icon.className = 'icon success';
+                icon.textContent = '✓';
+            } else {
+                item.classList.add('failed');
+                icon.className = 'icon error';
+                icon.textContent = '✗';
+            }
+        }
+
+        // Auto-run basic checks on load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                testBackendConnection();
+                testAuthentication();
+            }, 500);
+        });
+    </script>
+</body>
+
+</html>
