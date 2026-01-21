@@ -685,7 +685,7 @@ async function initializeWebsite() {
         // Load all sections in parallel for faster loading
         await Promise.all([
             renderHeroBooks(),
-            renderIslamicBooks(),
+
             renderFeaturedBooks(),
             renderTrendingBooks(),
             renderNewReleases(),
