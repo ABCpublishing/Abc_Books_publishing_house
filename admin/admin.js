@@ -8,7 +8,7 @@ const ADMIN_API_BASE = (window.location.hostname !== 'localhost' && window.locat
 // Storage Keys
 const STORAGE_KEYS = {
     ADMIN_AUTH: 'abc_admin_auth',
-    BOOKS_DATA: 'abc_books_data',
+    BOOKS_DATA: 'abc_books_data_v4',
     ADMIN_LOGS: 'abc_admin_logs'
 };
 

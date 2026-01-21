@@ -262,7 +262,7 @@ const DEMO_ISLAMIC_BOOKS = [
 // ===== Load Books from Admin Panel =====
 function getCustomBooksData() {
     try {
-        const data = localStorage.getItem('abc_books_data');
+        const data = localStorage.getItem('abc_books_data_v4');
         if (data) {
             const parsed = JSON.parse(data);
             console.log('📚 Loaded custom books data from admin:', parsed);
@@ -286,23 +286,84 @@ function initializeDemoData() {
         existingData.books.length < currentDemoCount ||
         existingData.books.some(b => b.id.startsWith('top_') && !b.image.includes('amazon'));
 
+    // === 50 Islamic Titles ===
+    const islamicTitles = [
+        "Gardens of the Righteous", "Fortress of the Muslim", "Stories of the Prophets", "The Sealed Nectar", "Don't Be Sad",
+        "Reclaim Your Heart", "Secrets of Divine Love", "Purification of the Heart", "Revival of Religious Sciences", "The Disease and The Cure",
+        "Timeless Seeds of Advice", "Prayers of the Pious", "The Ideal Muslim", "The Ideal Muslimah", "Enjoy Your Life",
+        "The Book of Knowledge", "In the Footsteps of the Prophet", "Women Around the Messenger", "The Beginning and the End", "Tafsir As-Sa'di",
+        "Characteristics of Prophet Muhammad", "40 Hadith Nawawi", "Riyad as-Salihin", "Bulugh al-Maram", "Fath al-Bari",
+        "Kitab at-Tawhid", "The Deviant Sects", "Biographies of the Companions", "History of Islam", "Lost Islamic History",
+        "The Road to Mecca", "Islam and the World", "Milestones", "Fiqh us-Sunnah", "The Spirt of Islam",
+        "Towards Understanding the Quran", "Let Us Be Muslims", "The Quran and Modern Science", "Islam the Natural Way", "The Productive Muslim",
+        "Islamic Manners", "Patience and Gratitude", "The Soul's Journey", "Life in the Grave", "Signs of the Last Day",
+        "Descriptions of Paradise", "The Fire of Hell", "Sins and Repentance", "Daily Duas", "The Rights of Parents"
+    ];
+
+    // === 50 Arabic Titles ===
+    const arabicTitles = [
+        "Al-Muqaddimah", "Kalila wa Dimna", "Alf Layla wa Layla", "Diwan Al-Mutanabbi", "Nahj al-Balagha",
+        "Kitab al-Aghani", "Hayat al-Hayawan", "Al-Bukhala", "Risalat al-Ghufran", "Tawq al-Hamamah",
+        "Al-Iqd al-Farid", "Wafayat al-Ayan", "Siyar A'lam al-Nubala", "Al-Bidaya wan-Nihaya", "Tarikh al-Tabari",
+        "Lisan al-Arab", "Al-Qamus al-Muhit", "Asrar al-Balagha", "Dala'il al-I'jaz", "Maqamat al-Hariri",
+        "Hayy ibn Yaqdhan", "Al-Muwafaqat", "Al-Itisam", "Talbis Iblis", "Sayd al-Khatir",
+        "Rawdat al-Muhibbin", "Madarij al-Salikin", "Zad al-Ma'ad", "Ilam al-Muwaqqi'in", "Al-Fawa'id",
+        "Al-Umm", "Al-Risala", "Al-Burhan", "Al-Mustasfa", "Ihya Ulum ad-Din",
+        "Mishkat al-Masabih", "Al-Adab al-Mufrad", "Shamail Muhammadiyah", "Al-Shifa", "Nur al-Yaqin",
+        "Rahiq al-Makhtum (Arabic)", "Fi Zilal al-Quran", "Tafsir al-Jalalayn", "Tafsir al-Qurtubi", "Tafsir al-Baghawi",
+        "Fath al-Qadir", "Umdat al-Ahkam", "Subul al-Salam", "Nail al-Awtar", "Al-Muhalla"
+    ];
+
     if (needsRefresh) {
         console.log('🎬 Initializing/Refreshing with new Amazon book data...');
 
-        // Get all book IDs
-        const allBookIds = DEMO_ISLAMIC_BOOKS.map(book => book.id);
+        // Generate Book Objects
+        const generatedIslamicBooks = islamicTitles.map((title, index) => ({
+            id: `isl_gen_${index + 1}`,
+            title: title,
+            author: 'Prominent Islamic Scholar',
+            category: 'Islamic',
+            subcategory: 'General',
+            language: 'English',
+            image: `https://m.media-amazon.com/images/I/${['71+2-t7M35L', '71F4+7rk2eL', '6176yTa0KQL'][index % 3]}._AC_UY218_.jpg`, // Rotating placeholders
+            price: 299 + (index * 10),
+            originalPrice: 499 + (index * 10),
+            rating: 4.8,
+            description: `A classic masterpiece of Islamic literature: ${title}. Essential reading for every home.`
+        }));
+
+        const generatedArabicBooks = arabicTitles.map((title, index) => ({
+            id: `arb_gen_${index + 1}`,
+            title: title,
+            author: 'Classical Arabic Author',
+            category: 'Arabic',
+            subcategory: 'Literature',
+            language: 'Arabic',
+            image: `https://m.media-amazon.com/images/I/${['611X8GI7hpL', '81BE7eeKzAL', '81ngZpLkktL'][index % 3]}._AC_UY218_.jpg`, // Rotating placeholders
+            price: 399 + (index * 15),
+            originalPrice: 699 + (index * 15),
+            rating: 4.9,
+            description: `A timeless work of Arabic heritage: ${title}. Rich in language and wisdom.`
+        }));
+
+        // Combine all books
+        const finalBookList = [...DEMO_ISLAMIC_BOOKS, ...generatedIslamicBooks, ...generatedArabicBooks];
+        const allBookIds = finalBookList.map(b => b.id);
 
         const demoData = {
-            books: DEMO_ISLAMIC_BOOKS,
+            books: finalBookList,
             sections: {
-                hero: allBookIds.slice(0, 5),
+                hero: allBookIds,
                 editors: allBookIds.slice(5, 11),
                 featured: allBookIds.slice(2, 8),
-                trending: allBookIds.slice(0, 15) // Populate trending with more books
+                trending: allBookIds.slice(0, 15),
+                islamic_top50: generatedIslamicBooks.map(b => b.id),
+                arabic_top50: generatedArabicBooks.map(b => b.id),
+                top100_all: [...generatedIslamicBooks.map(b => b.id), ...generatedArabicBooks.map(b => b.id)]
             }
         };
-        localStorage.setItem('abc_books_data', JSON.stringify(demoData));
-        console.log('✅ Data initialized with', DEMO_ISLAMIC_BOOKS.length, 'books');
+        localStorage.setItem('abc_books_data_v4', JSON.stringify(demoData));
+        console.log('✅ Data initialized with', finalBookList.length, 'books');
         return demoData;
     }
 
