@@ -3,26 +3,66 @@
    For ABC Books Mobile Experience
    ========================================= */
 
-/* ===== GLOBAL OVERFLOW PREVENTION ===== */
-html,
+/* ===== CRITICAL: GLOBAL OVERFLOW PREVENTION ===== */
+/* This MUST override all other styles to prevent horizontal scroll */
+html {
+    overflow-x: hidden !important;
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
 body {
     overflow-x: hidden !important;
     width: 100% !important;
     max-width: 100vw !important;
+    position: relative;
 }
 
 *,
 *::before,
 *::after {
-    box-sizing: border-box;
+    box-sizing: border-box !important;
 }
 
-.container {
-    width: 100%;
-    max-width: 100%;
-    padding-left: 15px;
-    padding-right: 15px;
-    overflow: hidden;
+/* Force ALL containers to respect viewport width */
+.container,
+.wrapper,
+.content-wrapper,
+section,
+main,
+header,
+footer,
+aside,
+article,
+div {
+    max-width: 100vw !important;
+}
+
+@media (max-width: 768px) {
+    .container {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+        overflow: hidden !important;
+        margin: 0 auto !important;
+    }
+
+    /* Force all sections to be contained */
+    section {
+        width: 100% !important;
+        overflow: hidden !important;
+    }
+
+    /* Force all grids and flexbox to wrap properly */
+    .content-grid,
+    .main-content-grid,
+    .footer-grid,
+    .trust-grid,
+    .categories-grid {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
 }
 
 /* ===== HEADER & NAVIGATION MOBILE ===== */
@@ -468,20 +508,53 @@ body {
     }
 }
 
-/* ===== FOOTER ===== */
+/* ===== FOOTER - MOBILE FIX ===== */
 @media (max-width: 768px) {
+
+    footer,
+    .footer,
+    .site-footer {
+        width: 100% !important;
+        overflow: hidden !important;
+    }
+
     .footer-grid {
-        grid-template-columns: 1fr;
-        gap: 25px;
-        text-align: center;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 25px !important;
+        text-align: center !important;
+        width: 100% !important;
+        padding: 0 15px !important;
+    }
+
+    .footer-col {
+        width: 100% !important;
+        text-align: center !important;
     }
 
     .footer-col ul {
-        padding-left: 0;
+        padding-left: 0 !important;
+        list-style: none !important;
     }
 
     .footer-social {
-        justify-content: center;
+        display: flex !important;
+        justify-content: center !important;
+        gap: 15px !important;
+    }
+
+    .footer-bottom {
+        text-align: center !important;
+        padding: 15px !important;
+    }
+
+    .newsletter-form {
+        flex-direction: column !important;
+        gap: 10px !important;
+    }
+
+    .newsletter-form input {
+        width: 100% !important;
     }
 }
 
@@ -674,6 +747,7 @@ body {
         margin-bottom: 3px;
         display: -webkit-box;
         -webkit-line-clamp: 2;
+        line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
@@ -706,56 +780,107 @@ body {
     }
 }
 
-/* ===== ISLAMIC BOOKS BANNER WRAPPER - FIXED ===== */
+/* ===== ISLAMIC BOOKS BANNER - COMPLETE MOBILE FIX ===== */
 @media (max-width: 768px) {
     .islamic-books-banner {
-        padding: 15px 0;
+        padding: 20px 0 !important;
+        width: 100% !important;
+        overflow: hidden !important;
     }
 
-    .banner-wrapper {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 20px;
-        padding: 15px;
+    .islamic-books-banner .container {
+        padding: 0 12px !important;
     }
 
-    .banner-books-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
-        width: 100%;
+    .islamic-books-banner .banner-wrapper {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 15px !important;
+        padding: 10px !important;
+        width: 100% !important;
+        max-width: 100% !important;
     }
 
-    .banner-books-grid .book-cover-item {
-        grid-column: span 1 !important;
-        grid-row: span 1 !important;
-        aspect-ratio: 3/4;
-        border-radius: 6px;
-        overflow: hidden;
+    /* Book Grid - 2 columns on mobile */
+    .islamic-books-banner .banner-books-grid {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 10px !important;
+        width: 100% !important;
+        max-width: 100% !important;
     }
 
-    .banner-books-grid .book-cover-item img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
+    /* Individual Book Cards */
+    .islamic-books-banner .banner-book-card {
+        width: 100% !important;
+        border-radius: 10px !important;
+        overflow: hidden !important;
     }
 
-    .banner-badge {
+    .islamic-books-banner .banner-book-cover {
+        height: 140px !important;
+        padding: 8px !important;
+    }
+
+    .islamic-books-banner .banner-book-cover img {
+        max-height: 100% !important;
+        max-width: 100% !important;
+        object-fit: contain !important;
+    }
+
+    .islamic-books-banner .banner-book-info {
+        padding: 8px !important;
+    }
+
+    .islamic-books-banner .banner-book-title {
+        font-size: 11px !important;
+        line-height: 1.3 !important;
+        min-height: auto !important;
+    }
+
+    .islamic-books-banner .banner-book-author {
+        font-size: 9px !important;
+    }
+
+    /* TOP 100 Badge - Reduced Size */
+    .banner-badge-link {
+        display: flex !important;
+        justify-content: center !important;
+        width: 100% !important;
+    }
+
+    .banner-badge,
+    .top100-badge {
         position: static !important;
         transform: none !important;
-        margin: 0;
+        margin: 0 auto !important;
     }
 
-    .banner-badge-link {
-        display: flex;
-        justify-content: center;
-        width: 100%;
+    .top100-badge .badge-content {
+        padding: 15px 25px !important;
+        min-width: 120px !important;
+        max-width: 180px !important;
     }
 
-    .badge-content {
-        text-align: center;
-        padding: 15px 30px;
+    .top100-badge .badge-label {
+        font-size: 22px !important;
+        letter-spacing: 1px !important;
+    }
+
+    .top100-badge .badge-title {
+        font-size: 12px !important;
+    }
+}
+
+@media (max-width: 400px) {
+    .islamic-books-banner .banner-books-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px !important;
+    }
+
+    .islamic-books-banner .banner-book-cover {
+        height: 120px !important;
     }
 }
 
