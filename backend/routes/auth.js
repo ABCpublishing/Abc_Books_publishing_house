@@ -19,39 +19,74 @@ router.post('/register', async (req, res) => {
             return res.status(400).json({ error: 'Email already registered' });
         }
 
+        // Generate verification token
+        const crypto = require('crypto');
+        const verificationToken = crypto.randomBytes(32).toString('hex');
+
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Insert new user
         const result = await sql`
-            INSERT INTO users (name, email, phone, password_hash)
-            VALUES (${name}, ${email}, ${phone}, ${hashedPassword})
+            INSERT INTO users (name, email, phone, password_hash, verification_token, is_verified)
+            VALUES (${name}, ${email}, ${phone}, ${hashedPassword}, ${verificationToken}, FALSE)
             RETURNING id, name, email, phone, created_at
         `;
 
         const user = result[0];
 
-        // Generate JWT token
-        const token = jwt.sign(
-            { userId: user.id, email: user.email },
-            process.env.JWT_SECRET,
-            { expiresIn: '7d' }
-        );
+        // Send verification email
+        const { sendVerificationEmail } = require('../services/email');
+        try {
+            await sendVerificationEmail(email, name, verificationToken);
+        } catch (emailError) {
+            console.error('Failed to send verification email:', emailError);
+            // We still registered the user, but inform them email failed or just log it
+        }
 
         res.status(201).json({
-            message: 'Registration successful',
+            message: 'Registration successful. Please check your email to verify your account.',
             user: {
                 id: user.id,
                 name: user.name,
                 email: user.email,
                 phone: user.phone,
-                createdAt: user.created_at
-            },
-            token
+                createdAt: user.created_at,
+                isVerified: false
+            }
         });
     } catch (error) {
         console.error('Register error:', error);
         res.status(500).json({ error: 'Registration failed', message: error.message });
+    }
+});
+
+// Verify email
+router.get('/verify', async (req, res) => {
+    try {
+        const { token } = req.query;
+        const sql = req.sql;
+
+        if (!token) {
+            return res.status(400).json({ error: 'Missing token' });
+        }
+
+        // Find user by token
+        const result = await sql`
+            UPDATE users 
+            SET is_verified = TRUE, verification_token = NULL
+            WHERE verification_token = ${token}
+            RETURNING id, name, email
+        `;
+
+        if (result.length === 0) {
+            return res.status(400).json({ error: 'Invalid or expired verification token' });
+        }
+
+        res.json({ message: 'Email verified successfully! You can now login.' });
+    } catch (error) {
+        console.error('Verification error:', error);
+        res.status(500).json({ error: 'Verification failed' });
     }
 });
 
@@ -63,7 +98,7 @@ router.post('/login', async (req, res) => {
 
         // Find user by email
         const users = await sql`
-            SELECT id, name, email, phone, password_hash, created_at
+            SELECT id, name, email, phone, password_hash, created_at, is_verified
             FROM users WHERE email = ${email}
         `;
 
@@ -72,6 +107,14 @@ router.post('/login', async (req, res) => {
         }
 
         const user = users[0];
+
+        // Check verification
+        if (user.is_verified === false) {
+            return res.status(403).json({
+                error: 'Account not verified',
+                message: 'Please check your email and verify your account before logging in.'
+            });
+        }
 
         // Verify password
         const isValid = await bcrypt.compare(password, user.password_hash);
