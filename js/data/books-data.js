@@ -8,6 +8,7 @@ const BOOKS_DATA_API_BASE = (window.location.hostname !== 'localhost' && window.
 // Islamic Books (Arabic/English translations)
 // Top 100 / Trending Books (Using Amazon Image Links)
 const DEMO_ISLAMIC_BOOKS = [
+    // === Trending & Best Sellers ===
     {
         id: 'top_1',
         title: 'The Alchemist',
@@ -15,11 +16,11 @@ const DEMO_ISLAMIC_BOOKS = [
         category: 'Fiction',
         subcategory: 'Inspirational',
         language: 'English',
-        image: 'https://m.media-amazon.com/images/I/71aFt4+OTOL.jpg',
+        image: 'https://m.media-amazon.com/images/I/71+2-t7M35L._AC_UY218_.jpg',
         price: 399,
         originalPrice: 599,
         rating: 4.8,
-        description: 'A global phenomenon, The Alchemist has been read and loved by over sixty-two million readers in seventy-four languages around the world, becoming a modern classic.'
+        description: 'A global phenomenon, The Alchemist has been read and loved by millions, becoming a modern classic.'
     },
     {
         id: 'top_2',
@@ -28,63 +29,63 @@ const DEMO_ISLAMIC_BOOKS = [
         category: 'Self-Help',
         subcategory: 'Productivity',
         language: 'English',
-        image: 'https://m.media-amazon.com/images/I/91bYsX41DVL.jpg',
+        image: 'https://m.media-amazon.com/images/I/71F4+7rk2eL._AC_UY218_.jpg',
         price: 499,
         originalPrice: 799,
         rating: 4.9,
-        description: 'No matter your goals, Atomic Habits offers a proven framework for improving every day.'
+        description: 'An easy & proven way to build good habits & break bad ones.'
     },
     {
         id: 'top_3',
-        title: 'The Psychology of Money',
-        author: 'Morgan Housel',
-        category: 'Business',
-        subcategory: 'Finance',
+        title: "Don't Be Sad",
+        author: 'Aaidh ibn Abdullah al-Qarni',
+        category: 'Islamic',
+        subcategory: 'Self-Help',
         language: 'English',
-        image: 'https://m.media-amazon.com/images/I/71g2ednj0JL.jpg',
-        price: 299,
-        originalPrice: 499,
-        rating: 4.7,
-        description: 'Doing well with money isn’t necessarily about what you know. It’s about how you behave.'
+        image: 'https://m.media-amazon.com/images/I/6176yTa0KQL._AC_UY218_.jpg',
+        price: 549,
+        originalPrice: 850,
+        rating: 4.9,
+        description: 'An uplifting and thought-provoking book rooted in Islamic teachings to help navigate life challenges.'
     },
     {
         id: 'top_4',
+        title: 'The 48 Laws of Power',
+        author: 'Robert Greene',
+        category: 'Psychology',
+        subcategory: 'Strategy',
+        language: 'English',
+        image: 'https://m.media-amazon.com/images/I/611X8GI7hpL._AC_UY218_.jpg',
+        price: 449,
+        originalPrice: 699,
+        rating: 4.7,
+        description: 'Amoral, cunning, ruthless, and instructive, this multi-million-copy bestseller is the definitive manual.'
+    },
+    {
+        id: 'top_5',
+        title: 'Rich Dad Poor Dad',
+        author: 'Robert Kiyosaki',
+        category: 'Business',
+        subcategory: 'Finance',
+        language: 'English',
+        image: 'https://m.media-amazon.com/images/I/81BE7eeKzAL._AC_UY218_.jpg',
+        price: 349,
+        originalPrice: 550,
+        rating: 4.8,
+        description: 'What the rich teach their kids about money that the poor and middle class do not!'
+    },
+    {
+        id: 'top_6',
         title: 'Deep Work',
         author: 'Cal Newport',
         category: 'Self-Help',
         subcategory: 'Productivity',
         language: 'English',
-        image: 'https://m.media-amazon.com/images/I/417yjF+E5zL.jpg',
-        price: 349,
-        originalPrice: 550,
-        rating: 4.6,
+        image: 'https://m.media-amazon.com/images/I/81ngZpLkktL._AC_UY218_.jpg',
+        price: 399,
+        originalPrice: 599,
+        rating: 4.7,
         description: 'Rules for Focused Success in a Distracted World.'
-    },
-    {
-        id: 'top_5',
-        title: 'Sapiens: A Brief History of Humankind',
-        author: 'Yuval Noah Harari',
-        category: 'History',
-        subcategory: 'Anthropology',
-        language: 'English',
-        image: 'https://m.media-amazon.com/images/I/713jIoMO3UL.jpg',
-        price: 599,
-        originalPrice: 899,
-        rating: 4.8,
-        description: 'From a renowned historian comes a groundbreaking narrative of humanity’s creation and evolution.'
-    },
-    {
-        id: 'top_6',
-        title: 'Ikigai',
-        author: 'Francesc Miralles',
-        category: 'Self-Help',
-        subcategory: 'Philosophy',
-        language: 'English',
-        image: 'https://m.media-amazon.com/images/I/81l3rZK4lnL.jpg',
-        price: 299,
-        originalPrice: 499,
-        rating: 4.6,
-        description: 'The Japanese Secret to a Long and Happy Life.'
     },
     {
         id: 'top_7',
@@ -93,12 +94,117 @@ const DEMO_ISLAMIC_BOOKS = [
         category: 'Psychology',
         subcategory: 'Decision Making',
         language: 'English',
-        image: 'https://m.media-amazon.com/images/I/71f66-UbcqL.jpg',
-        price: 449,
-        originalPrice: 699,
+        image: 'https://m.media-amazon.com/images/I/61fdrEuPJwL._AC_UY218_.jpg',
+        price: 599,
+        originalPrice: 899,
         rating: 4.7,
         description: 'A major work in modern psychology and behavioral economics.'
     },
+    {
+        id: 'top_8',
+        title: 'The Psychology of Money',
+        author: 'Morgan Housel',
+        category: 'Business',
+        subcategory: 'Finance',
+        language: 'English',
+        image: 'https://m.media-amazon.com/images/I/81gC3mdNi5L._AC_UY218_.jpg',
+        price: 299,
+        originalPrice: 499,
+        rating: 4.8,
+        description: 'Doing well with money isn’t necessarily about what you know. It’s about how you behave.'
+    },
+    {
+        id: 'top_9',
+        title: 'The Power of Now',
+        author: 'Eckhart Tolle',
+        category: 'Self-Help',
+        subcategory: 'Spirituality',
+        language: 'English',
+        image: 'https://m.media-amazon.com/images/I/61Ij8nLooNL._AC_UY218_.jpg',
+        price: 349,
+        originalPrice: 550,
+        rating: 4.7,
+        description: 'A Guide to Spiritual Enlightenment.'
+    },
+    {
+        id: 'top_10',
+        title: "Man's Search for Meaning",
+        author: 'Viktor Frankl',
+        category: 'Psychology',
+        subcategory: 'Memoir',
+        language: 'English',
+        image: 'https://m.media-amazon.com/images/I/81uK7UU+0OL._AC_UY218_.jpg',
+        price: 249,
+        originalPrice: 399,
+        rating: 4.9,
+        description: 'Psychiatrist Viktor Frankl’s memoir has riveted generations of readers with its descriptions of life in Nazi death camps.'
+    },
+    {
+        id: 'top_11',
+        title: 'The Midnight Library',
+        author: 'Matt Haig',
+        category: 'Fiction',
+        subcategory: 'Contemporary',
+        language: 'English',
+        image: 'https://m.media-amazon.com/images/I/812whWLbqAL._AC_UY218_.jpg',
+        price: 399,
+        originalPrice: 650,
+        rating: 4.6,
+        description: 'Between life and death there is a library, and within that library, the shelves go on forever.'
+    },
+    {
+        id: 'top_12',
+        title: 'The Silent Patient',
+        author: 'Alex Michaelides',
+        category: 'Fiction',
+        subcategory: 'Thriller',
+        language: 'English',
+        image: 'https://m.media-amazon.com/images/I/91BbLCJOruL._AC_UY218_.jpg',
+        price: 349,
+        originalPrice: 599,
+        rating: 4.7,
+        description: 'The Silent Patient is a shocking psychological thriller of a woman’s act of violence against her husband.'
+    },
+    {
+        id: 'top_13',
+        title: 'It Ends with Us',
+        author: 'Colleen Hoover',
+        category: 'Fiction',
+        subcategory: 'Romance',
+        language: 'English',
+        image: 'https://m.media-amazon.com/images/I/91w8b7ug0nL._AC_UY218_.jpg',
+        price: 399,
+        originalPrice: 699,
+        rating: 4.8,
+        description: 'A brave and heartbreaking novel that digs its claws into you and doesn’t let go.'
+    },
+    {
+        id: 'top_14',
+        title: 'Principles',
+        author: 'Ray Dalio',
+        category: 'Business',
+        subcategory: 'Management',
+        language: 'English',
+        image: 'https://m.media-amazon.com/images/I/61LKD6scbfL._AC_UY218_.jpg',
+        price: 699,
+        originalPrice: 999,
+        rating: 4.7,
+        description: 'Ray Dalio, one of the world’s most successful investors and entrepreneurs, shares the unconventional principles that he’s developed.'
+    },
+    {
+        id: 'top_15',
+        title: 'Tools of Titans',
+        author: 'Tim Ferriss',
+        category: 'Self-Help',
+        subcategory: 'Advice',
+        language: 'English',
+        image: 'https://m.media-amazon.com/images/I/710FF4JrjsL._AC_UL320_.jpg',
+        price: 599,
+        originalPrice: 899,
+        rating: 4.7,
+        description: 'The Tactics, Routines, and Habits of Billionaires, Icons, and World-Class Performers.'
+    },
+    // === Core Islamic Collection ===
     {
         id: 'book_quran_1',
         title: 'The Holy Quran (Arabic-English)',
@@ -150,19 +256,6 @@ const DEMO_ISLAMIC_BOOKS = [
         originalPrice: 699,
         rating: 4.8,
         description: 'Ar-Raheeq Al-Makhtum - Biography of Prophet Muhammad (PBUH).'
-    },
-    {
-        id: 'top_12',
-        title: 'The 5 AM Club',
-        author: 'Robin Sharma',
-        category: 'Self-Help',
-        subcategory: 'Productivity',
-        language: 'English',
-        image: 'https://m.media-amazon.com/images/I/71N78Sbi96L.jpg',
-        price: 299,
-        originalPrice: 450,
-        rating: 4.5,
-        description: 'Own Your Morning. Elevate Your Life.'
     }
 ];
 
@@ -182,12 +275,19 @@ function getCustomBooksData() {
     }
 }
 
-// Initialize demo data if no data exists
+// Initialize demo data if no data exists or if we want to force refresh new books
 function initializeDemoData() {
     const existingData = getCustomBooksData();
+    const currentDemoCount = DEMO_ISLAMIC_BOOKS.length;
 
-    if (!existingData || !existingData.books || existingData.books.length === 0) {
-        console.log('🎬 No data found, initializing with demo Islamic books...');
+    // Force refresh if demo books collection has expanded or changed significantly
+    const needsRefresh = !existingData ||
+        !existingData.books ||
+        existingData.books.length < currentDemoCount ||
+        existingData.books.some(b => b.id.startsWith('top_') && !b.image.includes('amazon'));
+
+    if (needsRefresh) {
+        console.log('🎬 Initializing/Refreshing with new Amazon book data...');
 
         // Get all book IDs
         const allBookIds = DEMO_ISLAMIC_BOOKS.map(book => book.id);
@@ -195,22 +295,15 @@ function initializeDemoData() {
         const demoData = {
             books: DEMO_ISLAMIC_BOOKS,
             sections: {
-                hero: allBookIds,
-                editors: allBookIds.slice(0, 6),
-                featured: allBookIds.slice(0, 6),
-                trending: allBookIds.slice(0, 8)  // Populate trending with first 8 books
+                hero: allBookIds.slice(0, 5),
+                editors: allBookIds.slice(5, 11),
+                featured: allBookIds.slice(2, 8),
+                trending: allBookIds.slice(0, 15) // Populate trending with more books
             }
         };
         localStorage.setItem('abc_books_data', JSON.stringify(demoData));
-        console.log('✅ Demo data initialized with', DEMO_ISLAMIC_BOOKS.length, 'books');
+        console.log('✅ Data initialized with', DEMO_ISLAMIC_BOOKS.length, 'books');
         return demoData;
-    }
-
-    // If existing data has empty trending, populate it
-    if (existingData.sections && (!existingData.sections.trending || existingData.sections.trending.length === 0)) {
-        existingData.sections.trending = existingData.books.slice(0, 8).map(b => b.id);
-        localStorage.setItem('abc_books_data', JSON.stringify(existingData));
-        console.log('📚 Populated trending section with books');
     }
 
     return existingData;
