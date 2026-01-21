@@ -262,7 +262,7 @@ const DEMO_ISLAMIC_BOOKS = [
 // ===== Load Books from Admin Panel =====
 function getCustomBooksData() {
     try {
-        const data = localStorage.getItem('abc_books_data_v4');
+        const data = localStorage.getItem('abc_books_data_v5');
         if (data) {
             const parsed = JSON.parse(data);
             console.log('📚 Loaded custom books data from admin:', parsed);
@@ -281,8 +281,12 @@ function initializeDemoData() {
     const currentDemoCount = DEMO_ISLAMIC_BOOKS.length;
 
     // Force refresh if demo books collection has expanded or changed significantly
+    // OR if we are missing our critical Top 100 sections
     const needsRefresh = !existingData ||
         !existingData.books ||
+        !existingData.sections ||
+        !existingData.sections.islamic_top50 ||
+        !existingData.sections.arabic_top50 ||
         existingData.books.length < currentDemoCount ||
         existingData.books.some(b => b.id.startsWith('top_') && !b.image.includes('amazon'));
 
@@ -362,7 +366,7 @@ function initializeDemoData() {
                 top100_all: [...generatedIslamicBooks.map(b => b.id), ...generatedArabicBooks.map(b => b.id)]
             }
         };
-        localStorage.setItem('abc_books_data_v4', JSON.stringify(demoData));
+        localStorage.setItem('abc_books_data_v5', JSON.stringify(demoData));
         console.log('✅ Data initialized with', finalBookList.length, 'books');
         return demoData;
     }
