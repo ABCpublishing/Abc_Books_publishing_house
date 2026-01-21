@@ -108,14 +108,15 @@ async function renderFictionBooks() {
 // Render sidebar books
 async function renderSidebarBooks() {
     const data = initializeDemoData();
+    const allBooks = data.books || [];
 
-    // Author books
-    const authorBooks = data.books.slice(0, 5);
+    // Author Spotlight - Sudha Murty (Simulated with our top books for now)
+    const authorBooks = allBooks.slice(0, 3);
     const authorContainer = document.getElementById('authorBooks');
     if (authorContainer && authorBooks.length > 0) {
-        authorContainer.innerHTML = authorBooks.slice(0, 3).map(book => `
-            <div class="author-book-item">
-                <img src="${book.image}" alt="${book.title}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22100%22 height=%22100%22/%3E%3C/svg%3E'">
+        authorContainer.innerHTML = authorBooks.map(book => `
+            <div class="author-book-item" onclick="viewBookDetail('${book.id}')" style="cursor: pointer;">
+                <img src="${book.image}" alt="${book.title}" onerror="this.src='https://via.placeholder.com/50x70?text=Book'">
                 <div class="book-details">
                     <h4>${book.title}</h4>
                     <span class="price">₹${book.price}</span>
@@ -125,57 +126,46 @@ async function renderSidebarBooks() {
     }
 
     // Academic books
-    const academicBooks = data.books.slice(0, 3);
+    const academicBooks = allBooks.slice(3, 6);
     const academicContainer = document.getElementById('academicBooks');
     if (academicContainer && academicBooks.length > 0) {
         academicContainer.innerHTML = academicBooks.map(book => `
-            <div class="promo-book-item">
-                <img src="${book.image}" alt="${book.title}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22100%22 height=%22100%22/%3E%3C/svg%3E'">
+            <div class="promo-book-item" onclick="viewBookDetail('${book.id}')" style="cursor: pointer;">
+                <img src="${book.image}" alt="${book.title}" onerror="this.src='https://via.placeholder.com/80x120?text=Book'">
             </div>
         `).join('');
     }
 
     // Exam books
-    const examBooks = data.books.slice(0, 3);
+    const examBooks = allBooks.slice(6, 9);
     const examContainer = document.getElementById('examBooks');
     if (examContainer && examBooks.length > 0) {
         examContainer.innerHTML = examBooks.map(book => `
-            <div class="promo-book-item">
-                <img src="${book.image}" alt="${book.title}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22100%22 height=%22100%22/%3E%3C/svg%3E'">
+            <div class="promo-book-item" onclick="viewBookDetail('${book.id}')" style="cursor: pointer;">
+                <img src="${book.image}" alt="${book.title}" onerror="this.src='https://via.placeholder.com/80x120?text=Book'">
             </div>
         `).join('');
     }
 
-    // Economics books
-    const economicsBooks = data.books.slice(0, 2);
-    const economicsContainer = document.getElementById('economicsBooks');
-    if (economicsContainer && economicsBooks.length > 0) {
-        economicsContainer.innerHTML = economicsBooks.map(book => `
-            <div class="economics-book-item">
-                <img src="${book.image}" alt="${book.title}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22100%22 height=%22100%22/%3E%3C/svg%3E'">
-                <span class="book-price">₹${book.price}</span>
-            </div>
-        `).join('');
-    }
-
-    // Learning books
+    // Learning books (Shelf)
+    const shelfBooks = allBooks.slice(0, 3);
     const learningContainer = document.getElementById('learningBooks');
-    if (learningContainer && examBooks.length > 0) {
-        learningContainer.innerHTML = examBooks.slice(0, 3).map(book => `
-            <div class="shelf-book-item">
-                <img src="${book.image}" alt="${book.title}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22100%22 height=%22100%22/%3E%3C/svg%3E'">
+    if (learningContainer && shelfBooks.length > 0) {
+        learningContainer.innerHTML = shelfBooks.map(book => `
+            <div class="shelf-book-item" onclick="viewBookDetail('${book.id}')" style="cursor: pointer;">
+                <img src="${book.image}" alt="${book.title}" onerror="this.src='https://via.placeholder.com/60x90?text=Book'">
                 <h4>${book.title}</h4>
             </div>
         `).join('');
     }
 
     // Book crushes
-    const crushBooks = data.books.slice(0, 3);
+    const crushBooks = allBooks.slice(2, 5);
     const crushContainer = document.getElementById('crushBooks');
     if (crushContainer && crushBooks.length > 0) {
         crushContainer.innerHTML = crushBooks.map(book => `
-            <div class="promo-book-item">
-                <img src="${book.image}" alt="${book.title}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22100%22 height=%22100%22/%3E%3C/svg%3E'">
+            <div class="promo-book-item" onclick="viewBookDetail('${book.id}')" style="cursor: pointer;">
+                <img src="${book.image}" alt="${book.title}" onerror="this.src='https://via.placeholder.com/80x120?text=Book'">
             </div>
         `).join('');
     }

@@ -6,8 +6,99 @@ const BOOKS_DATA_API_BASE = (window.location.hostname !== 'localhost' && window.
     : 'http://localhost:3001/api';
 
 // Islamic Books (Arabic/English translations)
+// Top 100 / Trending Books (Using Amazon Image Links)
 const DEMO_ISLAMIC_BOOKS = [
-    // Quran & Tafsir
+    {
+        id: 'top_1',
+        title: 'The Alchemist',
+        author: 'Paulo Coelho',
+        category: 'Fiction',
+        subcategory: 'Inspirational',
+        language: 'English',
+        image: 'https://m.media-amazon.com/images/I/71aFt4+OTOL.jpg',
+        price: 399,
+        originalPrice: 599,
+        rating: 4.8,
+        description: 'A global phenomenon, The Alchemist has been read and loved by over sixty-two million readers in seventy-four languages around the world, becoming a modern classic.'
+    },
+    {
+        id: 'top_2',
+        title: 'Atomic Habits',
+        author: 'James Clear',
+        category: 'Self-Help',
+        subcategory: 'Productivity',
+        language: 'English',
+        image: 'https://m.media-amazon.com/images/I/91bYsX41DVL.jpg',
+        price: 499,
+        originalPrice: 799,
+        rating: 4.9,
+        description: 'No matter your goals, Atomic Habits offers a proven framework for improving every day.'
+    },
+    {
+        id: 'top_3',
+        title: 'The Psychology of Money',
+        author: 'Morgan Housel',
+        category: 'Business',
+        subcategory: 'Finance',
+        language: 'English',
+        image: 'https://m.media-amazon.com/images/I/71g2ednj0JL.jpg',
+        price: 299,
+        originalPrice: 499,
+        rating: 4.7,
+        description: 'Doing well with money isn’t necessarily about what you know. It’s about how you behave.'
+    },
+    {
+        id: 'top_4',
+        title: 'Deep Work',
+        author: 'Cal Newport',
+        category: 'Self-Help',
+        subcategory: 'Productivity',
+        language: 'English',
+        image: 'https://m.media-amazon.com/images/I/417yjF+E5zL.jpg',
+        price: 349,
+        originalPrice: 550,
+        rating: 4.6,
+        description: 'Rules for Focused Success in a Distracted World.'
+    },
+    {
+        id: 'top_5',
+        title: 'Sapiens: A Brief History of Humankind',
+        author: 'Yuval Noah Harari',
+        category: 'History',
+        subcategory: 'Anthropology',
+        language: 'English',
+        image: 'https://m.media-amazon.com/images/I/713jIoMO3UL.jpg',
+        price: 599,
+        originalPrice: 899,
+        rating: 4.8,
+        description: 'From a renowned historian comes a groundbreaking narrative of humanity’s creation and evolution.'
+    },
+    {
+        id: 'top_6',
+        title: 'Ikigai',
+        author: 'Francesc Miralles',
+        category: 'Self-Help',
+        subcategory: 'Philosophy',
+        language: 'English',
+        image: 'https://m.media-amazon.com/images/I/81l3rZK4lnL.jpg',
+        price: 299,
+        originalPrice: 499,
+        rating: 4.6,
+        description: 'The Japanese Secret to a Long and Happy Life.'
+    },
+    {
+        id: 'top_7',
+        title: 'Thinking, Fast and Slow',
+        author: 'Daniel Kahneman',
+        category: 'Psychology',
+        subcategory: 'Decision Making',
+        language: 'English',
+        image: 'https://m.media-amazon.com/images/I/71f66-UbcqL.jpg',
+        price: 449,
+        originalPrice: 699,
+        rating: 4.7,
+        description: 'A major work in modern psychology and behavioral economics.'
+    },
     {
         id: 'book_quran_1',
         title: 'The Holy Quran (Arabic-English)',
@@ -19,7 +110,7 @@ const DEMO_ISLAMIC_BOOKS = [
         price: 299,
         originalPrice: 499,
         rating: 5.0,
-        description: 'The complete Holy Quran with Arabic text and English translation. Beautifully formatted for easy reading.'
+        description: 'The complete Holy Quran with Arabic text and English translation.'
     },
     {
         id: 'book_tafsir_1',
@@ -32,9 +123,8 @@ const DEMO_ISLAMIC_BOOKS = [
         price: 1299,
         originalPrice: 1799,
         rating: 4.9,
-        description: 'The most popular Tafsir in the world. Comprehensive commentary on the Holy Quran.'
+        description: 'Comprehensive commentary on the Holy Quran.'
     },
-    // Hadith Collections
     {
         id: 'book_hadith_1',
         title: 'Sahih Bukhari (Complete)',
@@ -46,25 +136,11 @@ const DEMO_ISLAMIC_BOOKS = [
         price: 899,
         originalPrice: 1299,
         rating: 5.0,
-        description: 'The most authentic collection of Hadith. Essential for every Muslim household.'
+        description: 'The most authentic collection of Hadith.'
     },
-    {
-        id: 'book_hadith_2',
-        title: 'Riyadh-us-Saliheen',
-        author: 'Imam Nawawi',
-        category: 'Islamic',
-        subcategory: 'Hadith',
-        language: 'English',
-        image: 'https://m.media-amazon.com/images/I/71TqI5cGqfL._AC_UF1000,1000_QL80_.jpg',
-        price: 399,
-        originalPrice: 599,
-        rating: 4.9,
-        description: 'Gardens of the Righteous - A collection of authentic hadiths covering all aspects of life.'
-    },
-    // Seerah
     {
         id: 'book_seerah_1',
-        title: 'The Sealed Nectar (Ar-Raheeq Al-Makhtum)',
+        title: 'The Sealed Nectar',
         author: 'Safiur Rahman Mubarakpuri',
         category: 'Islamic',
         subcategory: 'Seerah',
@@ -73,140 +149,20 @@ const DEMO_ISLAMIC_BOOKS = [
         price: 449,
         originalPrice: 699,
         rating: 4.8,
-        description: 'Award-winning biography of Prophet Muhammad (PBUH). A must-read for understanding Islamic history.'
+        description: 'Ar-Raheeq Al-Makhtum - Biography of Prophet Muhammad (PBUH).'
     },
     {
-        id: 'book_seerah_2',
-        title: 'In the Footsteps of the Prophet',
-        author: 'Tariq Ramadan',
-        category: 'Islamic',
-        subcategory: 'Seerah',
+        id: 'top_12',
+        title: 'The 5 AM Club',
+        author: 'Robin Sharma',
+        category: 'Self-Help',
+        subcategory: 'Productivity',
         language: 'English',
-        image: 'https://m.media-amazon.com/images/I/71U0H4DTDEL._AC_UF1000,1000_QL80_.jpg',
-        price: 599,
-        originalPrice: 899,
-        rating: 4.7,
-        description: 'A contemporary look at the life and teachings of Prophet Muhammad (PBUH).'
-    },
-    // Dua & Supplications
-    {
-        id: 'book_dua_1',
-        title: 'Fortress of the Muslim (Hisnul Muslim)',
-        author: 'Said bin Ali bin Wahf Al-Qahtani',
-        category: 'Islamic',
-        subcategory: 'Dua',
-        language: 'Arabic-English',
-        image: 'https://m.media-amazon.com/images/I/71rPqBOLHkL._AC_UF1000,1000_QL80_.jpg',
-        price: 199,
-        originalPrice: 299,
-        rating: 4.9,
-        description: 'Essential daily duas and supplications from Quran and Sunnah. Pocket size available.'
-    },
-    // English Islamic Books
-    {
-        id: 'book_english_1',
-        title: 'Purification of the Heart',
-        author: 'Hamza Yusuf',
-        category: 'English',
-        subcategory: 'Self-Help',
-        language: 'English',
-        image: 'https://m.media-amazon.com/images/I/71wXQn+EIVL._AC_UF1000,1000_QL80_.jpg',
-        price: 549,
-        originalPrice: 799,
-        rating: 4.9,
-        description: 'A spiritual guide to purifying the heart from diseases and attaining inner peace.'
-    },
-    {
-        id: 'book_english_2',
-        title: 'The Book of Assistance',
-        author: 'Imam Al-Haddad',
-        category: 'English',
-        subcategory: 'Spirituality',
-        language: 'English',
-        image: 'https://m.media-amazon.com/images/I/71PYa0qXxjL._AC_UF1000,1000_QL80_.jpg',
-        price: 399,
-        originalPrice: 599,
-        rating: 4.8,
-        description: 'A guide to Islamic spirituality and self-improvement. Classic work translated into English.'
-    },
-    {
-        id: 'book_english_3',
-        title: 'The Lives of the Prophets',
-        author: 'Ibn Kathir',
-        category: 'English',
-        subcategory: 'History',
-        language: 'English',
-        image: 'https://m.media-amazon.com/images/I/71eQ7rxI9ML._AC_UF1000,1000_QL80_.jpg',
-        price: 699,
-        originalPrice: 999,
-        rating: 4.8,
-        description: 'Complete stories of all prophets mentioned in the Quran. Beautifully presented.'
-    },
-    {
-        id: 'book_english_4',
-        title: 'The Four Imams',
-        author: 'Muhammad Abu Zahra',
-        category: 'English',
-        subcategory: 'Biography',
-        language: 'English',
-        image: 'https://m.media-amazon.com/images/I/71y+5KvLLkL._AC_UF1000,1000_QL80_.jpg',
-        price: 799,
-        originalPrice: 1199,
-        rating: 4.8,
-        description: 'Comprehensive biography of the four great Imams of Islamic jurisprudence.'
-    },
-    {
-        id: 'book_english_5',
-        title: 'Islamic Manners',
-        author: 'Shaykh Abdul Fattah Abu Ghuddah',
-        category: 'English',
-        subcategory: 'Self-Help',
-        language: 'English',
-        image: 'https://m.media-amazon.com/images/I/71Hqvx8lQRL._AC_UF1000,1000_QL80_.jpg',
-        price: 349,
-        originalPrice: 499,
-        rating: 4.7,
-        description: 'A practical guide to Islamic etiquette and good manners in daily life.'
-    },
-    // Arabic Books
-    {
-        id: 'book_arabic_1',
-        title: 'المصحف الشريف (Arabic Quran)',
-        author: 'Holy Text',
-        category: 'Arabic',
-        subcategory: 'Quran',
-        language: 'Arabic',
-        image: 'https://m.media-amazon.com/images/I/71xKk7+9jPL._AC_UF1000,1000_QL80_.jpg',
-        price: 249,
-        originalPrice: 399,
-        rating: 5.0,
-        description: 'Beautiful Arabic Quran with clear script and proper tajweed markings.'
-    },
-    {
-        id: 'book_arabic_2',
-        title: 'تيسير مصطلح الحديث',
-        author: 'Dr. Mahmoud Al-Tahan',
-        category: 'Arabic',
-        subcategory: 'Hadith Sciences',
-        language: 'Arabic',
-        image: 'https://m.media-amazon.com/images/I/71VvXzKfRiL._AC_UF1000,1000_QL80_.jpg',
+        image: 'https://m.media-amazon.com/images/I/71N78Sbi96L.jpg',
         price: 299,
         originalPrice: 450,
-        rating: 4.8,
-        description: 'Introduction to the science of Hadith. Essential for students of knowledge.'
-    },
-    {
-        id: 'book_arabic_3',
-        title: 'الأربعين النووية',
-        author: 'Imam Nawawi',
-        category: 'Arabic',
-        subcategory: 'Hadith',
-        language: 'Arabic',
-        image: 'https://m.media-amazon.com/images/I/71TqI5cGqfL._AC_UF1000,1000_QL80_.jpg',
-        price: 149,
-        originalPrice: 249,
-        rating: 4.9,
-        description: 'The famous 40 Hadith collection by Imam Nawawi in original Arabic.'
+        rating: 4.5,
+        description: 'Own Your Morning. Elevate Your Life.'
     }
 ];
 
