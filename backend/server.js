@@ -1,5 +1,5 @@
 // ===== ABC Books Backend Server =====
-// Using Neon PostgreSQL Database
+// Using Neon PostgreSQL Database with Enhanced Security
 
 require('dotenv').config();
 const express = require('express');
@@ -15,10 +15,38 @@ const cartRoutes = require('./routes/cart');
 const wishlistRoutes = require('./routes/wishlist');
 const paymentRoutes = require('./routes/payment');
 
+// Import security middleware
+const {
+    securityHeaders,
+    sanitizeInput,
+    rateLimit,
+    requestLogger
+} = require('./middleware/security');
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Middleware
+// ===== Security Middleware =====
+// Apply security headers to all responses
+app.use(securityHeaders);
+
+// Request logging for monitoring
+app.use(requestLogger);
+
+// Rate limiting - 100 requests per 15 minutes per IP
+app.use(rateLimit({
+    windowMs: 15 * 60 * 1000,
+    maxRequests: 100
+}));
+
+// Stricter rate limit for auth endpoints (prevent brute force)
+app.use('/api/auth', rateLimit({
+    windowMs: 15 * 60 * 1000,
+    maxRequests: 20,
+    message: 'Too many login attempts. Please try again in 15 minutes.'
+}));
+
+// CORS Configuration
 app.use(cors({
     origin: function (origin, callback) {
         // Allow requests with no origin (like mobile apps or curl requests)
@@ -47,7 +75,12 @@ app.use(cors({
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
-app.use(express.json());
+
+// Body parsing with size limit (prevent large payload attacks)
+app.use(express.json({ limit: '10mb' }));
+
+// Input sanitization for all requests
+app.use(sanitizeInput);
 
 // Database connection
 const sql = neon(process.env.DATABASE_URL);

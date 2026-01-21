@@ -232,18 +232,29 @@ function initializeDemoData() {
 
     if (!existingData || !existingData.books || existingData.books.length === 0) {
         console.log('🎬 No data found, initializing with demo Islamic books...');
+
+        // Get all book IDs
+        const allBookIds = DEMO_ISLAMIC_BOOKS.map(book => book.id);
+
         const demoData = {
             books: DEMO_ISLAMIC_BOOKS,
             sections: {
-                hero: DEMO_ISLAMIC_BOOKS.map(book => book.id),
-                editors: [],
-                featured: [],
-                trending: []
+                hero: allBookIds,
+                editors: allBookIds.slice(0, 6),
+                featured: allBookIds.slice(0, 6),
+                trending: allBookIds.slice(0, 8)  // Populate trending with first 8 books
             }
         };
         localStorage.setItem('abc_books_data', JSON.stringify(demoData));
         console.log('✅ Demo data initialized with', DEMO_ISLAMIC_BOOKS.length, 'books');
         return demoData;
+    }
+
+    // If existing data has empty trending, populate it
+    if (existingData.sections && (!existingData.sections.trending || existingData.sections.trending.length === 0)) {
+        existingData.sections.trending = existingData.books.slice(0, 8).map(b => b.id);
+        localStorage.setItem('abc_books_data', JSON.stringify(existingData));
+        console.log('📚 Populated trending section with books');
     }
 
     return existingData;
