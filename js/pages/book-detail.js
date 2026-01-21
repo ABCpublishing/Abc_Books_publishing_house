@@ -194,21 +194,25 @@ function decreaseQty() {
 async function addToCartDetail() {
     if (!currentBook) return;
 
-    // Check if user is logged in - REQUIRED for adding to cart
+    // Check if user is logged in - Strict check using token
+    const token = localStorage.getItem('jwt_token');
     const currentUser = JSON.parse(localStorage.getItem('abc_books_current_user') || 'null');
 
-    if (!currentUser || !currentUser.email) {
+    if (!token || !currentUser || !currentUser.id) {
         // User is NOT logged in - show login modal
         showNotification('Please login or create an account to add items to cart', 'info');
 
         // Show login modal if available
         if (typeof showLoginModal === 'function') {
-            setTimeout(() => showLoginModal(), 500);
+            setTimeout(() => showLoginModal(), 100);
         } else {
             // Fallback: try to find and show the login modal directly
             const loginModal = document.getElementById('loginModal');
             if (loginModal) {
                 loginModal.classList.add('active');
+                if (document.getElementById('loginTabBtn')) {
+                    document.getElementById('loginTabBtn').click();
+                }
                 document.body.style.overflow = 'hidden';
             }
         }
@@ -276,10 +280,11 @@ async function addToCartDetail() {
 async function buyNow() {
     if (!currentBook) return;
 
-    // Check if user is logged in - use email for more reliable check
+    // Check if user is logged in - Strict check using token
+    const token = localStorage.getItem('jwt_token');
     const currentUser = JSON.parse(localStorage.getItem('abc_books_current_user') || 'null');
 
-    if (!currentUser || !currentUser.email) {
+    if (!token || !currentUser || !currentUser.id) {
         // User is NOT logged in - save pending action and show login modal
         localStorage.setItem('abc_pending_action', 'buy_now');
 
@@ -294,12 +299,15 @@ async function buyNow() {
 
         // Show login modal if available
         if (typeof showLoginModal === 'function') {
-            setTimeout(() => showLoginModal(), 500);
+            setTimeout(() => showLoginModal(), 100);
         } else {
             // Fallback: try to find and show the login modal directly
             const loginModal = document.getElementById('loginModal');
             if (loginModal) {
                 loginModal.classList.add('active');
+                if (document.getElementById('loginTabBtn')) {
+                    document.getElementById('loginTabBtn').click();
+                }
                 document.body.style.overflow = 'hidden';
             }
         }
