@@ -592,14 +592,46 @@ textarea {
     background: var(--white);
     border-radius: var(--radius-lg);
     overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    /* Improved shadow */
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     scroll-snap-align: start;
-    min-width: 160px;
-    max-width: 160px;
+
+    /* Standard Card Sizing */
+    width: 220px;
+    min-width: 220px;
+    max-width: 220px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+
     flex-shrink: 0;
     border: 1px solid var(--gray-100);
     cursor: pointer;
+    position: relative;
+}
+
+/* Specific override for Hero Slider to ensure consistency */
+.hero-books-slider .book-card,
+.books-track .book-card {
+    width: 220px !important;
+    min-width: 220px !important;
+    max-width: 220px !important;
+}
+
+/* Mobile Responsiveness for Cards */
+@media (max-width: 768px) {
+
+    .book-card,
+    .hero-books-slider .book-card {
+        width: 160px !important;
+        min-width: 160px !important;
+        max-width: 160px !important;
+    }
+
+    .book-card .book-cover {
+        height: 200px !important;
+    }
 }
 
 .book-card:hover {
@@ -610,7 +642,8 @@ textarea {
 }
 
 .book-card .book-cover {
-    height: 220px;
+    height: 300px;
+    /* Taller cover area for better display */
     background: linear-gradient(135deg, #fafafa 0%, #f0f0f0 100%);
     display: flex;
     align-items: center;
