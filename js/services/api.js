@@ -141,6 +141,10 @@ const BooksAPI = {
         return await apiRequest(`/books/${id}`, {
             method: 'DELETE'
         });
+    },
+
+    async getBySection(section) {
+        return await apiRequest(`/books/section/${section}`);
     }
 };
 

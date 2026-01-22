@@ -96,6 +96,18 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'ABC Books API is running!' });
 });
 
+// Maintenance Route - Fix DB Schema
+app.get('/api/fix-db-schema', async (req, res) => {
+    try {
+        await req.sql`ALTER TABLE books ALTER COLUMN image TYPE TEXT`;
+        await req.sql`ALTER TABLE books ALTER COLUMN description TYPE TEXT`;
+        res.send('✅ Schema updated successfully! Columns "image" and "description" are now TEXT type.');
+    } catch (error) {
+        console.error('Schema update failed:', error);
+        res.status(500).send('Schema update failed: ' + error.message);
+    }
+});
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/books', booksRoutes);

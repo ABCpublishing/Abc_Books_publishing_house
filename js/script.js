@@ -50,8 +50,26 @@ async function renderTrendingBooks() {
 
 // Render new releases (uses all books if no specific data)
 async function renderNewReleases() {
-    const data = initializeDemoData();
-    const newReleases = data.books.slice(0, 6);
+    let newReleases = [];
+
+    // Try fetching from API first
+    if (typeof API !== 'undefined' && API.Books) {
+        try {
+            const response = await API.Books.getAll({ limit: 6 });
+            if (response && response.books) {
+                newReleases = response.books;
+            }
+        } catch (e) {
+            console.warn('Failed to load new releases from API', e);
+        }
+    }
+
+    // Fallback to demo data
+    if (newReleases.length === 0) {
+        const data = initializeDemoData();
+        newReleases = data.books.slice(0, 6);
+    }
+
     const releasesContainer = document.getElementById('newReleasesBooks');
 
     if (releasesContainer && newReleases.length > 0) {
@@ -500,41 +518,24 @@ function initializeSearch() {
 
     if (!searchInput || !searchBtn) return;
 
-    async function performSearch() {
+    function handleSearch() {
         const query = searchInput.value.trim();
-        if (query.length < 3) {
-            alert('Please enter at least 3 characters to search');
-            return;
-        }
+        if (query.length === 0) return;
 
-        // Show loading state
-        searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Searching...';
-        searchBtn.disabled = true;
+        // Determine correct path to search page
+        // If we are in 'pages' subdirectory, it's just 'search.html'
+        // If we are in root, it's 'pages/search.html'
+        const isPagesDir = window.location.pathname.includes('/pages/');
+        const searchPath = isPagesDir ? 'search.html' : 'pages/search.html';
 
-        try {
-            const results = await fetchBooksFromAPI(query, 20);
-
-            if (results.length > 0) {
-                // Display results (you can customize this)
-                console.log('Search results:', results);
-                alert(`Found ${results.length} results for "${query}"`);
-            } else {
-                alert('No results found. Try a different search term.');
-            }
-        } catch (error) {
-            console.error('Search error:', error);
-            alert('Search failed. Please try again.');
-        } finally {
-            searchBtn.innerHTML = 'Search';
-            searchBtn.disabled = false;
-        }
+        window.location.href = `${searchPath}?q=${encodeURIComponent(query)}`;
     }
 
-    searchBtn.addEventListener('click', performSearch);
+    searchBtn.addEventListener('click', handleSearch);
 
     searchInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
-            performSearch();
+            handleSearch();
         }
     });
 }

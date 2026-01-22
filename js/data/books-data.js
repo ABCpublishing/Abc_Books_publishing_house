@@ -212,7 +212,7 @@ const DEMO_ISLAMIC_BOOKS = [
         category: 'Islamic',
         subcategory: 'Quran',
         language: 'Arabic-English',
-        image: 'https://m.media-amazon.com/images/I/71xKk7+9jPL._AC_UF1000,1000_QL80_.jpg',
+        image: 'https://placehold.co/300x450/27ae60/ffffff?text=The+Holy+Quran',
         price: 299,
         originalPrice: 499,
         rating: 5.0,
@@ -225,7 +225,7 @@ const DEMO_ISLAMIC_BOOKS = [
         category: 'Islamic',
         subcategory: 'Tafsir',
         language: 'English',
-        image: 'https://m.media-amazon.com/images/I/71N8rVXxMIL._AC_UF1000,1000_QL80_.jpg',
+        image: 'https://placehold.co/300x450/2c3e50/ffffff?text=Tafsir+Ibn+Kathir',
         price: 1299,
         originalPrice: 1799,
         rating: 4.9,
@@ -238,7 +238,7 @@ const DEMO_ISLAMIC_BOOKS = [
         category: 'Islamic',
         subcategory: 'Hadith',
         language: 'Arabic-English',
-        image: 'https://m.media-amazon.com/images/I/71VvXzKfRiL._AC_UF1000,1000_QL80_.jpg',
+        image: 'https://placehold.co/300x450/8e44ad/ffffff?text=Sahih+Bukhari',
         price: 899,
         originalPrice: 1299,
         rating: 5.0,
@@ -251,7 +251,7 @@ const DEMO_ISLAMIC_BOOKS = [
         category: 'Islamic',
         subcategory: 'Seerah',
         language: 'English',
-        image: 'https://m.media-amazon.com/images/I/81V6hF8TPIL._AC_UF1000,1000_QL80_.jpg',
+        image: 'https://placehold.co/300x450/d35400/ffffff?text=The+Sealed+Nectar',
         price: 449,
         originalPrice: 699,
         rating: 4.8,
@@ -375,7 +375,20 @@ function initializeDemoData() {
 }
 
 // Get books for a specific section
-function getBooksForSection(section) {
+async function getBooksForSection(section) {
+    // Try API first
+    if (typeof API !== 'undefined' && API.Books) {
+        try {
+            const response = await API.Books.getBySection(section);
+            if (response && response.books && response.books.length > 0) {
+                console.log(`📘 Loaded ${response.books.length} books for ${section} from API`);
+                return response.books;
+            }
+        } catch (error) {
+            console.warn(`⚠️ API fetch failed for section ${section}, falling back to demo data`, error);
+        }
+    }
+
     const data = initializeDemoData();
 
     // Map section names
@@ -406,7 +419,7 @@ function getBooksForSection(section) {
         .map(id => data.books.find(b => b.id === id))
         .filter(Boolean);
 
-    console.log(`📘 Loaded ${books.length} books for ${section}`);
+    console.log(`📘 Loaded ${books.length} books for ${section} (Demo Data)`);
     return Promise.resolve(books);
 }
 
