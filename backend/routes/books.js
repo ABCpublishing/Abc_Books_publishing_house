@@ -40,6 +40,30 @@ router.get('/', async (req, res) => {
     }
 });
 
+// Get books by section (hero, featured, trending, etc.)
+// IMPORTANT: This route MUST come BEFORE /:id to avoid being shadowed
+router.get('/section/:section', async (req, res) => {
+    try {
+        const sql = req.sql;
+        const { section } = req.params;
+
+        console.log(`📚 Fetching books for section: ${section}`);
+
+        const books = await sql`
+            SELECT b.* FROM books b
+            INNER JOIN book_sections bs ON b.id = bs.book_id
+            WHERE bs.section_name = ${section}
+            ORDER BY bs.display_order ASC
+        `;
+
+        console.log(`✅ Found ${books.length} books in ${section} section`);
+        res.json({ books });
+    } catch (error) {
+        console.error('Get section books error:', error);
+        res.status(500).json({ error: 'Failed to get section books' });
+    }
+});
+
 // Get book by ID
 router.get('/:id', async (req, res) => {
     try {
@@ -63,26 +87,6 @@ router.get('/:id', async (req, res) => {
     } catch (error) {
         console.error('Get book error:', error);
         res.status(500).json({ error: 'Failed to get book' });
-    }
-});
-
-// Get books by section (hero, featured, trending, etc.)
-router.get('/section/:section', async (req, res) => {
-    try {
-        const sql = req.sql;
-        const { section } = req.params;
-
-        const books = await sql`
-            SELECT b.* FROM books b
-            INNER JOIN book_sections bs ON b.id = bs.book_id
-            WHERE bs.section_name = ${section}
-            ORDER BY bs.display_order ASC
-        `;
-
-        res.json({ books });
-    } catch (error) {
-        console.error('Get section books error:', error);
-        res.status(500).json({ error: 'Failed to get section books' });
     }
 });
 
