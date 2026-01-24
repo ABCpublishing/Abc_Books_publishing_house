@@ -15,7 +15,7 @@ function getBookIdFromUrl() {
 }
 
 // Load book details
-function loadBookDetails() {
+async function loadBookDetails() {
     const bookId = getBookIdFromUrl();
 
     if (!bookId) {
@@ -23,16 +23,48 @@ function loadBookDetails() {
         return;
     }
 
-    // Get books data
+    // FIRST: Try to fetch from API/database (for admin-added books with numeric IDs)
+    try {
+        console.log(`📖 Fetching book with ID: ${bookId} from API...`);
+        const response = await fetch(`${BOOK_DETAIL_API_BASE}/books/${bookId}`);
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.book) {
+                console.log('✅ Book found in database:', data.book.title);
+                // Map database fields to expected format
+                currentBook = {
+                    id: data.book.id,
+                    title: data.book.title,
+                    author: data.book.author,
+                    price: data.book.price,
+                    originalPrice: data.book.original_price,
+                    image: data.book.image,
+                    description: data.book.description,
+                    category: data.book.category,
+                    isbn: data.book.isbn,
+                    year: data.book.publish_year,
+                    rating: data.book.rating || 4.5
+                };
+                populateBookDetails();
+                loadRelatedBooks();
+                return;
+            }
+        }
+    } catch (error) {
+        console.log('⚠️ API fetch failed, trying local data...', error);
+    }
+
+    // FALLBACK: Try localStorage data
     const data = localStorage.getItem('abc_books_data');
     if (data) {
         const parsed = JSON.parse(data);
-        currentBook = parsed.books.find(b => b.id === bookId);
+        currentBook = parsed.books.find(b => b.id === bookId || String(b.id) === bookId);
     }
 
-    // Fallback to demo data
+    // FALLBACK: Try demo data
     if (!currentBook && typeof DEMO_ISLAMIC_BOOKS !== 'undefined') {
-        currentBook = DEMO_ISLAMIC_BOOKS.find(b => b.id === bookId);
+        currentBook = DEMO_ISLAMIC_BOOKS.find(b => b.id === bookId || String(b.id) === bookId);
     }
 
     if (!currentBook) {
@@ -44,6 +76,7 @@ function loadBookDetails() {
     populateBookDetails();
     loadRelatedBooks();
 }
+
 
 // Populate book details on page
 function populateBookDetails() {
@@ -128,24 +161,48 @@ function generateStars(rating) {
 }
 
 // Load related books
-function loadRelatedBooks() {
+async function loadRelatedBooks() {
     const container = document.getElementById('relatedBooks');
     if (!container) return;
 
-    // Get all books
+    // Get all books - try API first
     let allBooks = [];
-    const data = localStorage.getItem('abc_books_data');
-    if (data) {
-        const parsed = JSON.parse(data);
-        allBooks = parsed.books || [];
+
+    try {
+        const response = await fetch(`${BOOK_DETAIL_API_BASE}/books?limit=20`);
+        if (response.ok) {
+            const data = await response.json();
+            if (data.books && data.books.length > 0) {
+                // Map to expected format
+                allBooks = data.books.map(b => ({
+                    id: b.id,
+                    title: b.title,
+                    author: b.author,
+                    price: b.price,
+                    image: b.image
+                }));
+            }
+        }
+    } catch (error) {
+        console.log('Could not fetch books from API for related books');
     }
 
+    // Fallback to localStorage
+    if (allBooks.length === 0) {
+        const data = localStorage.getItem('abc_books_data');
+        if (data) {
+            const parsed = JSON.parse(data);
+            allBooks = parsed.books || [];
+        }
+    }
+
+    // Fallback to demo data
     if (allBooks.length === 0 && typeof DEMO_ISLAMIC_BOOKS !== 'undefined') {
         allBooks = DEMO_ISLAMIC_BOOKS;
     }
 
     // Filter out current book and get random 4-6 books
-    const otherBooks = allBooks.filter(b => b.id !== currentBook?.id);
+    const otherBooks = allBooks.filter(b => b.id !== currentBook?.id && String(b.id) !== String(currentBook?.id));
     const relatedBooks = otherBooks.sort(() => 0.5 - Math.random()).slice(0, 6);
 
     if (relatedBooks.length === 0) {
