@@ -466,7 +466,7 @@ textarea {
     background: linear-gradient(135deg, #fff9f0 0%, #fff5e6 50%, #ffefdb 100%);
     padding: 10px 0 20px;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .hero-bg {
