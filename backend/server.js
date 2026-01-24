@@ -61,7 +61,11 @@ app.use(cors({
             'http://localhost:5500',
             'http://127.0.0.1:5500',
             'http://localhost:8080',
-            'http://127.0.0.1:8080'
+            'http://127.0.0.1:8080',
+            'https://www.abcbooks.store',
+            'https://abcbooks.store',
+            'http://www.abcbooks.store',
+            'http://abcbooks.store'
         ];
 
         // Allow any Vercel domain
