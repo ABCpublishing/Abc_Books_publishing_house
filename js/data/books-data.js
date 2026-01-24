@@ -382,7 +382,20 @@ async function getBooksForSection(section) {
             const response = await API.Books.getBySection(section);
             if (response && response.books && response.books.length > 0) {
                 console.log(`📘 Loaded ${response.books.length} books for ${section} from API`);
-                return response.books;
+                // Map API fields (snake_case) to frontend fields (camelCase)
+                return response.books.map(book => ({
+                    id: book.id,
+                    title: book.title,
+                    author: book.author,
+                    price: book.price,
+                    originalPrice: book.original_price || book.originalPrice,
+                    image: book.image,
+                    description: book.description,
+                    category: book.category,
+                    rating: book.rating || 4.5,
+                    isbn: book.isbn,
+                    year: book.publish_year || book.year
+                }));
             }
         } catch (error) {
             console.warn(`⚠️ API fetch failed for section ${section}, falling back to demo data`, error);
@@ -422,6 +435,7 @@ async function getBooksForSection(section) {
     console.log(`📘 Loaded ${books.length} books for ${section} (Demo Data)`);
     return Promise.resolve(books);
 }
+
 
 // Get books by category
 function getBooksByCategory(category) {
