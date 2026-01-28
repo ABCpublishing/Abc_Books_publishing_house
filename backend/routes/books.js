@@ -117,7 +117,7 @@ router.post('/', async (req, res) => {
         res.status(201).json({ book, message: 'Book added successfully' });
     } catch (error) {
         console.error('Add book error:', error);
-        res.status(500).json({ error: 'Failed to add book', details: error.message, stack: error.stack });
+        res.status(500).json({ error: 'Failed to add book', details: error.message });
     }
 });
 

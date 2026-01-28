@@ -468,6 +468,7 @@ async function editBook(bookId) {
         document.getElementById('bookOriginalPrice').value = book.original_price || '';
         document.getElementById('bookISBN').value = book.isbn || '';
         document.getElementById('bookYear').value = book.publish_year || '';
+        document.getElementById('bookCategory').value = book.category || '';
         document.getElementById('bookImage').value = book.image;
 
         // Populate sections
@@ -498,6 +499,7 @@ async function handleBookFormSubmit(e) {
         isbn: document.getElementById('bookISBN').value || '',
         publish_year: parseInt(document.getElementById('bookYear').value) || '',
         image: document.getElementById('bookImage').value,
+        category: document.getElementById('bookCategory').value || 'General',
         rating: 4.5, // Default rating
         sections: Array.from(document.querySelectorAll('input[name="sections"]:checked')).map(cb => cb.value)
     };
