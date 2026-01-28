@@ -98,7 +98,7 @@ router.post('/', async (req, res) => {
 
         const result = await sql`
             INSERT INTO books (title, author, price, original_price, image, description, category, isbn, publish_year, rating)
-            VALUES (${title}, ${author}, ${price}, ${original_price || null}, ${image}, ${description || ''}, ${category || 'General'}, ${isbn || ''}, ${publish_year || null}, ${rating || 4.5})
+            VALUES (${title}, ${author}, ${price}, ${original_price || null}, ${image || null}, ${description || ''}, ${category || 'General'}, ${isbn || ''}, ${publish_year || null}, ${rating || 4.5})
             RETURNING *
         `;
 
@@ -117,7 +117,7 @@ router.post('/', async (req, res) => {
         res.status(201).json({ book, message: 'Book added successfully' });
     } catch (error) {
         console.error('Add book error:', error);
-        res.status(500).json({ error: 'Failed to add book' });
+        res.status(500).json({ error: 'Failed to add book', details: error.message, stack: error.stack });
     }
 });
 
@@ -134,7 +134,7 @@ router.put('/:id', async (req, res) => {
                 author = ${author},
                 price = ${price},
                 original_price = ${original_price || null},
-                image = ${image},
+                image = ${image || null},
                 description = ${description || ''},
                 category = ${category || 'General'},
                 isbn = ${isbn || ''},
