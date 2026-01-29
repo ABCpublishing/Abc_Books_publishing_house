@@ -94,11 +94,11 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
     try {
         const sql = req.sql;
-        const { title, author, price, original_price, image, description, category, isbn, publish_year, rating, sections } = req.body;
+        const { title, author, price, original_price, image, description, category, rating, sections } = req.body;
 
         const result = await sql`
-            INSERT INTO books (title, author, price, original_price, image, description, category, isbn, publish_year, rating)
-            VALUES (${title}, ${author}, ${price}, ${original_price || null}, ${image || null}, ${description || ''}, ${category || 'General'}, ${isbn || ''}, ${publish_year || null}, ${rating || 4.5})
+            INSERT INTO books (title, author, price, original_price, image, description, category, rating)
+            VALUES (${title}, ${author}, ${price}, ${original_price || null}, ${image || null}, ${description || ''}, ${category || 'General'}, ${rating || 4.5})
             RETURNING *
         `;
 
@@ -126,7 +126,7 @@ router.put('/:id', async (req, res) => {
     try {
         const sql = req.sql;
         const { id } = req.params;
-        const { title, author, price, original_price, image, description, category, isbn, publish_year, rating, sections } = req.body;
+        const { title, author, price, original_price, image, description, category, rating, sections } = req.body;
 
         const result = await sql`
             UPDATE books SET
@@ -137,8 +137,6 @@ router.put('/:id', async (req, res) => {
                 image = ${image || null},
                 description = ${description || ''},
                 category = ${category || 'General'},
-                isbn = ${isbn || ''},
-                publish_year = ${publish_year || null},
                 rating = ${rating || 4.5},
                 updated_at = NOW()
             WHERE id = ${id}

@@ -44,6 +44,26 @@ function showDashboard() {
 
 // ===== EVENT LISTENERS =====
 function initializeEventListeners() {
+    // Capitalize input for Title and Author
+    const capitalizeInput = (e) => {
+        let value = e.target.value;
+        if (value.length > 0) {
+            e.target.value = value.replace(/\w\S*/g, (txt) => {
+                return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+            });
+        }
+    };
+
+    const bookTitleInput = document.getElementById('bookTitle');
+    const bookAuthorInput = document.getElementById('bookAuthor');
+
+    if (bookTitleInput) {
+        bookTitleInput.addEventListener('input', capitalizeInput);
+    }
+    if (bookAuthorInput) {
+        bookAuthorInput.addEventListener('input', capitalizeInput);
+    }
+
     // Login Form
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
@@ -63,6 +83,7 @@ function initializeEventListeners() {
             e.preventDefault();
             const section = this.getAttribute('data-section');
             navigateToSection(section);
+            closeSidebarOnMobile();
         });
     });
 
@@ -70,7 +91,7 @@ function initializeEventListeners() {
     const previewBtn = document.getElementById('previewSiteBtn');
     if (previewBtn) {
         previewBtn.addEventListener('click', function () {
-            window.open('index.html', '_blank');
+            window.open('../index.html', '_blank');
         });
     }
 
@@ -131,6 +152,8 @@ function navigateToSection(section) {
         editors: "Editor's Choice",
         featured: 'Featured Books',
         trending: 'Trending Now',
+        english: 'English Books',
+        arabic: 'Arabic Books',
         settings: 'Settings'
     };
     document.getElementById('pageTitle').textContent = titles[section] || 'Dashboard';
@@ -174,6 +197,7 @@ async function loadDashboardData() {
 
 async function loadSectionData(section) {
     // Show loaders or clear current view if needed
+    console.log('Loading section:', section);
 
     switch (section) {
         case 'books':
@@ -198,6 +222,19 @@ async function loadSectionData(section) {
             try {
                 const response = await API.Books.getBySection(section);
                 renderSectionBooks(section, response.books || []);
+            } catch (error) {
+                console.error(`Error loading ${section} books:`, error);
+                document.getElementById(`${section}Books`).innerHTML = '<p class="no-data">Error loading books</p>';
+            }
+            break;
+        case 'english':
+        case 'arabic':
+            try {
+                // Capitalize first letter for category query (English, Arabic)
+                const category = section.charAt(0).toUpperCase() + section.slice(1);
+                console.log(`Fetching books for category: ${category}`);
+                const response = await API.Books.getAll({ category: category, limit: 100 });
+                renderCategoryBooks(section, response.books || []);
             } catch (error) {
                 console.error(`Error loading ${section} books:`, error);
                 document.getElementById(`${section}Books`).innerHTML = '<p class="no-data">Error loading books</p>';
@@ -438,6 +475,35 @@ function renderSectionBooks(section, books) {
     `).join('');
 }
 
+// ===== RENDER CATEGORY BOOKS (New Function) =====
+function renderCategoryBooks(section, books) {
+    const container = document.getElementById(`${section}Books`);
+
+    if (!books || books.length === 0) {
+        container.innerHTML = '<p class="no-data">No books in this category yet</p>';
+        return;
+    }
+
+    container.innerHTML = books.map(book => `
+        <div class="book-card">
+            <img src="${book.image}" alt="${book.title}" onerror="this.src='https://via.placeholder.com/200x280?text=No+Image'">
+            <div class="book-card-content">
+                <h3 title="${book.title}">${book.title}</h3>
+                <p>${book.author}</p>
+                <p style="font-weight: 600; color: var(--primary-color);">₹${book.price}</p>
+                <div class="book-card-actions">
+                    <button class="btn-edit-book" onclick="editBook('${book.id}')">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                    <button class="btn-remove-book" onclick="deleteBook('${book.id}')" style="background-color: #e74c3c;">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
 // ===== BOOK MODAL FUNCTIONS =====
 function showAddBookModal() {
     const modal = document.getElementById('bookModal');
@@ -447,6 +513,20 @@ function showAddBookModal() {
     // Clear checkboxes
     document.querySelectorAll('input[name="sections"]').forEach(cb => cb.checked = false);
     modal.classList.add('active');
+}
+
+function showAddBookModalWithCategory(category) {
+    showAddBookModal();
+    const categorySelect = document.getElementById('bookCategory');
+    if (categorySelect) {
+        // Try to match the category
+        for (let i = 0; i < categorySelect.options.length; i++) {
+            if (categorySelect.options[i].value.toLowerCase() === category.toLowerCase()) {
+                categorySelect.selectedIndex = i;
+                break;
+            }
+        }
+    }
 }
 
 function closeBookModal() {
@@ -466,8 +546,6 @@ async function editBook(bookId) {
         document.getElementById('bookAuthor').value = book.author;
         document.getElementById('bookPrice').value = book.price;
         document.getElementById('bookOriginalPrice').value = book.original_price || '';
-        document.getElementById('bookISBN').value = book.isbn || '';
-        document.getElementById('bookYear').value = book.publish_year || '';
         document.getElementById('bookCategory').value = book.category || '';
         document.getElementById('bookImage').value = book.image;
 
@@ -496,8 +574,6 @@ async function handleBookFormSubmit(e) {
         author: document.getElementById('bookAuthor').value,
         price: parseInt(document.getElementById('bookPrice').value),
         original_price: parseInt(document.getElementById('bookOriginalPrice').value) || null,
-        isbn: document.getElementById('bookISBN').value || '',
-        publish_year: parseInt(document.getElementById('bookYear').value) || '',
         image: document.getElementById('bookImage').value,
         category: document.getElementById('bookCategory').value || 'General',
         rating: 4.5, // Default rating
@@ -691,10 +767,64 @@ function showChangePasswordModal() {
     alert('Feature coming soon');
 }
 
-// Close modal when clicking outside
-window.onclick = function (event) {
-    const modal = document.getElementById('bookModal');
-    if (event.target === modal) {
-        closeBookModal();
+// ===== RESPONSIVE SIDEBAR =====
+function toggleAdminSidebar() {
+    document.querySelector('.admin-sidebar').classList.toggle('active');
+    document.querySelector('.sidebar-overlay').classList.toggle('active');
+}
+
+// Close sidebar when clicking a nav item (mobile)
+function closeSidebarOnMobile() {
+    if (window.innerWidth <= 768) {
+        document.querySelector('.admin-sidebar').classList.remove('active');
+        document.querySelector('.sidebar-overlay').classList.remove('active');
     }
-};
+}
+
+// Initialize everything when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    // Check authentication first
+    if (!checkAdminAuth()) return;
+
+    // Capitalize input for Title and Author
+    const capitalizeInput = (e) => {
+        let value = e.target.value;
+        if (value.length > 0) {
+            // Capitalize first letter of each word (Title Case)
+            e.target.value = value.replace(/\w\S*/g, (txt) => {
+                return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+            });
+        }
+    };
+
+    const bookTitleInput = document.getElementById('bookTitle');
+    const bookAuthorInput = document.getElementById('bookAuthor');
+
+    if (bookTitleInput) {
+        bookTitleInput.addEventListener('input', capitalizeInput);
+    }
+    if (bookAuthorInput) {
+        bookAuthorInput.addEventListener('input', capitalizeInput);
+    }
+
+    // Set initial active state based on hash or default
+    const hash = window.location.hash.slice(1) || 'overview';
+    navigateToSection(hash);
+
+    // Load initial data
+    loadDashboardData();
+    updateDate();
+
+    // Set up other event listeners
+    document.getElementById('logoutBtn').addEventListener('click', adminLogout);
+
+    // Setup modal closing
+    window.onclick = function (event) {
+        const modals = document.getElementsByClassName('modal');
+        for (let i = 0; i < modals.length; i++) {
+            if (event.target == modals[i]) {
+                modals[i].classList.remove('active');
+            }
+        }
+    }
+});

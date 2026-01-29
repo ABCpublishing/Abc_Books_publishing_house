@@ -51,8 +51,11 @@
 
     <!-- Admin Dashboard -->
     <div id="adminDashboard" class="admin-dashboard" style="display: none;">
+        <!-- Sidebar Overlay -->
+        <div class="sidebar-overlay" onclick="toggleAdminSidebar()"></div>
+
         <!-- Sidebar -->
-        <aside class="admin-sidebar">
+        <aside class="admin-sidebar" id="adminSidebar">
             <div class="sidebar-header">
                 <div class="logo">
                     <i class="fas fa-book"></i>
@@ -60,6 +63,7 @@
                 </div>
             </div>
             <nav class="sidebar-nav">
+                <!-- ... Nav items structure remains the same, just adding ID for JS if needed but CSS handles layout ... -->
                 <a href="#" class="nav-item active" data-section="overview">
                     <i class="fas fa-chart-line"></i>
                     <span>Overview</span>
@@ -100,6 +104,14 @@
                     <i class="fas fa-trending-up"></i>
                     <span>Trending Now</span>
                 </a>
+                <a href="#" class="nav-item" data-section="english">
+                    <i class="fas fa-language"></i>
+                    <span>English Books</span>
+                </a>
+                <a href="#" class="nav-item" data-section="arabic">
+                    <i class="fas fa-quran"></i>
+                    <span>Arabic Books</span>
+                </a>
                 <a href="#" class="nav-item" data-section="settings">
                     <i class="fas fa-cog"></i>
                     <span>Settings</span>
@@ -118,12 +130,15 @@
             <!-- Top Bar -->
             <header class="admin-topbar">
                 <div class="topbar-left">
+                    <button class="menu-toggle" onclick="toggleAdminSidebar()">
+                        <i class="fas fa-bars"></i>
+                    </button>
                     <h1 id="pageTitle">Dashboard Overview</h1>
                 </div>
                 <div class="topbar-right">
                     <button id="previewSiteBtn" class="btn-preview">
                         <i class="fas fa-external-link-alt"></i>
-                        Preview Site
+                        <span>Preview Site</span>
                     </button>
                     <div class="admin-user">
                         <i class="fas fa-user-circle"></i>
@@ -423,6 +438,30 @@
                     <div id="trendingBooks" class="books-grid"></div>
                 </section>
 
+                <!-- English Books Management -->
+                <section id="englishSection" class="content-section">
+                    <div class="section-header">
+                        <h2>English Books</h2>
+                        <button class="btn-primary" onclick="showAddBookModalWithCategory('English')">
+                            <i class="fas fa-plus"></i>
+                            Add English Book
+                        </button>
+                    </div>
+                    <div id="englishBooks" class="books-grid"></div>
+                </section>
+
+                <!-- Arabic Books Management -->
+                <section id="arabicSection" class="content-section">
+                    <div class="section-header">
+                        <h2>Arabic Books</h2>
+                        <button class="btn-primary" onclick="showAddBookModalWithCategory('Arabic')">
+                            <i class="fas fa-plus"></i>
+                            Add Arabic Book
+                        </button>
+                    </div>
+                    <div id="arabicBooks" class="books-grid"></div>
+                </section>
+
                 <!-- Settings Section -->
                 <section id="settingsSection" class="content-section">
                     <h2>Settings</h2>
@@ -491,16 +530,7 @@
                     </div>
                 </div>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="bookISBN">ISBN</label>
-                        <input type="text" id="bookISBN" placeholder="978-XXXXXXXXXX">
-                    </div>
-                    <div class="form-group">
-                        <label for="bookYear">Publish Year</label>
-                        <input type="number" id="bookYear" placeholder="2024">
-                    </div>
-                </div>
+
 
                 <div class="form-group">
                     <label for="bookCategory">Category *</label>

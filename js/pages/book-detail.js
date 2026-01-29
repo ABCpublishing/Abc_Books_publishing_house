@@ -42,8 +42,9 @@ async function loadBookDetails() {
                     image: data.book.image,
                     description: data.book.description,
                     category: data.book.category,
-                    isbn: data.book.isbn,
-                    year: data.book.publish_year,
+                    image: data.book.image,
+                    description: data.book.description,
+                    category: data.book.category,
                     rating: data.book.rating || 4.5
                 };
                 populateBookDetails();
@@ -131,15 +132,9 @@ function populateBookDetails() {
         document.getElementById('discountPercent').style.display = 'none';
     }
 
-    // Meta info
-    document.getElementById('bookISBN').textContent = currentBook.isbn || '978-' + Math.random().toString().slice(2, 12);
-    document.getElementById('bookYear').textContent = currentBook.year || '2024';
-
     // Details tab
     document.getElementById('detailTitle').textContent = currentBook.title;
     document.getElementById('detailAuthor').textContent = currentBook.author;
-    document.getElementById('detailISBN').textContent = currentBook.isbn || '978-' + Math.random().toString().slice(2, 12);
-    document.getElementById('detailYear').textContent = currentBook.year || '2024';
 
     // Overall rating in reviews
     document.getElementById('overallRating').textContent = rating;
