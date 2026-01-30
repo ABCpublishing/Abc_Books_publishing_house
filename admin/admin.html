@@ -521,6 +521,14 @@
 
                 <div class="form-row">
                     <div class="form-group">
+                        <label for="bookPublisher">Publisher *</label>
+                        <input type="text" id="bookPublisher" required
+                            placeholder="Enter publisher name (e.g., ABC Publishing, Penguin)">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
                         <label for="bookPrice">Price (₹) *</label>
                         <input type="number" id="bookPrice" required placeholder="299">
                     </div>
@@ -532,20 +540,29 @@
 
 
 
-                <div class="form-group">
-                    <label for="bookCategory">Category *</label>
-                    <select id="bookCategory" required
-                        style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
-                        <option value="">-- Select Category --</option>
-                        <option value="Islamic">Islamic Books</option>
-                        <option value="Arabic">Arabic Books</option>
-                        <option value="English">English Books</option>
-                        <option value="Fiction">Fiction</option>
-                        <option value="History">History</option>
-                        <option value="Education">Education</option>
-                        <option value="General">General/Other</option>
-                    </select>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="bookLanguage">Language *</label>
+                        <select id="bookLanguage" required
+                            style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;"
+                            onchange="loadSubcategories()">
+                            <option value="">-- Select Language --</option>
+                            <option value="Urdu">📘 Urdu</option>
+                            <option value="English">📗 English</option>
+                            <option value="Arabic">📙 Arabic</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="bookSubcategory">Subcategory *</label>
+                        <select id="bookSubcategory" required
+                            style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                            <option value="">-- Select Language First --</option>
+                        </select>
+                    </div>
                 </div>
+
+                <!-- Hidden field for backward compatibility -->
+                <input type="hidden" id="bookCategory" value="General">
 
 
                 <div class="form-group">

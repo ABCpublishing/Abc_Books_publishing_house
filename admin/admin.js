@@ -544,6 +544,7 @@ async function editBook(bookId) {
         document.getElementById('bookId').value = book.id;
         document.getElementById('bookTitle').value = book.title;
         document.getElementById('bookAuthor').value = book.author;
+        document.getElementById('bookPublisher').value = book.publisher || 'ABC Publishing';
         document.getElementById('bookPrice').value = book.price;
         document.getElementById('bookOriginalPrice').value = book.original_price || '';
         document.getElementById('bookCategory').value = book.category || '';
@@ -572,10 +573,13 @@ async function handleBookFormSubmit(e) {
     const book = {
         title: document.getElementById('bookTitle').value,
         author: document.getElementById('bookAuthor').value,
+        publisher: document.getElementById('bookPublisher')?.value || 'ABC Publishing',
         price: parseInt(document.getElementById('bookPrice').value),
         original_price: parseInt(document.getElementById('bookOriginalPrice').value) || null,
         image: document.getElementById('bookImage').value,
-        category: document.getElementById('bookCategory').value || 'General',
+        language: document.getElementById('bookLanguage')?.value || 'Urdu',
+        subcategory: document.getElementById('bookSubcategory')?.value || '',
+        category: document.getElementById('bookCategory')?.value || document.getElementById('bookLanguage')?.value || 'General',
         rating: 4.5, // Default rating
         sections: Array.from(document.querySelectorAll('input[name="sections"]:checked')).map(cb => cb.value)
     };
@@ -828,3 +832,128 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 });
+
+// ===== SUBCATEGORIES SYSTEM =====
+// Different subcategories for each language
+const SUBCATEGORIES_BY_LANGUAGE = {
+    'Urdu': [
+        { value: 'Quran & Tafsir', label: '📖 Quran & Tafsir' },
+        { value: 'Hadith', label: '📜 Hadith' },
+        { value: 'Biography', label: '👤 Biography' },
+        { value: 'Creed & Fiqh', label: '⚖️ Creed & Fiqh' },
+        { value: 'Hajj & Umrah', label: '🕋 Hajj & Umrah' },
+        { value: 'Salah & Supplication', label: '🤲 Salah & Supplication' },
+        { value: 'Ramadan', label: '🌙 Ramadan' },
+        { value: 'Women & Children', label: '👩‍👧 Women & Children' },
+        { value: 'History', label: '🏛️ History' },
+        { value: 'School Books', label: '📚 School Books' },
+        { value: 'Competitive & Entrance', label: '🎯 Competitive & Entrance' },
+        { value: 'Higher Education', label: '🎓 Higher Education' },
+        { value: 'Literature & Fiction', label: '📕 Literature & Fiction' },
+        { value: 'Stationery', label: '✏️ Stationery' }
+    ],
+    'English': [
+        { value: 'Quran & Tafsir', label: '📖 Quran & Tafsir' },
+        { value: 'Hadith', label: '📜 Hadith' },
+        { value: 'Biography', label: '👤 Biography' },
+        { value: 'Creed & Fiqh', label: '⚖️ Creed & Fiqh' },
+        { value: 'Hajj & Umrah', label: '🕋 Hajj & Umrah' },
+        { value: 'Salah & Supplication', label: '🤲 Salah & Supplication' },
+        { value: 'Ramadan', label: '🌙 Ramadan' },
+        { value: 'Women & Children', label: '👩‍👧 Women & Children' },
+        { value: 'History', label: '🏛️ History' },
+        { value: 'Academic', label: '🎓 Academic' },
+        { value: 'School Books', label: '📚 School Books' },
+        { value: 'Competitive & Entrance', label: '🎯 Competitive & Entrance' },
+        { value: 'Higher Education', label: '🎓 Higher Education' },
+        { value: 'Literature & Fiction', label: '📕 Literature & Fiction' },
+        { value: 'Stationery', label: '✏️ Stationery' }
+    ],
+    'Arabic': [
+        { value: 'Quran & Tafsir', label: '📖 Quran & Tafsir' },
+        { value: 'Hadith', label: '📜 Hadith' },
+        { value: 'Biography', label: '👤 Biography' },
+        { value: 'Creed & Fiqh', label: '⚖️ Creed & Fiqh' },
+        { value: 'Hajj & Umrah', label: '🕋 Hajj & Umrah' },
+        { value: 'Salah & Supplication', label: '🤲 Salah & Supplication' },
+        { value: 'Ramadan', label: '🌙 Ramadan' },
+        { value: 'Women & Children', label: '👩‍👧 Women & Children' },
+        { value: 'History', label: '🏛️ History' },
+        { value: 'Arabic Grammar', label: '📝 Arabic Grammar' },
+        { value: 'Arabic Literature', label: '📕 Arabic Literature' },
+        { value: 'Dictionaries', label: '📚 Dictionaries' }
+    ]
+};
+
+// Load subcategories based on selected language
+function loadSubcategories() {
+    const languageSelect = document.getElementById('bookLanguage');
+    const subcategorySelect = document.getElementById('bookSubcategory');
+    const language = languageSelect.value;
+
+    // Clear existing options
+    subcategorySelect.innerHTML = '';
+
+    if (!language) {
+        subcategorySelect.innerHTML = '<option value="">-- Select Language First --</option>';
+        return;
+    }
+
+    // Add default option
+    subcategorySelect.innerHTML = '<option value="">-- Select Subcategory --</option>';
+
+    // Get subcategories for selected language
+    const subcategories = SUBCATEGORIES_BY_LANGUAGE[language] || [];
+
+    // Add subcategories
+    subcategories.forEach(sub => {
+        const option = document.createElement('option');
+        option.value = sub.value;
+        option.textContent = sub.label;
+        subcategorySelect.appendChild(option);
+    });
+
+    // Update the hidden category field for backward compatibility
+    document.getElementById('bookCategory').value = language;
+}
+
+// Updated function to populate form when editing
+async function populateBookFormForEdit(book) {
+    document.getElementById('bookTitle').value = book.title || '';
+    document.getElementById('bookAuthor').value = book.author || '';
+    document.getElementById('bookPrice').value = book.price || '';
+    document.getElementById('bookOriginalPrice').value = book.original_price || '';
+
+    // Set language
+    const languageSelect = document.getElementById('bookLanguage');
+    if (languageSelect) {
+        languageSelect.value = book.language || 'Urdu';
+        loadSubcategories(); // Populate subcategories
+
+        // Set subcategory after loading options
+        setTimeout(() => {
+            const subcategorySelect = document.getElementById('bookSubcategory');
+            if (subcategorySelect && book.subcategory) {
+                subcategorySelect.value = book.subcategory;
+            }
+        }, 100);
+    }
+
+    // Set image
+    if (book.image) {
+        document.getElementById('bookImage').value = book.image;
+        // Show preview
+        const previewContainer = document.getElementById('imagePreview');
+        const previewImg = document.getElementById('previewImg');
+        if (previewContainer && previewImg) {
+            previewImg.src = book.image;
+            previewContainer.style.display = 'block';
+        }
+    }
+
+    // Set sections checkboxes
+    const bookSections = book.sections || [];
+    document.querySelectorAll('input[name="sections"]').forEach(checkbox => {
+        checkbox.checked = bookSections.includes(checkbox.value);
+    });
+}

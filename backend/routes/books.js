@@ -94,11 +94,11 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
     try {
         const sql = req.sql;
-        const { title, author, price, original_price, image, description, category, rating, sections } = req.body;
+        const { title, author, publisher, price, original_price, image, description, category, language, subcategory, rating, sections } = req.body;
 
         const result = await sql`
-            INSERT INTO books (title, author, price, original_price, image, description, category, rating)
-            VALUES (${title}, ${author}, ${price}, ${original_price || null}, ${image || null}, ${description || ''}, ${category || 'General'}, ${rating || 4.5})
+            INSERT INTO books (title, author, publisher, price, original_price, image, description, category, language, subcategory, rating)
+            VALUES (${title}, ${author}, ${publisher || 'ABC Publishing'}, ${price}, ${original_price || null}, ${image || null}, ${description || ''}, ${category || language || 'General'}, ${language || 'Urdu'}, ${subcategory || ''}, ${rating || 4.5})
             RETURNING *
         `;
 
@@ -126,17 +126,20 @@ router.put('/:id', async (req, res) => {
     try {
         const sql = req.sql;
         const { id } = req.params;
-        const { title, author, price, original_price, image, description, category, rating, sections } = req.body;
+        const { title, author, publisher, price, original_price, image, description, category, language, subcategory, rating, sections } = req.body;
 
         const result = await sql`
             UPDATE books SET
                 title = ${title},
                 author = ${author},
+                publisher = ${publisher || 'ABC Publishing'},
                 price = ${price},
                 original_price = ${original_price || null},
                 image = ${image || null},
                 description = ${description || ''},
-                category = ${category || 'General'},
+                category = ${category || language || 'General'},
+                language = ${language || 'Urdu'},
+                subcategory = ${subcategory || ''},
                 rating = ${rating || 4.5},
                 updated_at = NOW()
             WHERE id = ${id}

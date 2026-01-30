@@ -1,3 +1,4 @@
+
 // ===== ABC Books Backend Server =====
 // Using Neon PostgreSQL Database with Enhanced Security
 
@@ -14,6 +15,7 @@ const usersRoutes = require('./routes/users');
 const cartRoutes = require('./routes/cart');
 const wishlistRoutes = require('./routes/wishlist');
 const paymentRoutes = require('./routes/payment');
+const categoriesRoutes = require('./routes/categories');
 
 // Import security middleware
 const {
@@ -120,6 +122,7 @@ app.use('/api/users', usersRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/payment', paymentRoutes);
+app.use('/api/categories', categoriesRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
