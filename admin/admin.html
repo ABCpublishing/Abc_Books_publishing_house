@@ -112,6 +112,10 @@
                     <i class="fas fa-quran"></i>
                     <span>Arabic Books</span>
                 </a>
+                <a href="#" class="nav-item" data-section="kashmiri">
+                    <i class="fas fa-mountain"></i>
+                    <span>Kashmiri Books</span>
+                </a>
                 <a href="#" class="nav-item" data-section="settings">
                     <i class="fas fa-cog"></i>
                     <span>Settings</span>
@@ -462,6 +466,18 @@
                     <div id="arabicBooks" class="books-grid"></div>
                 </section>
 
+                <!-- Kashmiri Books Management -->
+                <section id="kashmiriSection" class="content-section">
+                    <div class="section-header">
+                        <h2>Kashmiri Books</h2>
+                        <button class="btn-primary" onclick="showAddBookModalWithCategory('Kashmiri')">
+                            <i class="fas fa-plus"></i>
+                            Add Kashmiri Book
+                        </button>
+                    </div>
+                    <div id="kashmiriBooks" class="books-grid"></div>
+                </section>
+
                 <!-- Settings Section -->
                 <section id="settingsSection" class="content-section">
                     <h2>Settings</h2>
@@ -542,21 +558,22 @@
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="bookLanguage">Language *</label>
+                        <label for="bookLanguage">Category *</label>
                         <select id="bookLanguage" required
                             style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;"
                             onchange="loadSubcategories()">
-                            <option value="">-- Select Language --</option>
+                            <option value="">-- Select Category --</option>
                             <option value="Urdu">📘 Urdu</option>
                             <option value="English">📗 English</option>
                             <option value="Arabic">📙 Arabic</option>
+                            <option value="Kashmiri">🏔️ Kashmiri</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label for="bookSubcategory">Subcategory *</label>
                         <select id="bookSubcategory" required
                             style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
-                            <option value="">-- Select Language First --</option>
+                            <option value="">-- Select Category First --</option>
                         </select>
                     </div>
                 </div>

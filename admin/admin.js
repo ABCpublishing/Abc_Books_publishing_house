@@ -154,6 +154,7 @@ function navigateToSection(section) {
         trending: 'Trending Now',
         english: 'English Books',
         arabic: 'Arabic Books',
+        kashmiri: 'Kashmiri Books',
         settings: 'Settings'
     };
     document.getElementById('pageTitle').textContent = titles[section] || 'Dashboard';
@@ -229,8 +230,9 @@ async function loadSectionData(section) {
             break;
         case 'english':
         case 'arabic':
+        case 'kashmiri':
             try {
-                // Capitalize first letter for category query (English, Arabic)
+                // Capitalize first letter for category query (English, Arabic, Kashmiri)
                 const category = section.charAt(0).toUpperCase() + section.slice(1);
                 console.log(`Fetching books for category: ${category}`);
                 const response = await API.Books.getAll({ category: category, limit: 100 });
@@ -882,6 +884,18 @@ const SUBCATEGORIES_BY_LANGUAGE = {
         { value: 'Arabic Grammar', label: '📝 Arabic Grammar' },
         { value: 'Arabic Literature', label: '📕 Arabic Literature' },
         { value: 'Dictionaries', label: '📚 Dictionaries' }
+    ],
+    'Kashmiri': [
+        { value: 'Quran & Tafsir', label: '📖 Quran & Tafsir' },
+        { value: 'Hadith', label: '📜 Hadith' },
+        { value: 'Biography', label: '👤 Biography' },
+        { value: 'Creed & Fiqh', label: '⚖️ Creed & Fiqh' },
+        { value: 'Kashmiri Poetry', label: '🎭 Kashmiri Poetry' },
+        { value: 'Kashmiri Literature', label: '📕 Kashmiri Literature' },
+        { value: 'History', label: '🏛️ History' },
+        { value: 'Culture & Tradition', label: '🏔️ Culture & Tradition' },
+        { value: 'Women & Children', label: '👩‍👧 Women & Children' },
+        { value: 'School Books', label: '📚 School Books' }
     ]
 };
 
