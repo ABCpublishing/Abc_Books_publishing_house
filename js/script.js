@@ -675,7 +675,7 @@ async function initializeWebsite() {
     try {
         // Load all sections in parallel for faster loading
         await Promise.all([
-            renderHeroBooks(),
+            // renderHeroBooks(), // Replaced by static modern hero
 
             renderFeaturedBooks(),
             renderTrendingBooks(),
@@ -694,6 +694,17 @@ async function initializeWebsite() {
         initializeSearch();
         initializeInteractions();
         initializeNewsletter();
+
+        // Initialize Modern Hero Animations
+        const heroText = document.querySelector('.hero-text');
+        if (heroText) {
+            heroText.style.opacity = '1'; // Ensure visible if JS runs late
+            const children = heroText.children;
+            Array.from(children).forEach((child, index) => {
+                child.style.opacity = '0';
+                child.style.animation = `fadeInUp 0.8s ${index * 0.1}s forwards`;
+            });
+        }
 
         console.log('✅ ABC Books website loaded successfully with Open Library API!');
     } catch (error) {

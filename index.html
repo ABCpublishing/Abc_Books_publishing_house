@@ -18,6 +18,7 @@
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/styles-responsive.css">
     <link rel="stylesheet" href="css/user-ui.css">
+    <link rel="stylesheet" href="css/components/hero-modern.css">
 </head>
 
 <body>
@@ -34,8 +35,9 @@
     <div class="announcement-bar">
         <div class="container">
             <div class="announcement-content">
-                <span><i class="fas fa-gift"></i> New Year Special: Extra 20% OFF on all orders! Use code:
-                    <strong>NEWYEAR2025</strong></span>
+                <span><i class="fas fa-moon"></i> رمضان كريم | Ramadan Kareem! Special 25% OFF on Islamic Books! Use
+                    code:
+                    <strong>RAMADAN2026</strong> ☪</span>
             </div>
         </div>
     </div>
@@ -283,24 +285,47 @@
     </div>
 
     <!-- Hero Section - Islamic Books Collection -->
-    <section class="hero-section">
-        <div class="hero-bg"></div>
+    <!-- Modern Hero Section - Islamic Theme -->
+    <section class="hero-modern">
         <div class="container">
-            <div class="hero-header">
-                <span class="hero-year">2025</span>
-                <h1 class="hero-title">Islamic Books Collection</h1>
-                <p class="hero-subtitle">Discover Spiritual Wisdom and Islamic Literature</p>
-            </div>
-            <div class="hero-books-slider">
-                <button class="slider-arrow prev"><i class="fas fa-chevron-left"></i></button>
-                <div class="slider-viewport">
-                    <div class="books-track" id="heroBooks">
-                        <!-- Books will be loaded dynamically -->
+            <div class="hero-grid">
+
+                <!-- Left Content: Text & CTA -->
+                <div class="hero-text">
+                    <h1 class="hero-headline">
+                        Discover Your Next <br>Great Read
+                    </h1>
+                    <p class="hero-year">Serving Readers Since 1995</p>
+
+                    <h2 class="hero-subhead">ABC Publishing House</h2>
+
+                    <p class="hero-description">
+                        India's most trusted Islamic bookstore. Explore our curated collection of Quran, Hadith, Seerah,
+                        and thousands of books in Arabic, English & Urdu.
+                    </p>
+
+                    <a href="pages/search.html" class="hero-cta">
+                        Explore Collection
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+
+                <!-- Right Content: Illustrated Book Stack -->
+                <div class="hero-visual">
+                    <!-- Ramadan Mubarak Banner -->
+                    <div class="ramadan-banner">
+                        <span class="ramadan-crescent">☪</span>
+                        <span class="ramadan-text">Ramadan Mubarak</span>
+                        <span class="ramadan-star">✦</span>
+                    </div>
+                    <div class="book-illustration">
+                        <!-- Hero Illustration -->
+                        <img src="images/Gemini_Generated_Image_31coaa31coaa31co.png"
+                            alt="Islamic Books Collection - Quran, Hadith & Islamic Literature"
+                            class="illustration-image">
                     </div>
                 </div>
-                <button class="slider-arrow next"><i class="fas fa-chevron-right"></i></button>
             </div>
-            <div class="slider-dots" id="heroDots"></div>
         </div>
     </section>
 

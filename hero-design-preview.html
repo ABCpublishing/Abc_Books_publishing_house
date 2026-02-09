@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Hero Design Preview - ABC Books</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Component CSS -->
+    <link rel="stylesheet" href="css/components/hero-modern.css">
+
+    <style>
+        /* Reset for preview */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        /* Navbar placeholder for context */
+        .preview-nav {
+            height: 80px;
+            background: #fff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ccc;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* 3D Book Cover styling adjustment for actual images */
+        .book-cover-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 4px 12px 12px 4px;
+            box-shadow: -5px 5px 15px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="preview-nav">Navigation Bar Placeholder</div>
+
+    <!-- Hero Section -->
+    <section class="hero-modern">
+        <div class="container">
+            <div class="hero-grid">
+
+                <!-- Left Content: Text & CTA -->
+                <div class="hero-text">
+                    <span class="hero-badge">
+                        <i class="fas fa-star" style="margin-right: 5px;"></i> Featured Collection
+                    </span>
+
+                    <h1 class="hero-headline">
+                        Discover the Deep <br>
+                        <span>Wisdom of Islam</span>
+                    </h1>
+
+                    <p class="hero-description">
+                        Explore our curated selection of spiritual masterpieces. From timeless Quranic Tafsir to
+                        contemporary Islamic thought, find the knowledge that illuminates the heart and mind.
+                    </p>
+
+                    <div class="hero-cta-group">
+                        <a href="pages/search.html?q=islamic" class="btn-hero-primary">
+                            Shop Collection <i class="fas fa-arrow-right"></i>
+                        </a>
+                        <a href="#featured" class="btn-hero-secondary">
+                            View Bestsellers
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Right Content: Visual Showcase -->
+                <div class="hero-visual">
+                    <!-- Glow Effect -->
+                    <div class="glow-effect"></div>
+
+                    <!-- Side Book Left -->
+                    <div class="side-book left">
+                        <img src="images/featured_book_2_1767970670231.png" alt="Side Book" class="book-cover-img">
+                    </div>
+
+                    <!-- Main Center Book -->
+                    <div class="main-book">
+                        <div class="discount-badge">
+                            <span>20%</span>
+                            <span>OFF</span>
+                        </div>
+                        <img src="images/featured_book_1_1767970652616.png" alt="Main Featured Book"
+                            class="book-cover-img">
+                    </div>
+
+                    <!-- Side Book Right -->
+                    <div class="side-book right">
+                        <img src="images/featured_book_3_1767970688644.png" alt="Side Book" class="book-cover-img">
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Script for simple interactions if needed, CSS handles most animation -->
+    <script>
+        // Add simple entrance delay for elements
+        document.addEventListener('DOMContentLoaded', () => {
+            const elements = document.querySelectorAll('.hero-text > *');
+            elements.forEach((el, index) => {
+                el.style.opacity = '0';
+                el.style.animation = `fadeInUp 0.8s ${index * 0.2}s forwards`;
+            });
+        });
+    </script>
+
+</body>
+
+</html>

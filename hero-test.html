@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hero Test - ABC Books</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Poppins:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #fdfbf7;
+        }
+
+        .hero-modern {
+            background-color: #fdfbf7;
+            background-image:
+                radial-gradient(rgba(212, 175, 55, 0.05) 2px, transparent 2px),
+                radial-gradient(rgba(212, 175, 55, 0.05) 2px, transparent 2px);
+            background-size: 32px 32px;
+            background-position: 0 0, 16px 16px;
+            padding: 4rem 2rem;
+            min-height: 600px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .hero-text {
+            padding: 2rem 0;
+        }
+
+        .legacy-headline {
+            font-family: 'Playfair Display', serif;
+            font-size: 3.5rem;
+            line-height: 1.1;
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+
+        .legacy-headline span {
+            color: #c0392b;
+            font-weight: 700;
+        }
+
+        .legacy-year {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            color: #7f8c8d;
+            font-style: italic;
+            margin-bottom: 2rem;
+            display: block;
+        }
+
+        .legacy-subhead {
+            font-size: 1.3rem;
+            color: #c0392b;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .legacy-list {
+            margin-bottom: 2rem;
+            border-left: 3px solid #d4af37;
+            padding-left: 1.5rem;
+        }
+
+        .legacy-list ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .legacy-list li {
+            font-size: 1.1rem;
+            color: #2c3e50;
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .urdu-text {
+            font-family: 'Noto Nastaliq Urdu', serif;
+            font-size: 1.2rem;
+            line-height: 1.6;
+            color: #2c3e50;
+            text-align: right;
+            direction: rtl;
+            opacity: 0.7;
+            margin-bottom: 2rem;
+        }
+
+        .btn-hero-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background-color: #800000;
+            color: #fff;
+            padding: 1rem 3rem;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-decoration: none;
+            box-shadow: 0 8px 20px rgba(192, 57, 43, 0.25);
+            transition: all 0.3s ease;
+        }
+
+        .btn-hero-primary:hover {
+            background-color: #c0392b;
+            transform: translateY(-2px);
+            box-shadow: 0 12px 25px rgba(192, 57, 43, 0.35);
+        }
+
+        .hero-visual {
+            position: relative;
+            height: 500px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .book-composition {
+            position: relative;
+            width: 400px;
+            height: 400px;
+        }
+
+        .comp-book {
+            position: absolute;
+            border-radius: 4px 10px 10px 4px;
+            box-shadow: -5px 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .comp-book img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 4px 10px 10px 4px;
+        }
+
+        .book-bottom {
+            width: 240px;
+            height: 45px;
+            bottom: 20px;
+            left: 40px;
+            z-index: 1;
+            transform: rotate(-5deg);
+            background: #34495e;
+        }
+
+        .book-middle {
+            width: 230px;
+            height: 50px;
+            bottom: 65px;
+            left: 45px;
+            z-index: 2;
+            transform: rotate(2deg);
+            background: #c0392b;
+        }
+
+        .book-top {
+            width: 220px;
+            height: 45px;
+            bottom: 115px;
+            left: 50px;
+            z-index: 3;
+            transform: rotate(-3deg);
+            background: #2c3e50;
+        }
+
+        .book-leaning {
+            width: 190px;
+            height: 280px;
+            bottom: 30px;
+            right: 20px;
+            z-index: 10;
+            transform: rotate(5deg);
+            box-shadow: -15px 15px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .book-standing-back {
+            width: 170px;
+            height: 260px;
+            bottom: 40px;
+            right: 60px;
+            z-index: 5;
+            transform: rotate(-10deg);
+            filter: brightness(0.9);
+        }
+
+        .decor-circle {
+            position: absolute;
+            width: 350px;
+            height: 350px;
+            background: radial-gradient(circle, rgba(212, 175, 55, 0.1) 0%, transparent 70%);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 0;
+        }
+
+        @media (max-width: 992px) {
+            .hero-grid {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+
+            .legacy-headline {
+                font-size: 2.5rem;
+            }
+
+            .hero-visual {
+                height: 400px;
+            }
+
+            .book-composition {
+                width: 320px;
+                height: 320px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <section class="hero-modern">
+        <div class="container">
+            <div class="hero-grid">
+
+                <!-- Left Content -->
+                <div class="hero-text">
+                    <h1 class="legacy-headline">
+                        <span style="display: block; font-size: 1.2em; margin-bottom: 10px;">30+ Years of</span>
+                        Publishing Legacy
+                    </h1>
+                    <span class="legacy-year">Since 1995....</span>
+
+                    <h2 class="legacy-subhead">ABC Publishing House</h2>
+
+                    <div class="legacy-list">
+                        <ul>
+                            <li><i class="fas fa-check-circle" style="color: #c0392b;"></i> Islamic Literature & History
+                            </li>
+                            <li><i class="fas fa-check-circle" style="color: #c0392b;"></i> Quranic Studies & Tafsir
+                            </li>
+                            <li><i class="fas fa-check-circle" style="color: #c0392b;"></i> Academic Resources</li>
+                        </ul>
+                    </div>
+
+                    <div class="urdu-text">
+                        مشتاق بک کارنر • عبداللہ اکیڈمی<br>
+                        زبیر پبلیکیشنز • حسنین ریڈرز
+                    </div>
+
+                    <a href="#" class="btn-hero-primary">
+                        Shop Now <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+
+                <!-- Right Visual -->
+                <div class="hero-visual">
+                    <div class="decor-circle"></div>
+
+                    <div class="book-composition">
+                        <div class="comp-book book-standing-back">
+                            <img src="images/featured_book_3_1767970688644.png" alt="Book">
+                        </div>
+
+                        <div class="comp-book book-leaning">
+                            <img src="images/featured_book_1_1767970652616.png" alt="Book">
+                        </div>
+
+                        <div class="comp-book book-bottom">
+                            <img src="images/featured_book_2_1767970670231.png" alt="Book">
+                        </div>
+                        <div class="comp-book book-middle">
+                            <img src="images/featured_book_4_1767970707050.png" alt="Book">
+                        </div>
+                        <div class="comp-book book-top">
+                            <img src="images/featured_book_5_1767970727212.png" alt="Book">
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+</body>
+
+</html>
