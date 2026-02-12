@@ -99,7 +99,7 @@ app.use((req, res, next) => {
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', message: 'ABC Books API is running!' });
+    res.json({ status: 'ok', message: 'ABC Books API v2.0 (Verified) is running!' });
 });
 
 // Root endpoint for friendly message
