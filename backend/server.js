@@ -102,6 +102,11 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'ABC Books API is running!' });
 });
 
+// Root endpoint for friendly message
+app.get('/', (req, res) => {
+    res.send('Welcome to ABC Books Backend API! 🚀 Use /api/health to check status.');
+});
+
 // Maintenance Route - Fix DB Schema
 app.get('/api/fix-db-schema', async (req, res) => {
     try {
