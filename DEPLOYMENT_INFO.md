@@ -8,6 +8,9 @@ Your website is now live on Vercel.
 [https://abc-books.vercel.app](https://abc-books.vercel.app)
 *(Note: If this URL doesn't work, verify the alias in your Vercel dashboard. It might be under `https://abc-books-publishinghouses-projects.vercel.app`)*
 
+**Vercel dashboard (deployments & logs):**
+[https://vercel.com/abc-books-publishinghouses-projects/abc-books/HwhxNzUeT34uzMYQ9JHSzxdepJ9Z](https://vercel.com/abc-books-publishinghouses-projects/abc-books/HwhxNzUeT34uzMYQ9JHSzxdepJ9Z)
+
 ## 🛠️ Configuration Details
 
 - **Database:** Connected to Neon PostgreSQL
