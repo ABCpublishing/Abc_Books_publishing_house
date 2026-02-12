@@ -135,10 +135,12 @@ app.use((err, req, res, next) => {
     res.status(500).json({ error: 'Internal server error', message: err.message });
 });
 
-// Start server
-app.listen(PORT, () => {
-    console.log(`🚀 ABC Books API running on http://localhost:${PORT}`);
-    console.log(`📚 Database: Neon PostgreSQL`);
-});
+// Start server if run directly
+if (require.main === module) {
+    app.listen(PORT, () => {
+        console.log(`🚀 ABC Books API running on http://localhost:${PORT}`);
+        console.log(`📚 Database: Neon PostgreSQL`);
+    });
+}
 
 module.exports = app;
