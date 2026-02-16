@@ -52,15 +52,21 @@ async function renderTrendingBooks() {
 async function renderNewReleases() {
     let newReleases = [];
 
-    // Try fetching from API first
+    // Try fetching from API first (with timeout)
     if (typeof API !== 'undefined' && API.Books) {
         try {
-            const response = await API.Books.getAll({ limit: 6 });
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('API timeout')), 3000)
+            );
+            const response = await Promise.race([
+                API.Books.getAll({ limit: 6 }),
+                timeoutPromise
+            ]);
             if (response && response.books) {
                 newReleases = response.books;
             }
         } catch (e) {
-            console.warn('Failed to load new releases from API', e);
+            console.warn('Failed to load new releases from API', e.message);
         }
     }
 
@@ -673,20 +679,32 @@ async function initializeWebsite() {
     showLoading();
 
     try {
-        // Load all sections in parallel for faster loading
-        await Promise.all([
+        // Helper to safely run each render function independently
+        const safeRender = (fn, name) => fn().catch(err => {
+            console.warn(`⚠️ Failed to render ${name}:`, err.message);
+            return null;
+        });
+
+        // Load all sections in parallel - allSettled ensures one failure doesn't block others
+        const results = await Promise.allSettled([
             // renderHeroBooks(), // Replaced by static modern hero
 
-            renderFeaturedBooks(),
-            renderTrendingBooks(),
-            renderNewReleases(),
-            renderIndianAuthors(),
-            renderBoxSets(),
-            renderChildrenBooks(),
-            renderFictionBooks(),
-            renderSidebarBooks(),
-            renderTop100Books()
+            safeRender(renderFeaturedBooks, 'Featured Books'),
+            safeRender(renderTrendingBooks, 'Trending Books'),
+            safeRender(renderNewReleases, 'New Releases'),
+            safeRender(renderIndianAuthors, 'Indian Authors'),
+            safeRender(renderBoxSets, 'Box Sets'),
+            safeRender(renderChildrenBooks, 'Children Books'),
+            safeRender(renderFictionBooks, 'Fiction Books'),
+            safeRender(renderSidebarBooks, 'Sidebar Books'),
+            safeRender(renderTop100Books, 'Top 100')
         ]);
+
+        // Log any sections that failed
+        const failed = results.filter(r => r.status === 'rejected');
+        if (failed.length > 0) {
+            console.warn(`⚠️ ${failed.length} section(s) had issues loading`);
+        }
 
         // Initialize content-dependent UI
         initializeCategoryStrip();
@@ -703,10 +721,11 @@ async function initializeWebsite() {
             });
         }
 
-        console.log('✅ ABC Books website loaded successfully with Open Library API!');
+        console.log('✅ ABC Books website loaded successfully!');
     } catch (error) {
         console.error('Error initializing website:', error);
-        alert('Some content failed to load. Please refresh the page.');
+        // Don't show alert - instead gracefully degrade
+        console.warn('⚠️ Some content may not have loaded. The page should still be usable.');
     } finally {
         // Always run these - critical for navbar, search, and buttons to work
         hideLoading();

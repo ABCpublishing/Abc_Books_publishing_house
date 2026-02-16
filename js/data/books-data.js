@@ -282,13 +282,19 @@ function initializeDemoData() {
 
     // Force refresh if demo books collection has expanded or changed significantly
     // OR if we are missing our critical Top 100 sections
-    const needsRefresh = !existingData ||
-        !existingData.books ||
-        !existingData.sections ||
-        !existingData.sections.islamic_top50 ||
-        !existingData.sections.arabic_top50 ||
-        existingData.books.length < currentDemoCount ||
-        existingData.books.some(b => b.id.startsWith('top_') && !b.image.includes('amazon'));
+    let needsRefresh = true;
+    try {
+        needsRefresh = !existingData ||
+            !existingData.books ||
+            !existingData.sections ||
+            !existingData.sections.islamic_top50 ||
+            !existingData.sections.arabic_top50 ||
+            existingData.books.length < currentDemoCount ||
+            existingData.books.some(b => b.id && b.id.startsWith('top_') && b.image && !b.image.includes('amazon'));
+    } catch (e) {
+        console.warn('⚠️ Error checking existing data, will refresh:', e.message);
+        needsRefresh = true;
+    }
 
     // === 50 Islamic Titles ===
     const islamicTitles = [
@@ -376,10 +382,16 @@ function initializeDemoData() {
 
 // Get books for a specific section
 async function getBooksForSection(section) {
-    // Try API first
+    // Try API first (with timeout to avoid long waits if backend is down)
     if (typeof API !== 'undefined' && API.Books) {
         try {
-            const response = await API.Books.getBySection(section);
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('API timeout')), 3000)
+            );
+            const response = await Promise.race([
+                API.Books.getBySection(section),
+                timeoutPromise
+            ]);
             if (response && response.books && response.books.length > 0) {
                 console.log(`📘 Loaded ${response.books.length} books for ${section} from API`);
                 // Map API fields (snake_case) to frontend fields (camelCase)
@@ -398,7 +410,7 @@ async function getBooksForSection(section) {
                 }));
             }
         } catch (error) {
-            console.warn(`⚠️ API fetch failed for section ${section}, falling back to demo data`, error);
+            console.warn(`⚠️ API fetch failed for section ${section}, falling back to demo data`, error.message);
         }
     }
 
