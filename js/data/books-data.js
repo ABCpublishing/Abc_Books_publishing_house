@@ -489,12 +489,20 @@ function createBookCard(book) {
     const bookJSON = JSON.stringify(book).replace(/'/g, "\\'").replace(/"/g, '&quot;');
 
     return `
-        <div class="book-card">
+        <div class="book-card" data-book-id="${book.id}">
             <div class="book-cover" onclick="viewBookDetail('${book.id}')" style="cursor: pointer;">
                 <img src="${book.image}" alt="${book.title}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 200 300%22%3E%3Crect fill=%22%23e8e8e8%22 width=%22200%22 height=%22300%22/%3E%3Cpath d=%22M80 110h40v80H80z%22 fill=%22%23ccc%22/%3E%3Cpath d=%22M85 115h30v70H85z%22 fill=%22%23fff%22/%3E%3Cpath d=%22M90 125h20v2H90zm0 8h20v2H90zm0 8h15v2H90z%22 fill=%22%23ddd%22/%3E%3C/svg%3E'">
                 ${discount > 0 ? `<div class="discount-badge">-${discount}%</div>` : ''}
                 
-                <!-- Quick Actions Removed as per request -->
+                <!-- Quick Action Buttons -->
+                <div class="book-actions">
+                    <button class="btn-wishlist wishlist-btn" title="Add to Wishlist" onclick="event.stopPropagation();">
+                        <i class="far fa-heart"></i>
+                    </button>
+                    <button class="btn-cart add-to-cart-btn" title="Add to Cart" onclick="event.stopPropagation();">
+                        <i class="fas fa-shopping-cart"></i>
+                    </button>
+                </div>
 
                 <!-- Hover Overlay with Description -->
                 <div class="book-overlay">
@@ -572,7 +580,7 @@ async function addToWishlistCard(btn, bookId, bookData) {
 
     try {
         // Fetch the real book ID from database using ISBN
-        const response = await fetch(`\\/books`);
+        const response = await fetch(`${BOOKS_DATA_API_BASE}/books`);
         if (!response.ok) {
             throw new Error('Failed to fetch books from database');
         }
@@ -623,7 +631,7 @@ async function addToCartCard(bookId, bookData) {
 
     try {
         // Fetch the real book ID from database using ISBN (which is the demo book ID)
-        const response = await fetch(`\\/books`);
+        const response = await fetch(`${BOOKS_DATA_API_BASE}/books`);
         if (!response.ok) {
             throw new Error('Failed to fetch books from database');
         }
@@ -671,7 +679,7 @@ async function buyNow(bookId, bookData) {
 
     try {
         // Fetch the real book ID from database using ISBN
-        const response = await fetch(`\\/books`);
+        const response = await fetch(`${BOOKS_DATA_API_BASE}/books`);
         if (!response.ok) {
             throw new Error('Failed to fetch books from database');
         }

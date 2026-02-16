@@ -1,8 +1,12 @@
 // ===== Mobile Navigation Logic =====
 function toggleMobileMenu() {
+    console.log('🍔 toggleMobileMenu called');
     const sidebar = document.getElementById('mobileNavSidebar');
     const overlay = document.getElementById('mobileNavOverlay');
     const body = document.body;
+
+    console.log('Sidebar element:', sidebar);
+    console.log('Overlay element:', overlay);
 
     if (sidebar && overlay) {
         sidebar.classList.toggle('active');
@@ -11,16 +15,22 @@ function toggleMobileMenu() {
         // Prevent body scrolling when menu is open
         if (sidebar.classList.contains('active')) {
             body.style.overflow = 'hidden';
+            console.log('✅ Mobile menu OPENED');
         } else {
             body.style.overflow = '';
+            console.log('✅ Mobile menu CLOSED');
         }
+    } else {
+        console.error('❌ Mobile menu elements not found!', {
+            sidebar: !!sidebar,
+            overlay: !!overlay,
+            sidebarId: 'mobileNavSidebar',
+            overlayId: 'mobileNavOverlay'
+        });
     }
 }
 
 function toggleMobileSubmenu(element) {
-    // Prevent default anchor behavior
-    if (event) event.preventDefault();
-
     const submenu = element.nextElementSibling;
     const parentLi = element.parentElement;
     const icon = element.querySelector('.fa-chevron-down');
@@ -37,8 +47,10 @@ function toggleMobileSubmenu(element) {
     }
 }
 
-// Close mobile menu when clicking a link (optional, improves UX)
+// Close mobile menu when clicking a link
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('📱 Mobile menu JS loaded successfully');
+
     const mobileLinks = document.querySelectorAll('.mobile-nav-link:not([onclick])');
     mobileLinks.forEach(link => {
         link.addEventListener('click', () => {
@@ -49,4 +61,23 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    // Also add touch event support for the hamburger button
+    const menuBtn = document.querySelector('.mobile-menu-btn');
+    if (menuBtn) {
+        console.log('✅ Mobile menu button found, adding touch listener');
+        menuBtn.addEventListener('touchstart', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleMobileMenu();
+        }, { passive: false });
+
+        menuBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleMobileMenu();
+        });
+    } else {
+        console.error('❌ Mobile menu button (.mobile-menu-btn) not found!');
+    }
 });

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Root package for Vercel deployment",
   "scripts": {
-    "start": "node api/index.js",
+    "start": "node backend/server.js",
     "build": "echo No build step"
   },
   "engines": {

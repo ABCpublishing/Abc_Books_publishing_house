@@ -2,7 +2,8 @@
 // ===== ABC Books Backend Server =====
 // Using Neon PostgreSQL Database with Enhanced Security
 
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 const express = require('express');
 const cors = require('cors');
 const { neon } = require('@neondatabase/serverless');
@@ -64,6 +65,8 @@ app.use(cors({
             'http://127.0.0.1:5500',
             'http://localhost:8080',
             'http://127.0.0.1:8080',
+            'http://localhost:3001',
+            'http://127.0.0.1:3001',
             'https://www.abcbooks.store',
             'https://abcbooks.store',
             'http://www.abcbooks.store',
@@ -102,11 +105,6 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'ABC Books API v2.0 (Verified) is running!' });
 });
 
-// Root endpoint for friendly message
-app.get('/', (req, res) => {
-    res.send('Welcome to ABC Books Backend API! 🚀 Use /api/health to check status.');
-});
-
 // Maintenance Route - Fix DB Schema
 app.get('/api/fix-db-schema', async (req, res) => {
     try {
@@ -129,6 +127,11 @@ app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/categories', categoriesRoutes);
 
+// Serve frontend: static files + index.html at root (Vercel only receives /api/* so this runs locally)
+const rootDir = path.join(__dirname, '..');
+app.use(express.static(rootDir));
+app.get('/', (req, res) => res.sendFile(path.join(rootDir, 'index.html')));
+
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error('Error:', err);
@@ -139,6 +142,7 @@ app.use((err, req, res, next) => {
 if (require.main === module) {
     app.listen(PORT, () => {
         console.log(`🚀 ABC Books API running on http://localhost:${PORT}`);
+        console.log(`📖 Open the site in your browser: http://localhost:${PORT}`);
         console.log(`📚 Database: Neon PostgreSQL`);
     });
 }

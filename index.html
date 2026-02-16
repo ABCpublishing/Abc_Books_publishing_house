@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Playfair+Display:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/styles.css">
@@ -36,14 +36,13 @@
     <header class="header">
         <div class="container">
             <div class="header-content">
-                <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+                <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Open menu">
                     <i class="fas fa-bars"></i>
                 </button>
 
                 <a href="index.html" class="logo">
-                    <div class="logo-icon"><i class="fas fa-book-open"></i></div>
+                    <img src="images/logo.png" alt="ABC Books" class="logo-img">
                     <div class="logo-text">
-                        <span class="logo-main">ABC</span>
                         <span class="logo-sub">BOOKS</span>
                     </div>
                 </a>
@@ -102,9 +101,8 @@
     <div class="mobile-nav-sidebar" id="mobileNavSidebar">
         <div class="mobile-nav-header">
             <div class="logo">
-                <div class="logo-icon"><i class="fas fa-book-open"></i></div>
+                <img src="images/logo.png" alt="ABC Books" class="logo-img">
                 <div class="logo-text">
-                    <span class="logo-main">ABC</span>
                     <span class="logo-sub">BOOKS</span>
                 </div>
             </div>
@@ -116,7 +114,8 @@
                 <li><a href="pages/top-100.html" class="mobile-nav-link"><i class="fas fa-crown"></i> Top 100 Books</a>
                 </li>
                 <li class="mobile-has-submenu">
-                    <a href="#" class="mobile-nav-link" onclick="toggleMobileSubmenu(this)">Categories <i
+                    <a href="#" class="mobile-nav-link"
+                        onclick="event.preventDefault(); toggleMobileSubmenu(this)">Categories <i
                             class="fas fa-chevron-down"></i></a>
                     <ul class="mobile-submenu">
                         <li><a href="pages/search.html?q=quran"><i class="fas fa-mosque"></i> Islamic Books</a></li>
@@ -130,7 +129,7 @@
                 </li>
                 <li><a href="pages/search.html?q=bestseller" class="mobile-nav-link"><i class="fas fa-star"></i>
                         Bestsellers</a></li>
-                <li><a href="pages/search.html?q=new" class="mobile-nav-link"><i class="fas fa-sparkles"></i> New
+                <li><a href="pages/search.html?q=new" class="mobile-nav-link"><i class="fas fa-bolt"></i> New
                         Arrivals</a></li>
                 <li><a href="pages/about.html" class="mobile-nav-link"><i class="fas fa-info-circle"></i> About Us</a>
                 </li>
@@ -195,9 +194,6 @@
             </ul>
         </div>
     </nav>
-    </div>
-    </div>
-    </div>
 
     <!-- Hero Section - Islamic Books Collection -->
     <!-- Modern Hero Section - Islamic Theme -->
@@ -403,7 +399,7 @@
         <div class="container">
             <div class="section-header-fancy">
                 <div class="header-line"></div>
-                <h2><i class="fas fa-sparkles"></i> New Releases - January 2025</h2>
+                <h2><i class="fas fa-bolt"></i> New Releases - January 2025</h2>
                 <div class="header-line"></div>
             </div>
             <div class="new-releases-slider">
@@ -716,9 +712,8 @@
                 <div class="footer-grid">
                     <div class="footer-col brand-col">
                         <div class="footer-logo">
-                            <div class="logo-icon"><i class="fas fa-book-open"></i></div>
+                            <img src="images/logo.svg" alt="ABC Books" class="logo-img">
                             <div class="logo-text">
-                                <span class="logo-main">ABC</span>
                                 <span class="logo-sub">Publishing Books</span>
                             </div>
                         </div>

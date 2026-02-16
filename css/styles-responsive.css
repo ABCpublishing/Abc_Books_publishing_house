@@ -48,6 +48,11 @@ div {
         margin: 0 auto !important;
     }
 
+    /* Header container must NOT clip - navbar buttons need to be visible */
+    .header .container {
+        overflow: visible !important;
+    }
+
     /* Force all sections to be contained */
     section {
         width: 100% !important;
@@ -66,28 +71,73 @@ div {
 }
 
 /* ===== HEADER & NAVIGATION MOBILE ===== */
-@media (max-width: 768px) {
+/* Prevent header from being clipped - critical for mobile */
+.header .container {
+    overflow: visible !important;
+}
+
+@media (max-width: 992px) {
+
+    /* Show hamburger, ensure header fits on small screens */
     .header-content {
-        padding: 0 10px;
-        gap: 10px;
+        flex-wrap: nowrap;
+        min-height: 56px;
+    }
+
+    .header .container {
+        overflow: visible !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .header {
+        padding: 8px 0;
+    }
+
+    .header .container {
+        overflow: visible !important;
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+    }
+
+    .header-content {
+        padding: 0 4px;
+        gap: 8px;
+        flex-wrap: nowrap;
+    }
+
+    .mobile-menu-btn {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+        min-height: 44px;
+        margin-right: 4px;
+        padding: 10px;
+        font-size: 22px;
+        color: var(--primary);
+        flex-shrink: 0;
     }
 
     .logo {
         flex-shrink: 1;
+        min-width: 0;
+    }
+
+    .logo-img {
+        height: 36px;
     }
 
     .logo-icon {
-        width: 40px;
-        height: 40px;
-        font-size: 16px;
-    }
-
-    .logo-text .logo-main {
-        font-size: 18px;
+        width: 36px;
+        height: 36px;
+        font-size: 14px;
     }
 
     .logo-text .logo-sub {
-        font-size: 10px;
+        font-size: 9px;
     }
 
     /* Hide button text on mobile, show only icons */
@@ -98,12 +148,18 @@ div {
 
     .header-actions .action-btn,
     .auth-buttons .action-btn {
-        min-width: 40px;
-        padding: 8px !important;
+        min-width: 36px;
+        width: 36px;
+        height: 36px;
+        padding: 6px !important;
+        font-size: 16px;
+        flex-shrink: 0;
     }
 
-    .header-actions {
-        gap: 5px;
+    .header-actions,
+    .auth-buttons {
+        gap: 4px;
+        flex-shrink: 0;
     }
 
     /* Search wrapper mobile */
@@ -114,6 +170,33 @@ div {
     .mobile-nav-sidebar {
         width: 280px;
         max-width: 85vw;
+    }
+}
+
+/* Extra small screens (iPhone SE, etc.) */
+@media (max-width: 400px) {
+    .header-content {
+        gap: 4px;
+    }
+
+    .mobile-menu-btn {
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+        font-size: 20px;
+    }
+
+    .logo-img {
+        height: 32px;
+    }
+
+    .header-actions .action-btn,
+    .auth-buttons .action-btn {
+        min-width: 34px;
+        width: 34px;
+        height: 34px;
+        padding: 5px !important;
+        font-size: 14px;
     }
 }
 
@@ -1261,5 +1344,330 @@ div {
 
     .nav-dot.active {
         background: var(--primary, #e42b26);
+    }
+}
+
+/* =========================================
+   MOBILE RESPONSIVENESS FIXES - v3
+   Header, Buttons, Book Actions, Menus
+   ========================================= */
+
+/* ===== HEADER LAYOUT - MOBILE ===== */
+@media (max-width: 768px) {
+
+    /* Ensure header-content is a single, non-wrapping row */
+    .header-content {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 8px !important;
+        padding: 0 4px !important;
+        min-height: 56px;
+    }
+
+    /* Hamburger button - MUST be visible */
+    .mobile-menu-btn {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 44px !important;
+        height: 44px !important;
+        min-width: 44px !important;
+        min-height: 44px !important;
+        flex-shrink: 0 !important;
+        background: var(--gray-100, #f3f4f6) !important;
+        border: 2px solid var(--gray-200, #e5e7eb) !important;
+        border-radius: 8px !important;
+        color: var(--primary, #e42b26) !important;
+        font-size: 20px !important;
+        cursor: pointer !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        -webkit-appearance: none !important;
+        appearance: none !important;
+        outline: none !important;
+    }
+
+    .mobile-menu-btn:active {
+        background: var(--gray-200, #e5e7eb) !important;
+        transform: scale(0.95);
+    }
+
+    /* Logo - takes remaining space */
+    .header-content .logo {
+        flex: 1 !important;
+        min-width: 0 !important;
+        margin-right: auto !important;
+    }
+
+    .header-content .logo-img {
+        height: 36px !important;
+        width: auto !important;
+    }
+
+    /* Hide search on mobile - use mobile menu instead */
+    .header-content .search-wrapper {
+        display: none !important;
+    }
+
+    /* Desktop nav hidden on mobile */
+    .main-nav,
+    .desktop-nav {
+        display: none !important;
+    }
+
+    /* Header Actions - compact icon-only buttons */
+    .header-actions {
+        display: flex !important;
+        align-items: center !important;
+        gap: 2px !important;
+        flex-shrink: 0 !important;
+        flex-wrap: nowrap !important;
+    }
+
+    /* All header action buttons - reset and style */
+    .header-actions .action-btn,
+    .header-actions .auth-buttons .action-btn {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 40px !important;
+        height: 40px !important;
+        min-width: 40px !important;
+        max-width: 40px !important;
+        min-height: 40px !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        gap: 0 !important;
+        background: transparent !important;
+        border: none !important;
+        border-radius: 8px !important;
+        cursor: pointer !important;
+        position: relative !important;
+        flex-shrink: 0 !important;
+        color: var(--text-secondary, #64748b) !important;
+        font-size: 16px !important;
+        -webkit-appearance: none !important;
+        appearance: none !important;
+        overflow: hidden !important;
+    }
+
+    .header-actions .action-btn:active {
+        background: var(--gray-100, #f3f4f6) !important;
+    }
+
+    /* Hide text labels in header buttons on mobile */
+    .header-actions .action-btn>span:not(.badge),
+    .header-actions .auth-buttons .action-btn>span:not(.badge) {
+        display: none !important;
+    }
+
+    /* Show only the icon */
+    .header-actions .action-btn i,
+    .header-actions .auth-buttons .action-btn i {
+        font-size: 18px !important;
+        display: block !important;
+    }
+
+    /* Auth buttons container */
+    .auth-buttons {
+        display: flex !important;
+        align-items: center !important;
+        gap: 2px !important;
+        flex-shrink: 0 !important;
+    }
+
+    /* Signup button styling - keep compact */
+    .auth-buttons .signup-btn {
+        width: 40px !important;
+        min-width: 40px !important;
+    }
+
+    /* Badge positioning for icon-only buttons */
+    .header-actions .action-btn .badge {
+        position: absolute !important;
+        top: 2px !important;
+        right: 2px !important;
+        width: 16px !important;
+        height: 16px !important;
+        font-size: 9px !important;
+        border-radius: 50% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    /* User account dropdown - proper positioning */
+    .user-account {
+        position: relative !important;
+    }
+
+    .user-dropdown {
+        position: absolute !important;
+        top: 100% !important;
+        right: 0 !important;
+        min-width: 180px !important;
+        z-index: 1001 !important;
+    }
+}
+
+/* ===== EXTRA SMALL SCREENS (iPhone SE, etc.) ===== */
+@media (max-width: 400px) {
+    .header-content {
+        gap: 4px !important;
+    }
+
+    .mobile-menu-btn {
+        width: 38px !important;
+        height: 38px !important;
+        min-width: 38px !important;
+        font-size: 18px !important;
+    }
+
+    .header-content .logo-img {
+        height: 30px !important;
+    }
+
+    .header-actions .action-btn,
+    .header-actions .auth-buttons .action-btn {
+        width: 36px !important;
+        height: 36px !important;
+        min-width: 36px !important;
+        min-height: 36px !important;
+    }
+
+    .header-actions .action-btn i,
+    .header-actions .auth-buttons .action-btn i {
+        font-size: 16px !important;
+    }
+}
+
+/* ===== BOOK CARD ACTION BUTTONS - MOBILE ===== */
+/* On touch devices, hover doesn't exist, so buttons must be visible */
+@media (max-width: 768px) {
+    .book-card .book-actions {
+        opacity: 1 !important;
+        transform: translateX(0) !important;
+        top: 8px !important;
+        right: 8px !important;
+    }
+
+    .book-card .book-actions .btn-wishlist,
+    .book-card .book-actions .btn-cart {
+        width: 32px !important;
+        height: 32px !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+    }
+
+    .book-card .book-actions .btn-wishlist i,
+    .book-card .book-actions .btn-cart i {
+        font-size: 12px !important;
+    }
+
+    /* Hide hover overlay on mobile - use tap instead */
+    .book-card .book-overlay {
+        display: none !important;
+    }
+
+    /* Book rating - smaller on mobile */
+    .book-card .book-rating {
+        display: none !important;
+    }
+}
+
+/* ===== MOBILE SIDEBAR NAVIGATION ===== */
+@media (max-width: 768px) {
+    .mobile-nav-sidebar {
+        position: fixed !important;
+        top: 0 !important;
+        left: -100% !important;
+        width: 280px !important;
+        max-width: 85vw !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        background: white !important;
+        z-index: 10001 !important;
+        transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        overflow-y: auto !important;
+        box-shadow: 5px 0 25px rgba(0, 0, 0, 0.15) !important;
+    }
+
+    .mobile-nav-sidebar.active {
+        left: 0 !important;
+    }
+
+    .mobile-nav-overlay {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        background: rgba(0, 0, 0, 0.5) !important;
+        z-index: 10000 !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        transition: opacity 0.3s ease, visibility 0.3s ease !important;
+    }
+
+    .mobile-nav-overlay.active {
+        opacity: 1 !important;
+        visibility: visible !important;
+    }
+
+    /* Mobile nav list items - touchable targets */
+    .mobile-nav-list li a {
+        display: flex !important;
+        align-items: center !important;
+        gap: 12px !important;
+        padding: 14px 20px !important;
+        min-height: 48px !important;
+        font-size: 15px !important;
+        color: #333 !important;
+        text-decoration: none !important;
+        border-bottom: 1px solid #f0f0f0 !important;
+    }
+
+    .mobile-nav-list li a:active {
+        background: #f5f5f5 !important;
+    }
+
+    .mobile-nav-list li a i {
+        width: 20px !important;
+        text-align: center !important;
+        color: var(--primary, #e42b26) !important;
+        font-size: 16px !important;
+    }
+
+    /* Mobile submenu */
+    .mobile-submenu {
+        max-height: 0 !important;
+        overflow: hidden !important;
+        transition: max-height 0.3s ease !important;
+        background: #fafafa !important;
+    }
+
+    .mobile-submenu.active {
+        max-height: 500px !important;
+    }
+
+    .mobile-submenu li a {
+        padding-left: 52px !important;
+        font-size: 14px !important;
+    }
+
+    /* Close button */
+    .close-mobile-nav {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 40px !important;
+        height: 40px !important;
+        border: none !important;
+        background: transparent !important;
+        font-size: 20px !important;
+        cursor: pointer !important;
+        color: #666 !important;
     }
 }

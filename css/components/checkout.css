@@ -38,29 +38,15 @@ body {
     text-decoration: none;
 }
 
-.checkout-header .logo-icon {
-    width: 40px;
+.checkout-header .logo-img {
     height: 40px;
-    background: linear-gradient(135deg, #D4AF37 0%, #f4c430 100%);
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #2c1810;
-    font-size: 18px;
+    width: auto;
+    object-fit: contain;
 }
 
 .checkout-header .logo-text {
     display: flex;
     flex-direction: column;
-}
-
-.checkout-header .logo-main {
-    font-family: 'Playfair Display', serif;
-    font-size: 20px;
-    font-weight: 700;
-    color: #D4AF37;
-    line-height: 1;
 }
 
 .checkout-header .logo-sub {

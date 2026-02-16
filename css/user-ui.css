@@ -7,7 +7,7 @@
 }
 
 .signup-btn {
-    background: linear-gradient(135deg, var(--primary-color) 0%, #D84A6B 100%);
+    background: linear-gradient(135deg, var(--primary, #e42b26) 0%, #D84A6B 100%);
     color: white !important;
 }
 
@@ -141,7 +141,7 @@
 
 .auth-header i {
     font-size: 48px;
-    color: var(--primary-color, #8B1538);
+    color: var(--primary, #e42b26);
     margin-bottom: 20px;
 }
 
@@ -174,7 +174,7 @@
 
 .form-group label i {
     margin-right: 8px;
-    color: var(--primary-color, #8B1538);
+    color: var(--primary, #e42b26);
 }
 
 .form-group input {
@@ -188,7 +188,7 @@
 
 .form-group input:focus {
     outline: none;
-    border-color: var(--primary-color, #8B1538);
+    border-color: var(--primary, #e42b26);
     box-shadow: 0 0 0 3px rgba(139, 21, 56, 0.1);
 }
 
@@ -215,7 +215,7 @@
 }
 
 .forgot-link {
-    color: var(--primary-color, #8B1538);
+    color: var(--primary, #e42b26);
     font-size: 14px;
     text-decoration: none;
 }
@@ -227,7 +227,7 @@
 .btn-auth {
     width: 100%;
     padding: 16px;
-    background: linear-gradient(135deg, var(--primary-color, #8B1538) 0%, #D84A6B 100%);
+    background: linear-gradient(135deg, var(--primary, #e42b26) 0%, #D84A6B 100%);
     color: white;
     border: none;
     border-radius: 10px;
@@ -255,7 +255,7 @@
 }
 
 .auth-footer a {
-    color: var(--primary-color, #8B1538);
+    color: var(--primary, #e42b26);
     font-weight: 600;
     text-decoration: none;
 }
@@ -356,12 +356,14 @@
     z-index: 9998;
     opacity: 0;
     visibility: hidden;
+    pointer-events: none;
     transition: all 0.3s ease;
 }
 
 .sidebar-overlay.active {
     opacity: 1;
     visibility: visible;
+    pointer-events: auto;
 }
 
 .sidebar-panel {
@@ -402,7 +404,7 @@
 
 .sidebar-header i {
     font-size: 22px;
-    color: var(--primary-color, #8B1538);
+    color: var(--primary, #e42b26);
 }
 
 .close-sidebar {
@@ -453,7 +455,7 @@
 .wishlist-item:hover,
 .cart-item:hover {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    border-color: var(--primary-color, #8B1538);
+    border-color: var(--primary, #e42b26);
 }
 
 .wishlist-item img,
@@ -487,7 +489,7 @@
 .item-price {
     font-size: 18px;
     font-weight: 700;
-    color: var(--primary-color, #8B1538);
+    color: var(--primary, #e42b26);
 }
 
 .item-actions {
@@ -510,9 +512,9 @@
 }
 
 .btn-icon:hover {
-    background: var(--primary-color, #8B1538);
+    background: var(--primary, #e42b26);
     color: white;
-    border-color: var(--primary-color, #8B1538);
+    border-color: var(--primary, #e42b26);
 }
 
 .btn-remove {
@@ -548,9 +550,9 @@
 }
 
 .item-quantity button:hover {
-    background: var(--primary-color, #8B1538);
+    background: var(--primary, #e42b26);
     color: white;
-    border-color: var(--primary-color, #8B1538);
+    border-color: var(--primary, #e42b26);
 }
 
 .item-quantity span {
@@ -581,7 +583,7 @@
 
 .cart-total strong {
     font-size: 24px;
-    color: var(--primary-color, #8B1538);
+    color: var(--primary, #e42b26);
 }
 
 .btn-primary,
@@ -601,7 +603,7 @@
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, var(--primary-color, #8B1538) 0%, #D84A6B 100%);
+    background: linear-gradient(135deg, var(--primary, #e42b26) 0%, #D84A6B 100%);
     color: white;
     box-shadow: 0 4px 15px rgba(139, 21, 56, 0.3);
 }
@@ -620,7 +622,7 @@
 
 .btn-secondary:hover {
     background: #f8f9fa;
-    border-color: var(--primary-color, #8B1538);
+    border-color: var(--primary, #e42b26);
 }
 
 .btn-block {
@@ -686,15 +688,15 @@
 }
 
 .btn-cart {
-    color: var(--primary-color, #8B1538);
+    color: var(--primary, #e42b26);
 }
 
 .btn-cart:hover {
-    background: var(--primary-color, #8B1538);
+    background: var(--primary, #e42b26);
     color: white;
     transform: scale(1.15);
     box-shadow: 0 6px 20px rgba(139, 21, 56, 0.5), 0 3px 10px rgba(139, 21, 56, 0.3);
-    border-color: var(--primary-color, #8B1538);
+    border-color: var(--primary, #e42b26);
 }
 
 .btn-wishlist i,
@@ -742,3 +744,4 @@
         font-size: 14px;
     }
 }
+

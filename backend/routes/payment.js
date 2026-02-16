@@ -4,15 +4,18 @@ const router = express.Router();
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
 
-// Initialize Razorpay instance
-const razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID,
-    key_secret: process.env.RAZORPAY_KEY_SECRET
-});
+// Initialize Razorpay only when keys are present (allows app to start without payment config)
+const hasRazorpayKeys = process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET;
+const razorpay = hasRazorpayKeys
+    ? new Razorpay({ key_id: process.env.RAZORPAY_KEY_ID, key_secret: process.env.RAZORPAY_KEY_SECRET })
+    : null;
 
 // Create Razorpay Order
 // POST /api/payment/create-order
 router.post('/create-order', async (req, res) => {
+    if (!razorpay) {
+        return res.status(503).json({ success: false, error: 'Payment gateway not configured' });
+    }
     try {
         const { amount, currency = 'INR', receipt, notes } = req.body;
 
@@ -69,6 +72,9 @@ router.post('/create-order', async (req, res) => {
 // Verify Payment Signature
 // POST /api/payment/verify
 router.post('/verify', async (req, res) => {
+    if (!hasRazorpayKeys) {
+        return res.status(503).json({ success: false, error: 'Payment gateway not configured' });
+    }
     try {
         const {
             razorpay_order_id,
@@ -132,6 +138,9 @@ router.post('/verify', async (req, res) => {
 // Get Payment Details
 // GET /api/payment/:paymentId
 router.get('/:paymentId', async (req, res) => {
+    if (!razorpay) {
+        return res.status(503).json({ success: false, error: 'Payment gateway not configured' });
+    }
     try {
         const { paymentId } = req.params;
 
@@ -163,6 +172,9 @@ router.get('/:paymentId', async (req, res) => {
 // Refund Payment (for admin use)
 // POST /api/payment/refund
 router.post('/refund', async (req, res) => {
+    if (!razorpay) {
+        return res.status(503).json({ success: false, error: 'Payment gateway not configured' });
+    }
     try {
         const { payment_id, amount, notes } = req.body;
 

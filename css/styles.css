@@ -115,6 +115,7 @@ button {
     font-family: inherit;
     border: none;
     outline: none;
+    background: none;
 }
 
 input,
@@ -188,6 +189,13 @@ textarea {
     align-items: center;
     gap: 10px;
     flex-shrink: 0;
+}
+
+.logo-img {
+    height: 50px;
+    width: auto;
+    object-fit: contain;
+    display: block;
 }
 
 .logo-icon {
@@ -2349,8 +2357,26 @@ textarea {
 .footer-logo {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     margin-bottom: 15px;
+}
+
+.footer-logo .logo-img {
+    height: 48px;
+    width: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.2));
+    transition: transform 0.2s ease;
+}
+
+.footer-logo:hover .logo-img {
+    transform: scale(1.02);
+}
+
+.footer-logo .logo-text {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .footer-logo .logo-icon {
@@ -2359,12 +2385,11 @@ textarea {
     font-size: 20px;
 }
 
-.footer-logo .logo-main {
-    color: var(--white);
-}
-
 .footer-logo .logo-sub {
-    color: var(--gray-400);
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
 }
 
 .brand-col p {
@@ -2529,7 +2554,7 @@ textarea {
 
 @media (max-width: 992px) {
     .header-content {
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
     }
 
     .search-wrapper {
@@ -2669,8 +2694,8 @@ textarea {
 
     /* Fixed Header Layout */
     .header-content {
-        flex-wrap: wrap;
-        gap: 10px;
+        flex-wrap: nowrap;
+        gap: 6px;
         justify-content: space-between;
     }
 
@@ -2680,14 +2705,14 @@ textarea {
         /* Allow logo to take updated space */
     }
 
+    .logo-img {
+        height: 32px;
+    }
+
     .logo-icon {
         width: 32px;
         height: 32px;
         font-size: 16px;
-    }
-
-    .logo-main {
-        font-size: 18px;
     }
 
     .logo-sub {
@@ -2729,9 +2754,11 @@ textarea {
     }
 
     .action-btn {
-        padding: 5px;
-        min-width: 40px;
-        /* Reduced min-width */
+        padding: 0;
+        min-width: 36px;
+        width: 36px;
+        height: 36px;
+        flex-direction: row;
         background: transparent;
     }
 
@@ -3524,14 +3551,38 @@ textarea {
 /* ===== Mobile Navigation Menu (Hamburger) ===== */
 .mobile-menu-btn {
     display: none;
-    background: none;
-    border: none;
-    font-size: 24px;
-    color: var(--gray-800);
+    align-items: center;
+    justify-content: center;
+    background: var(--gray-100);
+    border: 2px solid var(--gray-200);
+    border-radius: 8px;
+    font-size: 20px;
+    color: var(--primary);
     cursor: pointer;
-    padding: 5px;
-    margin-right: 15px;
-    /* Increased margin for better spacing */
+    padding: 0;
+    margin: 0;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    flex-shrink: 0;
+    transition: background 0.2s, border-color 0.2s;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.mobile-menu-btn:hover {
+    background: var(--gray-200);
+    border-color: var(--primary);
+}
+
+.mobile-menu-btn:active {
+    background: var(--gray-300);
+}
+
+.mobile-menu-btn i {
+    font-size: 1.25em;
+    line-height: 1;
 }
 
 .mobile-nav-overlay {
@@ -3545,12 +3596,14 @@ textarea {
     z-index: 9998;
     opacity: 0;
     visibility: hidden;
+    pointer-events: none;
     transition: all 0.3s ease;
 }
 
 .mobile-nav-overlay.active {
     opacity: 1;
     visibility: visible;
+    pointer-events: auto;
 }
 
 .mobile-nav-sidebar {
@@ -3686,7 +3739,12 @@ textarea {
 /* Ensure header content layout adjusts */
 @media (max-width: 992px) {
     .mobile-menu-btn {
-        display: block;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        background: var(--gray-100);
+        border: 2px solid var(--gray-200);
+        border-radius: 8px;
     }
 
     .main-nav {
@@ -3695,16 +3753,23 @@ textarea {
 
     .header-content {
         justify-content: flex-start;
-        /* Align start to keep menu button and logo together */
+        align-items: center;
     }
 
     .logo {
         margin-right: auto;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .header-actions {
+        flex-shrink: 0;
     }
 
     .search-wrapper {
         order: 3;
-        flex: 100%;
+        flex: 0 0 100%;
+        width: 100%;
         max-width: 100%;
         margin-top: 10px;
     }
