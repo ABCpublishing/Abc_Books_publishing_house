@@ -492,11 +492,18 @@ div {
 @media (max-width: 768px) {
     .section-header-fancy {
         padding: 0 10px;
+        justify-content: center;
+        /* Center the header when lines are hidden */
     }
 
     .section-header-fancy h2 {
-        font-size: 18px !important;
-        white-space: nowrap;
+        font-size: 20px !important;
+        /* Slightly larger for readability */
+        white-space: normal !important;
+        /* Allow wrapping */
+        text-align: center;
+        line-height: 1.4;
+        width: 100%;
     }
 
     .section-header-fancy .header-line {

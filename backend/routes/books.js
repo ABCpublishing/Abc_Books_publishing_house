@@ -2,34 +2,50 @@
 const express = require('express');
 const router = express.Router();
 
-// Get all books
+// Get all books with sections
+// Get all books with sections
 router.get('/', async (req, res) => {
     try {
         const sql = req.sql;
-        const { category, search, limit = 50 } = req.query;
+        const { category, search, limit = 100 } = req.query;
+        const parsedLimit = parseInt(limit) || 100;
 
         let books;
+
         if (search) {
+            const pattern = '%' + search + '%';
             books = await sql`
-                SELECT * FROM books 
-                WHERE title ILIKE ${'%' + search + '%'} 
-                   OR author ILIKE ${'%' + search + '%'}
-                   OR description ILIKE ${'%' + search + '%'}
-                ORDER BY created_at DESC
-                LIMIT ${parseInt(limit)}
+                SELECT b.*, 
+                       COALESCE(array_agg(bs.section_name) FILTER (WHERE bs.section_name IS NOT NULL), '{}') as sections
+                FROM books b
+                LEFT JOIN book_sections bs ON b.id = bs.book_id
+                WHERE b.title ILIKE ${pattern} 
+                   OR b.author ILIKE ${pattern}
+                   OR b.description ILIKE ${pattern}
+                GROUP BY b.id
+                ORDER BY b.created_at DESC
+                LIMIT ${parsedLimit}
             `;
         } else if (category) {
             books = await sql`
-                SELECT * FROM books 
-                WHERE category = ${category}
-                ORDER BY created_at DESC
-                LIMIT ${parseInt(limit)}
+                SELECT b.*, 
+                       COALESCE(array_agg(bs.section_name) FILTER (WHERE bs.section_name IS NOT NULL), '{}') as sections
+                FROM books b
+                LEFT JOIN book_sections bs ON b.id = bs.book_id
+                WHERE b.category = ${category}
+                GROUP BY b.id
+                ORDER BY b.created_at DESC
+                LIMIT ${parsedLimit}
             `;
         } else {
             books = await sql`
-                SELECT * FROM books 
-                ORDER BY created_at DESC
-                LIMIT ${parseInt(limit)}
+                SELECT b.*, 
+                       COALESCE(array_agg(bs.section_name) FILTER (WHERE bs.section_name IS NOT NULL), '{}') as sections
+                FROM books b
+                LEFT JOIN book_sections bs ON b.id = bs.book_id
+                GROUP BY b.id
+                ORDER BY b.created_at DESC
+                LIMIT ${parsedLimit}
             `;
         }
 

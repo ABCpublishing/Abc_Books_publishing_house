@@ -1395,12 +1395,17 @@ textarea {
 }
 
 .section-header-fancy h2 {
-    font-size: 18px;
-    font-weight: 600;
+    font-size: 24px;
+    /* Increased for better visual */
+    font-weight: 700;
     color: var(--gray-800);
-    white-space: nowrap;
+    white-space: normal;
+    /* Allow wrapping */
+    text-align: center;
+    line-height: 1.3;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 10px;
 }
 
@@ -3773,4 +3778,162 @@ textarea {
         max-width: 100%;
         margin-top: 10px;
     }
+}
+
+/* ===== Sidebar Book Items Styling ===== */
+.author-books {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 15px;
+}
+
+.author-book-item {
+    display: flex;
+    gap: 12px;
+    padding: 10px;
+    border-radius: var(--radius-md);
+    background: rgba(0, 0, 0, 0.02);
+    transition: var(--transition);
+    cursor: pointer;
+    align-items: center;
+}
+
+.author-book-item:hover {
+    background: var(--white);
+    box-shadow: var(--shadow-sm);
+    transform: translateX(5px);
+}
+
+.author-book-item img {
+    width: 50px;
+    height: 75px;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.author-book-item .book-details h4 {
+    font-size: 13px;
+    margin: 0 0 4px 0;
+    line-height: 1.3;
+    color: var(--text-primary);
+}
+
+.author-book-item .book-details .price {
+    font-size: 13px;
+    color: var(--primary);
+    font-weight: 700;
+}
+
+/* Learning Shelf Grid */
+.shelf-books {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.shelf-book-item {
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.shelf-book-item:hover {
+    transform: translateY(-3px);
+}
+
+.shelf-book-item img {
+    width: 100%;
+    aspect-ratio: 2/3;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 5px;
+}
+
+.shelf-book-item h4 {
+    font-size: 11px;
+    line-height: 1.3;
+    color: var(--text-secondary);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Promo Cards (Academic/Exam) Grid */
+.promo-books {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 15px;
+}
+
+.promo-book-item {
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.promo-book-item:hover {
+    transform: translateY(-3px);
+}
+
+.promo-book-item img {
+    width: 100%;
+    height: auto;
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Sidebar Alignment Fix - Force Grid Layout */
+.author-books {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+    margin-top: 15px !important;
+}
+
+.author-book-item {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    padding: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.author-book-item:hover {
+    transform: translateY(-3px) !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.author-book-item img {
+    width: 100% !important;
+    aspect-ratio: 2/3 !important;
+    height: auto !important;
+    object-fit: cover !important;
+    margin-bottom: 5px !important;
+    border-radius: var(--radius-sm) !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1) !important;
+}
+
+.author-book-item .book-details h4 {
+    font-size: 10px !important;
+    line-height: 1.3 !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    margin-bottom: 2px !important;
+    color: var(--text-secondary) !important;
+}
+
+.author-book-item .book-details .price {
+    font-size: 11px !important;
+    color: var(--primary) !important;
+    font-weight: 700 !important;
 }

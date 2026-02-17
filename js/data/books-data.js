@@ -1,468 +1,170 @@
-// ===== Demo Books Data with Categories =====
+// ===== Books Data - API Only (No Demo Data) =====
 
 // Dynamic API URL (same as api.js)
 const BOOKS_DATA_API_BASE = (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1')
     ? '/api'
     : 'http://localhost:3001/api';
 
-// Islamic Books (Arabic/English translations)
-// Top 100 / Trending Books (Using Amazon Image Links)
-const DEMO_ISLAMIC_BOOKS = [
-    // === Trending & Best Sellers ===
-    {
-        id: 'top_1',
-        title: 'The Alchemist',
-        author: 'Paulo Coelho',
-        category: 'Fiction',
-        subcategory: 'Inspirational',
-        language: 'English',
-        image: 'https://m.media-amazon.com/images/I/71+2-t7M35L._AC_UY218_.jpg',
-        price: 399,
-        originalPrice: 599,
-        rating: 4.8,
-        description: 'A global phenomenon, The Alchemist has been read and loved by millions, becoming a modern classic.'
-    },
-    {
-        id: 'top_2',
-        title: 'Atomic Habits',
-        author: 'James Clear',
-        category: 'Self-Help',
-        subcategory: 'Productivity',
-        language: 'English',
-        image: 'https://m.media-amazon.com/images/I/71F4+7rk2eL._AC_UY218_.jpg',
-        price: 499,
-        originalPrice: 799,
-        rating: 4.9,
-        description: 'An easy & proven way to build good habits & break bad ones.'
-    },
-    {
-        id: 'top_3',
-        title: "Don't Be Sad",
-        author: 'Aaidh ibn Abdullah al-Qarni',
-        category: 'Islamic',
-        subcategory: 'Self-Help',
-        language: 'English',
-        image: 'https://m.media-amazon.com/images/I/6176yTa0KQL._AC_UY218_.jpg',
-        price: 549,
-        originalPrice: 850,
-        rating: 4.9,
-        description: 'An uplifting and thought-provoking book rooted in Islamic teachings to help navigate life challenges.'
-    },
-    {
-        id: 'top_4',
-        title: 'The 48 Laws of Power',
-        author: 'Robert Greene',
-        category: 'Psychology',
-        subcategory: 'Strategy',
-        language: 'English',
-        image: 'https://m.media-amazon.com/images/I/611X8GI7hpL._AC_UY218_.jpg',
-        price: 449,
-        originalPrice: 699,
-        rating: 4.7,
-        description: 'Amoral, cunning, ruthless, and instructive, this multi-million-copy bestseller is the definitive manual.'
-    },
-    {
-        id: 'top_5',
-        title: 'Rich Dad Poor Dad',
-        author: 'Robert Kiyosaki',
-        category: 'Business',
-        subcategory: 'Finance',
-        language: 'English',
-        image: 'https://m.media-amazon.com/images/I/81BE7eeKzAL._AC_UY218_.jpg',
-        price: 349,
-        originalPrice: 550,
-        rating: 4.8,
-        description: 'What the rich teach their kids about money that the poor and middle class do not!'
-    },
-    {
-        id: 'top_6',
-        title: 'Deep Work',
-        author: 'Cal Newport',
-        category: 'Self-Help',
-        subcategory: 'Productivity',
-        language: 'English',
-        image: 'https://m.media-amazon.com/images/I/81ngZpLkktL._AC_UY218_.jpg',
-        price: 399,
-        originalPrice: 599,
-        rating: 4.7,
-        description: 'Rules for Focused Success in a Distracted World.'
-    },
-    {
-        id: 'top_7',
-        title: 'Thinking, Fast and Slow',
-        author: 'Daniel Kahneman',
-        category: 'Psychology',
-        subcategory: 'Decision Making',
-        language: 'English',
-        image: 'https://m.media-amazon.com/images/I/61fdrEuPJwL._AC_UY218_.jpg',
-        price: 599,
-        originalPrice: 899,
-        rating: 4.7,
-        description: 'A major work in modern psychology and behavioral economics.'
-    },
-    {
-        id: 'top_8',
-        title: 'The Psychology of Money',
-        author: 'Morgan Housel',
-        category: 'Business',
-        subcategory: 'Finance',
-        language: 'English',
-        image: 'https://m.media-amazon.com/images/I/81gC3mdNi5L._AC_UY218_.jpg',
-        price: 299,
-        originalPrice: 499,
-        rating: 4.8,
-        description: 'Doing well with money isn’t necessarily about what you know. It’s about how you behave.'
-    },
-    {
-        id: 'top_9',
-        title: 'The Power of Now',
-        author: 'Eckhart Tolle',
-        category: 'Self-Help',
-        subcategory: 'Spirituality',
-        language: 'English',
-        image: 'https://m.media-amazon.com/images/I/61Ij8nLooNL._AC_UY218_.jpg',
-        price: 349,
-        originalPrice: 550,
-        rating: 4.7,
-        description: 'A Guide to Spiritual Enlightenment.'
-    },
-    {
-        id: 'top_10',
-        title: "Man's Search for Meaning",
-        author: 'Viktor Frankl',
-        category: 'Psychology',
-        subcategory: 'Memoir',
-        language: 'English',
-        image: 'https://m.media-amazon.com/images/I/81uK7UU+0OL._AC_UY218_.jpg',
-        price: 249,
-        originalPrice: 399,
-        rating: 4.9,
-        description: 'Psychiatrist Viktor Frankl’s memoir has riveted generations of readers with its descriptions of life in Nazi death camps.'
-    },
-    {
-        id: 'top_11',
-        title: 'The Midnight Library',
-        author: 'Matt Haig',
-        category: 'Fiction',
-        subcategory: 'Contemporary',
-        language: 'English',
-        image: 'https://m.media-amazon.com/images/I/812whWLbqAL._AC_UY218_.jpg',
-        price: 399,
-        originalPrice: 650,
-        rating: 4.6,
-        description: 'Between life and death there is a library, and within that library, the shelves go on forever.'
-    },
-    {
-        id: 'top_12',
-        title: 'The Silent Patient',
-        author: 'Alex Michaelides',
-        category: 'Fiction',
-        subcategory: 'Thriller',
-        language: 'English',
-        image: 'https://m.media-amazon.com/images/I/91BbLCJOruL._AC_UY218_.jpg',
-        price: 349,
-        originalPrice: 599,
-        rating: 4.7,
-        description: 'The Silent Patient is a shocking psychological thriller of a woman’s act of violence against her husband.'
-    },
-    {
-        id: 'top_13',
-        title: 'It Ends with Us',
-        author: 'Colleen Hoover',
-        category: 'Fiction',
-        subcategory: 'Romance',
-        language: 'English',
-        image: 'https://m.media-amazon.com/images/I/91w8b7ug0nL._AC_UY218_.jpg',
-        price: 399,
-        originalPrice: 699,
-        rating: 4.8,
-        description: 'A brave and heartbreaking novel that digs its claws into you and doesn’t let go.'
-    },
-    {
-        id: 'top_14',
-        title: 'Principles',
-        author: 'Ray Dalio',
-        category: 'Business',
-        subcategory: 'Management',
-        language: 'English',
-        image: 'https://m.media-amazon.com/images/I/61LKD6scbfL._AC_UY218_.jpg',
-        price: 699,
-        originalPrice: 999,
-        rating: 4.7,
-        description: 'Ray Dalio, one of the world’s most successful investors and entrepreneurs, shares the unconventional principles that he’s developed.'
-    },
-    {
-        id: 'top_15',
-        title: 'Tools of Titans',
-        author: 'Tim Ferriss',
-        category: 'Self-Help',
-        subcategory: 'Advice',
-        language: 'English',
-        image: 'https://m.media-amazon.com/images/I/710FF4JrjsL._AC_UL320_.jpg',
-        price: 599,
-        originalPrice: 899,
-        rating: 4.7,
-        description: 'The Tactics, Routines, and Habits of Billionaires, Icons, and World-Class Performers.'
-    },
-    // === Core Islamic Collection ===
-    {
-        id: 'book_quran_1',
-        title: 'The Holy Quran (Arabic-English)',
-        author: 'Divine Revelation',
-        category: 'Islamic',
-        subcategory: 'Quran',
-        language: 'Arabic-English',
-        image: 'https://placehold.co/300x450/27ae60/ffffff?text=The+Holy+Quran',
-        price: 299,
-        originalPrice: 499,
-        rating: 5.0,
-        description: 'The complete Holy Quran with Arabic text and English translation.'
-    },
-    {
-        id: 'book_tafsir_1',
-        title: 'Tafsir Ibn Kathir (Complete)',
-        author: 'Ibn Kathir',
-        category: 'Islamic',
-        subcategory: 'Tafsir',
-        language: 'English',
-        image: 'https://placehold.co/300x450/2c3e50/ffffff?text=Tafsir+Ibn+Kathir',
-        price: 1299,
-        originalPrice: 1799,
-        rating: 4.9,
-        description: 'Comprehensive commentary on the Holy Quran.'
-    },
-    {
-        id: 'book_hadith_1',
-        title: 'Sahih Bukhari (Complete)',
-        author: 'Imam Bukhari',
-        category: 'Islamic',
-        subcategory: 'Hadith',
-        language: 'Arabic-English',
-        image: 'https://placehold.co/300x450/8e44ad/ffffff?text=Sahih+Bukhari',
-        price: 899,
-        originalPrice: 1299,
-        rating: 5.0,
-        description: 'The most authentic collection of Hadith.'
-    },
-    {
-        id: 'book_seerah_1',
-        title: 'The Sealed Nectar',
-        author: 'Safiur Rahman Mubarakpuri',
-        category: 'Islamic',
-        subcategory: 'Seerah',
-        language: 'English',
-        image: 'https://placehold.co/300x450/d35400/ffffff?text=The+Sealed+Nectar',
-        price: 449,
-        originalPrice: 699,
-        rating: 4.8,
-        description: 'Ar-Raheeq Al-Makhtum - Biography of Prophet Muhammad (PBUH).'
-    }
-];
+// ===== Book Cache =====
+let _cachedBooks = null;
+let _cacheTimestamp = 0;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-// ===== Load Books from Admin Panel =====
-function getCustomBooksData() {
+// ===== Fetch All Books from Database API =====
+async function fetchAllBooks() {
+    const now = Date.now();
+    if (_cachedBooks && (now - _cacheTimestamp) < CACHE_DURATION) {
+        return _cachedBooks;
+    }
+
     try {
-        const data = localStorage.getItem('abc_books_data_v5');
-        if (data) {
-            const parsed = JSON.parse(data);
-            console.log('📚 Loaded custom books data from admin:', parsed);
-            return parsed;
+        const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('API timeout')), 5000)
+        );
+        const response = await Promise.race([
+            fetch(`${BOOKS_DATA_API_BASE}/books?limit=1000`), // Fetch all books
+            timeoutPromise
+        ]);
+
+        if (!response.ok) throw new Error('API request failed');
+
+        const data = await response.json();
+        if (data && data.books && data.books.length > 0) {
+            _cachedBooks = data.books.map(book => ({
+                id: book.id,
+                title: book.title,
+                author: book.author,
+                price: parseFloat(book.price) || 0,
+                originalPrice: parseFloat(book.original_price) || parseFloat(book.price) || 0,
+                image: book.image,
+                description: book.description,
+                category: book.category,
+                subcategory: book.subcategory,
+                language: book.language,
+                rating: parseFloat(book.rating) || 4.5,
+                isbn: book.isbn,
+                year: book.publish_year,
+                publisher: book.publisher,
+                sections: book.sections || [] // Mapped from backend
+            }));
+            _cacheTimestamp = now;
+            console.log(`📚 Loaded ${_cachedBooks.length} books from database`);
+            return _cachedBooks;
         }
-        return null;
+        return [];
     } catch (error) {
-        console.error('Error loading custom books data:', error);
-        return null;
+        console.warn('⚠️ Failed to fetch books:', error.message);
+        return _cachedBooks || [];
     }
 }
 
-// Initialize demo data if no data exists or if we want to force refresh new books
-function initializeDemoData() {
-    const existingData = getCustomBooksData();
-    const currentDemoCount = DEMO_ISLAMIC_BOOKS.length;
-
-    // Force refresh if demo books collection has expanded or changed significantly
-    // OR if we are missing our critical Top 100 sections
-    let needsRefresh = true;
-    try {
-        needsRefresh = !existingData ||
-            !existingData.books ||
-            !existingData.sections ||
-            !existingData.sections.islamic_top50 ||
-            !existingData.sections.arabic_top50 ||
-            existingData.books.length < currentDemoCount ||
-            existingData.books.some(b => b.id && b.id.startsWith('top_') && b.image && !b.image.includes('amazon'));
-    } catch (e) {
-        console.warn('⚠️ Error checking existing data, will refresh:', e.message);
-        needsRefresh = true;
-    }
-
-    // === 50 Islamic Titles ===
-    const islamicTitles = [
-        "Gardens of the Righteous", "Fortress of the Muslim", "Stories of the Prophets", "The Sealed Nectar", "Don't Be Sad",
-        "Reclaim Your Heart", "Secrets of Divine Love", "Purification of the Heart", "Revival of Religious Sciences", "The Disease and The Cure",
-        "Timeless Seeds of Advice", "Prayers of the Pious", "The Ideal Muslim", "The Ideal Muslimah", "Enjoy Your Life",
-        "The Book of Knowledge", "In the Footsteps of the Prophet", "Women Around the Messenger", "The Beginning and the End", "Tafsir As-Sa'di",
-        "Characteristics of Prophet Muhammad", "40 Hadith Nawawi", "Riyad as-Salihin", "Bulugh al-Maram", "Fath al-Bari",
-        "Kitab at-Tawhid", "The Deviant Sects", "Biographies of the Companions", "History of Islam", "Lost Islamic History",
-        "The Road to Mecca", "Islam and the World", "Milestones", "Fiqh us-Sunnah", "The Spirt of Islam",
-        "Towards Understanding the Quran", "Let Us Be Muslims", "The Quran and Modern Science", "Islam the Natural Way", "The Productive Muslim",
-        "Islamic Manners", "Patience and Gratitude", "The Soul's Journey", "Life in the Grave", "Signs of the Last Day",
-        "Descriptions of Paradise", "The Fire of Hell", "Sins and Repentance", "Daily Duas", "The Rights of Parents"
-    ];
-
-    // === 50 Arabic Titles ===
-    const arabicTitles = [
-        "Al-Muqaddimah", "Kalila wa Dimna", "Alf Layla wa Layla", "Diwan Al-Mutanabbi", "Nahj al-Balagha",
-        "Kitab al-Aghani", "Hayat al-Hayawan", "Al-Bukhala", "Risalat al-Ghufran", "Tawq al-Hamamah",
-        "Al-Iqd al-Farid", "Wafayat al-Ayan", "Siyar A'lam al-Nubala", "Al-Bidaya wan-Nihaya", "Tarikh al-Tabari",
-        "Lisan al-Arab", "Al-Qamus al-Muhit", "Asrar al-Balagha", "Dala'il al-I'jaz", "Maqamat al-Hariri",
-        "Hayy ibn Yaqdhan", "Al-Muwafaqat", "Al-Itisam", "Talbis Iblis", "Sayd al-Khatir",
-        "Rawdat al-Muhibbin", "Madarij al-Salikin", "Zad al-Ma'ad", "Ilam al-Muwaqqi'in", "Al-Fawa'id",
-        "Al-Umm", "Al-Risala", "Al-Burhan", "Al-Mustasfa", "Ihya Ulum ad-Din",
-        "Mishkat al-Masabih", "Al-Adab al-Mufrad", "Shamail Muhammadiyah", "Al-Shifa", "Nur al-Yaqin",
-        "Rahiq al-Makhtum (Arabic)", "Fi Zilal al-Quran", "Tafsir al-Jalalayn", "Tafsir al-Qurtubi", "Tafsir al-Baghawi",
-        "Fath al-Qadir", "Umdat al-Ahkam", "Subul al-Salam", "Nail al-Awtar", "Al-Muhalla"
-    ];
-
-    if (needsRefresh) {
-        console.log('🎬 Initializing/Refreshing with new Amazon book data...');
-
-        // Generate Book Objects
-        const generatedIslamicBooks = islamicTitles.map((title, index) => ({
-            id: `isl_gen_${index + 1}`,
-            title: title,
-            author: 'Prominent Islamic Scholar',
-            category: 'Islamic',
-            subcategory: 'General',
-            language: 'English',
-            image: `https://m.media-amazon.com/images/I/${['71+2-t7M35L', '71F4+7rk2eL', '6176yTa0KQL'][index % 3]}._AC_UY218_.jpg`, // Rotating placeholders
-            price: 299 + (index * 10),
-            originalPrice: 499 + (index * 10),
-            rating: 4.8,
-            description: `A classic masterpiece of Islamic literature: ${title}. Essential reading for every home.`
-        }));
-
-        const generatedArabicBooks = arabicTitles.map((title, index) => ({
-            id: `arb_gen_${index + 1}`,
-            title: title,
-            author: 'Classical Arabic Author',
-            category: 'Arabic',
-            subcategory: 'Literature',
-            language: 'Arabic',
-            image: `https://m.media-amazon.com/images/I/${['611X8GI7hpL', '81BE7eeKzAL', '81ngZpLkktL'][index % 3]}._AC_UY218_.jpg`, // Rotating placeholders
-            price: 399 + (index * 15),
-            originalPrice: 699 + (index * 15),
-            rating: 4.9,
-            description: `A timeless work of Arabic heritage: ${title}. Rich in language and wisdom.`
-        }));
-
-        // Combine all books
-        const finalBookList = [...DEMO_ISLAMIC_BOOKS, ...generatedIslamicBooks, ...generatedArabicBooks];
-        const allBookIds = finalBookList.map(b => b.id);
-
-        const demoData = {
-            books: finalBookList,
-            sections: {
-                hero: allBookIds,
-                editors: allBookIds.slice(5, 11),
-                featured: allBookIds.slice(2, 8),
-                trending: allBookIds.slice(0, 15),
-                islamic_top50: generatedIslamicBooks.map(b => b.id),
-                arabic_top50: generatedArabicBooks.map(b => b.id),
-                top100_all: [...generatedIslamicBooks.map(b => b.id), ...generatedArabicBooks.map(b => b.id)]
-            }
-        };
-        localStorage.setItem('abc_books_data_v5', JSON.stringify(demoData));
-        console.log('✅ Data initialized with', finalBookList.length, 'books');
-        return demoData;
-    }
-
-    return existingData;
-}
-
-// Get books for a specific section
+// ===== Get Books for a Specific Section =====
 async function getBooksForSection(section) {
-    // Try API first (with timeout to avoid long waits if backend is down)
-    if (typeof API !== 'undefined' && API.Books) {
-        try {
-            const timeoutPromise = new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('API timeout')), 3000)
-            );
-            const response = await Promise.race([
-                API.Books.getBySection(section),
-                timeoutPromise
-            ]);
-            if (response && response.books && response.books.length > 0) {
-                console.log(`📘 Loaded ${response.books.length} books for ${section} from API`);
-                // Map API fields (snake_case) to frontend fields (camelCase)
-                return response.books.map(book => ({
-                    id: book.id,
-                    title: book.title,
-                    author: book.author,
-                    price: book.price,
-                    originalPrice: book.original_price || book.originalPrice,
-                    image: book.image,
-                    description: book.description,
-                    category: book.category,
-                    rating: book.rating || 4.5,
-                    isbn: book.isbn,
-                    year: book.publish_year || book.year
-                }));
+    const allBooks = await fetchAllBooks();
+    if (!allBooks || allBooks.length === 0) return [];
+
+    // 1. Explicit Manual Assignment (from Admin Panel)
+    // Map 'featured' to include 'editors' choice from Admin
+    let dbSections = [section];
+    if (section === 'featured') dbSections = ['featured', 'editors'];
+
+    // Filter books that have this section assigned
+    const explicitBooks = allBooks.filter(b => b.sections && dbSections.some(s => b.sections.includes(s)));
+
+    // 2. Automatic Rule-based Fallback
+    const sortedByNewest = [...allBooks].sort((a, b) => b.id - a.id);
+    const sortedByRating = [...allBooks].sort((a, b) => (b.rating || 0) - (a.rating || 0));
+
+    let autoBooks = [];
+    let sliceStart = 0;
+    let limit = 6;
+
+    switch (section) {
+        case 'featured':
+            autoBooks = sortedByNewest;
+            break;
+
+        case 'trending':
+            autoBooks = sortedByRating;
+            break;
+
+        case 'newReleases':
+            autoBooks = sortedByNewest;
+            break;
+
+        case 'indianAuthors': {
+            // Priority: Urdu/Hindi
+            const urduBooks = allBooks.filter(b => b.language === 'Urdu' || b.language === 'Hindi');
+            if (urduBooks.length > 0) {
+                autoBooks = urduBooks;
+            } else {
+                autoBooks = sortedByNewest;
+                sliceStart = 6; // Offset if falling back
             }
-        } catch (error) {
-            console.warn(`⚠️ API fetch failed for section ${section}, falling back to demo data`, error.message);
+            break;
         }
+
+        case 'boxSets':
+            autoBooks = sortedByNewest;
+            sliceStart = 12;
+            limit = 4;
+            break;
+
+        case 'children': {
+            const childBooks = allBooks.filter(b =>
+                b.category === 'General' ||
+                (b.subcategory && b.subcategory.toLowerCase().includes('children'))
+            );
+            if (childBooks.length > 0) {
+                autoBooks = childBooks;
+            } else {
+                autoBooks = sortedByNewest;
+                sliceStart = 18;
+            }
+            break;
+        }
+
+        case 'fiction': {
+            const engBooks = allBooks.filter(b => b.language === 'English');
+            if (engBooks.length > 0) {
+                autoBooks = engBooks;
+            } else {
+                autoBooks = sortedByNewest;
+                sliceStart = 24;
+            }
+            break;
+        }
+
+        case 'sidebar':
+            return allBooks;
+
+        case 'top100':
+            return sortedByRating.slice(0, Math.min(allBooks.length, 50));
+
+        case 'hero':
+            // Hero section is strictly manual. No automatic fallback.
+            // If explicitBooks is empty, we return empty [], so script.js keeps the static image.
+            return explicitBooks;
+
+        default:
+            autoBooks = sortedByNewest;
     }
 
-    const data = initializeDemoData();
+    // Merge: Top priority = Explicit, then Auto
+    // Ensure checking for duplicates by ID
+    let combined = [...explicitBooks];
 
-    // Map section names
-    const sectionMap = {
-        'hero': 'hero',
-        'islamicBooks': 'hero',
-        'featured': 'featured',
-        'trending': 'trending',
-        'editors': 'editors',
-        'editorsBanner': 'editors'
-    };
+    // Get appropriate candidates based on slice logic
+    const autoCandidates = autoBooks.slice(sliceStart);
 
-    const mappedSection = sectionMap[section] || section;
-
-    // Get book IDs for this section
-    const bookIds = data.sections && data.sections[mappedSection]
-        ? data.sections[mappedSection]
-        : [];
-
-    // If no books in section but it's hero, use all books
-    if (bookIds.length === 0 && (section === 'hero' || section === 'islamicBooks')) {
-        console.log(`⚠️ No books in ${mappedSection} section, using all books`);
-        return Promise.resolve(data.books || DEMO_ISLAMIC_BOOKS);
+    for (let book of autoCandidates) {
+        if (!combined.find(cb => cb.id === book.id)) {
+            combined.push(book);
+        }
+        if (combined.length >= limit) break;
     }
 
-    // Get actual book objects
-    const books = bookIds
-        .map(id => data.books.find(b => b.id === id))
-        .filter(Boolean);
-
-    console.log(`📘 Loaded ${books.length} books for ${section} (Demo Data)`);
-    return Promise.resolve(books);
-}
-
-
-// Get books by category
-function getBooksByCategory(category) {
-    const data = initializeDemoData();
-    return data.books.filter(book =>
-        book.category && book.category.toLowerCase() === category.toLowerCase()
-    );
-}
-
-// Get books by language
-function getBooksByLanguage(language) {
-    const data = initializeDemoData();
-    return data.books.filter(book =>
-        book.language && book.language.toLowerCase().includes(language.toLowerCase())
-    );
+    return combined.slice(0, limit);
 }
 
 // ===== UI Rendering Functions =====
@@ -508,10 +210,10 @@ function createBookCard(book) {
                 
                 <!-- Quick Action Buttons -->
                 <div class="book-actions">
-                    <button class="btn-wishlist wishlist-btn" title="Add to Wishlist" onclick="event.stopPropagation();">
+                    <button class="btn-wishlist wishlist-btn" title="Add to Wishlist" onclick="event.stopPropagation(); addToWishlistCard(this, '${book.id}', '${bookJSON}')">
                         <i class="far fa-heart"></i>
                     </button>
-                    <button class="btn-cart add-to-cart-btn" title="Add to Cart" onclick="event.stopPropagation();">
+                    <button class="btn-cart add-to-cart-btn" title="Add to Cart" onclick="event.stopPropagation(); addToCartCard('${book.id}', '${bookJSON}')">
                         <i class="fas fa-shopping-cart"></i>
                     </button>
                 </div>
@@ -591,28 +293,17 @@ async function addToWishlistCard(btn, bookId, bookData) {
     const book = typeof bookData === 'string' ? JSON.parse(bookData.replace(/&quot;/g, '"')) : bookData;
 
     try {
-        // Fetch the real book ID from database using ISBN
-        const response = await fetch(`${BOOKS_DATA_API_BASE}/books`);
-        if (!response.ok) {
-            throw new Error('Failed to fetch books from database');
-        }
-
-        const books = await response.json();
-        const dbBook = books.find(b => b.isbn === bookId);
-
-        if (!dbBook) {
-            showNotification('Book not found in database', 'error');
-            return;
-        }
-
-        // Call the API-integrated addToWishlist function with database book ID
+        // Call the API-integrated addToWishlist function
         if (typeof addToWishlist === 'function') {
-            await addToWishlist(dbBook.id, book);
+            // Use bookId directly (no need to fetch from DB again as bookId IS the DB id)
+            await addToWishlist(bookId, book);
 
             // Update button visual state
             const icon = btn.querySelector('i');
-            icon.classList.remove('far');
-            icon.classList.add('fas');
+            if (icon) {
+                icon.classList.remove('far');
+                icon.classList.add('fas');
+            }
             btn.classList.add('active');
         }
     } catch (error) {
@@ -642,24 +333,9 @@ async function addToCartCard(bookId, bookData) {
     const book = typeof bookData === 'string' ? JSON.parse(bookData.replace(/&quot;/g, '"')) : bookData;
 
     try {
-        // Fetch the real book ID from database using ISBN (which is the demo book ID)
-        const response = await fetch(`${BOOKS_DATA_API_BASE}/books`);
-        if (!response.ok) {
-            throw new Error('Failed to fetch books from database');
-        }
-
-        const books = await response.json();
-        const dbBook = books.find(b => b.isbn === bookId);
-
-        if (!dbBook) {
-            showNotification('Book not found in database', 'error');
-            console.error('Book not found:', bookId);
-            return;
-        }
-
-        // Call the API-integrated addToCart function with the database book ID
+        // Call the API-integrated addToCart function directly
         if (typeof addToCart === 'function') {
-            await addToCart(dbBook.id, book);
+            await addToCart(bookId, book);
         } else {
             throw new Error('addToCart function not available');
         }
@@ -690,24 +366,9 @@ async function buyNow(bookId, bookData) {
     const book = typeof bookData === 'string' ? JSON.parse(bookData.replace(/&quot;/g, '"')) : bookData;
 
     try {
-        // Fetch the real book ID from database using ISBN
-        const response = await fetch(`${BOOKS_DATA_API_BASE}/books`);
-        if (!response.ok) {
-            throw new Error('Failed to fetch books from database');
-        }
-
-        const books = await response.json();
-        const dbBook = books.find(b => b.isbn === bookId);
-
-        if (!dbBook) {
-            showNotification('Book not found in database', 'error');
-            console.error('Book not found:', bookId);
-            return;
-        }
-
-        // Add to cart via API with database book ID
+        // Add to cart directly
         if (typeof addToCart === 'function') {
-            await addToCart(dbBook.id, book);
+            await addToCart(bookId, book);
 
             // Show success message before redirect
             showNotification('Redirecting to checkout...', 'success');

@@ -1,14 +1,63 @@
 // ===== Hero Books Carousel =====
+// ===== Hero Books Section (Dynamic) =====
 async function renderHeroBooks() {
     const heroBooks = await getBooksForSection('hero');
-    const heroContainer = document.getElementById('heroBooks');
+    const heroVisual = document.querySelector('.hero-visual');
 
-    if (heroContainer && heroBooks.length > 0) {
-        heroContainer.innerHTML = heroBooks.map(book => createBookCard(book)).join('');
-        initializeHeroSlider();
-        console.log('✅ Hero books rendered:', heroBooks.length);
+    // Only activate if we have explicit hero books assigned by Admin
+    if (heroVisual && heroBooks.length > 0) {
+        const book = heroBooks[0]; // Show the most recent hero book
+
+        // Replace static image with dynamic book showcase
+        heroVisual.innerHTML = `
+            <div class="hero-book-showcase fade-in-up" style="text-align: center; animation: fadeInUp 0.8s ease forwards;">
+                <a href="pages/book-detail.html?id=${book.id}" class="hero-book-link" style="display: inline-block; position: relative; transition: transform 0.3s ease;">
+                    <img src="${book.image}" alt="${book.title}" class="hero-book-cover" style="
+                        max-height: 400px; 
+                        width: auto;
+                        box-shadow: 0 20px 40px rgba(0,0,0,0.3); 
+                        border-radius: 8px;
+                        border: 4px solid #fff;
+                    " onerror="this.src='https://via.placeholder.com/300x450?text=No+Cover'">
+                    
+                    <div class="hero-book-badge" style="
+                        position: absolute; 
+                        top: -15px; 
+                        right: -15px; 
+                        background: #ffd700; 
+                        color: #000; 
+                        padding: 8px 15px; 
+                        border-radius: 20px; 
+                        font-weight: bold; 
+                        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+                        z-index: 2;
+                    ">
+                        Top Pick
+                    </div>
+                </a>
+                
+                <div class="hero-book-info" style="
+                    margin-top: 25px; 
+                    background: rgba(255, 255, 255, 0.9); 
+                    padding: 15px 25px; 
+                    border-radius: 12px; 
+                    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+                    display: inline-block;
+                    backdrop-filter: blur(10px);
+                ">
+                    <h3 style="font-size: 1.2rem; margin: 0 0 5px 0; color: #2c3e50;">${book.title}</h3>
+                    <p style="font-size: 0.95rem; color: #7f8c8d; margin: 0 0 10px 0;">by ${book.author}</p>
+                    <div style="color: #f1c40f;">
+                        ${generateStars(book.rating)}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        console.log(`✅ Hero section updated with book: ${book.title}`);
     } else {
-        console.warn('⚠️ No hero books found or container missing');
+        // Fallback to static content (defined in HTML) if no hero books
+        console.log('ℹ️ No explicit hero books found, keeping static design');
     }
 }
 
@@ -50,32 +99,7 @@ async function renderTrendingBooks() {
 
 // Render new releases (uses all books if no specific data)
 async function renderNewReleases() {
-    let newReleases = [];
-
-    // Try fetching from API first (with timeout)
-    if (typeof API !== 'undefined' && API.Books) {
-        try {
-            const timeoutPromise = new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('API timeout')), 3000)
-            );
-            const response = await Promise.race([
-                API.Books.getAll({ limit: 6 }),
-                timeoutPromise
-            ]);
-            if (response && response.books) {
-                newReleases = response.books;
-            }
-        } catch (e) {
-            console.warn('Failed to load new releases from API', e.message);
-        }
-    }
-
-    // Fallback to demo data
-    if (newReleases.length === 0) {
-        const data = initializeDemoData();
-        newReleases = data.books.slice(0, 6);
-    }
-
+    const newReleases = await getBooksForSection('newReleases');
     const releasesContainer = document.getElementById('newReleasesBooks');
 
     if (releasesContainer && newReleases.length > 0) {
@@ -86,8 +110,7 @@ async function renderNewReleases() {
 
 // Render Indian authors section
 async function renderIndianAuthors() {
-    const data = initializeDemoData();
-    const indianBooks = data.books.slice(0, 6);
+    const indianBooks = await getBooksForSection('indianAuthors');
     const indianContainer = document.getElementById('indianAuthorsBooks');
 
     if (indianContainer && indianBooks.length > 0) {
@@ -97,8 +120,7 @@ async function renderIndianAuthors() {
 
 // Render box sets
 async function renderBoxSets() {
-    const data = initializeDemoData();
-    const boxSets = data.books.slice(0, 4);
+    const boxSets = await getBooksForSection('boxSets');
     const boxContainer = document.getElementById('boxSetsBooks');
 
     if (boxContainer && boxSets.length > 0) {
@@ -108,8 +130,7 @@ async function renderBoxSets() {
 
 // Render children's books
 async function renderChildrenBooks() {
-    const data = initializeDemoData();
-    const childrenBooks = data.books.slice(0, 6);
+    const childrenBooks = await getBooksForSection('children');
     const childrenContainer = document.getElementById('childrenBooks');
 
     if (childrenContainer && childrenBooks.length > 0) {
@@ -120,8 +141,7 @@ async function renderChildrenBooks() {
 
 // Render fiction books
 async function renderFictionBooks() {
-    const data = initializeDemoData();
-    const fictionBooks = data.books.slice(0, 6);
+    const fictionBooks = await getBooksForSection('fiction');
     const fictionContainer = document.getElementById('fictionBooks');
 
     if (fictionContainer && fictionBooks.length > 0) {
@@ -131,10 +151,9 @@ async function renderFictionBooks() {
 
 // Render sidebar books
 async function renderSidebarBooks() {
-    const data = initializeDemoData();
-    const allBooks = data.books || [];
+    const allBooks = await getBooksForSection('sidebar');
 
-    // Author Spotlight - Sudha Murty (Simulated with our top books for now)
+    // Author Spotlight (first 3)
     const authorBooks = allBooks.slice(0, 3);
     const authorContainer = document.getElementById('authorBooks');
     if (authorContainer && authorBooks.length > 0) {
@@ -149,7 +168,7 @@ async function renderSidebarBooks() {
         `).join('');
     }
 
-    // Academic books
+    // Academic books (next 3)
     const academicBooks = allBooks.slice(3, 6);
     const academicContainer = document.getElementById('academicBooks');
     if (academicContainer && academicBooks.length > 0) {
@@ -160,7 +179,7 @@ async function renderSidebarBooks() {
         `).join('');
     }
 
-    // Exam books
+    // Exam books (next 3)
     const examBooks = allBooks.slice(6, 9);
     const examContainer = document.getElementById('examBooks');
     if (examContainer && examBooks.length > 0) {
@@ -171,7 +190,7 @@ async function renderSidebarBooks() {
         `).join('');
     }
 
-    // Learning books (Shelf)
+    // Learning books (Shelf, first 3)
     const shelfBooks = allBooks.slice(0, 3);
     const learningContainer = document.getElementById('learningBooks');
     if (learningContainer && shelfBooks.length > 0) {
@@ -183,8 +202,8 @@ async function renderSidebarBooks() {
         `).join('');
     }
 
-    // Book crushes
-    const crushBooks = allBooks.slice(2, 5);
+    // Book crushes (use mid-section)
+    const crushBooks = allBooks.slice(Math.max(0, allBooks.length - 3));
     const crushContainer = document.getElementById('crushBooks');
     if (crushContainer && crushBooks.length > 0) {
         crushContainer.innerHTML = crushBooks.map(book => `
@@ -197,12 +216,13 @@ async function renderSidebarBooks() {
 
 // Render Top 100 Modal
 async function renderTop100Books() {
-    const data = initializeDemoData();
-    const top100Books = data.books;
+    const top100Books = await getBooksForSection('top100');
     const top100Container = document.getElementById('top100Books');
 
     if (top100Container && top100Books.length > 0) {
-        top100Container.innerHTML = top100Books.map((book, index) => `
+        top100Container.innerHTML = top100Books.map((book, index) => {
+            const bookJSON = JSON.stringify(book).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+            return `
             <div class="top100-book-item">
                 <span class="book-rank">#${index + 1}</span>
                 <img src="${book.image}" alt="${book.title}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22100%22 height=%22100%22/%3E%3C/svg%3E'">
@@ -214,9 +234,9 @@ async function renderTop100Books() {
                         ${book.originalPrice ? `<span class="original-price">₹${book.originalPrice}</span>` : ''}
                     </div>
                 </div>
-                <button class="btn-add-cart"><i class="fas fa-shopping-cart"></i></button>
+                <button class="btn-add-cart" onclick="addToCartCard('${book.id}', '${bookJSON}')"><i class="fas fa-shopping-cart"></i></button>
             </div>
-        `).join('');
+        `}).join('');
     }
 }
 
@@ -687,7 +707,7 @@ async function initializeWebsite() {
 
         // Load all sections in parallel - allSettled ensures one failure doesn't block others
         const results = await Promise.allSettled([
-            // renderHeroBooks(), // Replaced by static modern hero
+            safeRender(renderHeroBooks, 'Hero Section'),
 
             safeRender(renderFeaturedBooks, 'Featured Books'),
             safeRender(renderTrendingBooks, 'Trending Books'),
