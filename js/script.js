@@ -710,6 +710,7 @@ async function initializeWebsite() {
             safeRender(renderHeroBooks, 'Hero Section'),
 
             safeRender(renderFeaturedBooks, 'Featured Books'),
+            safeRender(renderIslamicBooks, 'Islamic Books'),
             safeRender(renderTrendingBooks, 'Trending Books'),
             safeRender(renderNewReleases, 'New Releases'),
             safeRender(renderIndianAuthors, 'Indian Authors'),
