@@ -150,14 +150,13 @@ async function renderFictionBooks() {
 }
 
 // Render sidebar books
+// Render sidebar books
 async function renderSidebarBooks() {
-    const allBooks = await getBooksForSection('sidebar');
-
-    // Author Spotlight (first 3)
-    const authorBooks = allBooks.slice(0, 3);
+    // 1. Author Spotlight - Use Featured books
+    const featuredBooks = await getBooksForSection('featured');
     const authorContainer = document.getElementById('authorBooks');
-    if (authorContainer && authorBooks.length > 0) {
-        authorContainer.innerHTML = authorBooks.map(book => `
+    if (authorContainer && featuredBooks.length > 0) {
+        authorContainer.innerHTML = featuredBooks.slice(0, 3).map(book => `
             <div class="author-book-item" onclick="viewBookDetail('${book.id}')" style="cursor: pointer;">
                 <img src="${book.image}" alt="${book.title}" onerror="this.src='https://via.placeholder.com/50x70?text=Book'">
                 <div class="book-details">
@@ -168,45 +167,32 @@ async function renderSidebarBooks() {
         `).join('');
     }
 
-    // Academic books (next 3)
-    const academicBooks = allBooks.slice(3, 6);
+    // 2. Academic books - Use Academic specific section
+    const academicBooks = await getBooksForSection('academic');
     const academicContainer = document.getElementById('academicBooks');
     if (academicContainer && academicBooks.length > 0) {
-        academicContainer.innerHTML = academicBooks.map(book => `
+        academicContainer.innerHTML = academicBooks.slice(0, 3).map(book => `
             <div class="promo-book-item" onclick="viewBookDetail('${book.id}')" style="cursor: pointer;">
                 <img src="${book.image}" alt="${book.title}" onerror="this.src='https://via.placeholder.com/80x120?text=Book'">
             </div>
         `).join('');
     }
 
-    // Exam books (next 3)
-    const examBooks = allBooks.slice(6, 9);
+    // 3. Exam books (Master CTET & CSAT) - Use Exam specific section
+    const examBooks = await getBooksForSection('exam');
     const examContainer = document.getElementById('examBooks');
     if (examContainer && examBooks.length > 0) {
-        examContainer.innerHTML = examBooks.map(book => `
+        examContainer.innerHTML = examBooks.slice(0, 3).map(book => `
             <div class="promo-book-item" onclick="viewBookDetail('${book.id}')" style="cursor: pointer;">
                 <img src="${book.image}" alt="${book.title}" onerror="this.src='https://via.placeholder.com/80x120?text=Book'">
             </div>
         `).join('');
     }
 
-    // Learning books (Shelf, first 3)
-    const shelfBooks = allBooks.slice(0, 3);
-    const learningContainer = document.getElementById('learningBooks');
-    if (learningContainer && shelfBooks.length > 0) {
-        learningContainer.innerHTML = shelfBooks.map(book => `
-            <div class="shelf-book-item" onclick="viewBookDetail('${book.id}')" style="cursor: pointer;">
-                <img src="${book.image}" alt="${book.title}" onerror="this.src='https://via.placeholder.com/60x90?text=Book'">
-                <h4>${book.title}</h4>
-            </div>
-        `).join('');
-    }
-
-    // Book crushes (use mid-section)
-    const crushBooks = allBooks.slice(Math.max(0, allBooks.length - 3));
+    // 4. Book crushes (use more featured books)
     const crushContainer = document.getElementById('crushBooks');
-    if (crushContainer && crushBooks.length > 0) {
-        crushContainer.innerHTML = crushBooks.map(book => `
+    if (crushContainer && featuredBooks.length > 3) {
+        crushContainer.innerHTML = featuredBooks.slice(3, 6).map(book => `
             <div class="promo-book-item" onclick="viewBookDetail('${book.id}')" style="cursor: pointer;">
                 <img src="${book.image}" alt="${book.title}" onerror="this.src='https://via.placeholder.com/80x120?text=Book'">
             </div>
@@ -664,6 +650,21 @@ function initializeNewsletter() {
 
 // ===== Loading Indicator =====
 function showLoading() {
+    // 1. Check for persistent cache - if it exists and is fresh, skip the blocking loader
+    const PERSISTENT_CACHE_KEY = 'abc_books_data_cache';
+    const PERSISTENT_CACHE_TTL = 30 * 60 * 1000;
+    const stored = localStorage.getItem(PERSISTENT_CACHE_KEY);
+
+    if (stored) {
+        try {
+            const parsed = JSON.parse(stored);
+            if (Date.now() - parsed.timestamp < PERSISTENT_CACHE_TTL) {
+                console.log('⚡ Skipping loader due to fresh cache');
+                return; // Don't show the full-screen loader
+            }
+        } catch (e) { }
+    }
+
     const loader = document.createElement('div');
     loader.id = 'page-loader';
     loader.innerHTML = `
@@ -673,18 +674,27 @@ function showLoading() {
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(255, 255, 255, 0.85);
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 9999;
             flex-direction: column;
+            backdrop-filter: blur(5px);
         ">
             <i class="fas fa-book-open" style="font-size: 48px; color: #8B0000; animation: pulse 1.5s infinite;"></i>
             <p style="margin-top: 20px; color: #8B0000; font-size: 18px; font-weight: 600;">Loading Amazing Books...</p>
         </div>
     `;
     document.body.appendChild(loader);
+
+    // 2. SAFETY TIMEOUT: Force hide the loader after 2.5 seconds no matter what
+    setTimeout(() => {
+        if (document.getElementById('page-loader')) {
+            console.warn('🕒 Loader safety timeout reached (2.5s)');
+            hideLoading();
+        }
+    }, 2500);
 }
 
 function hideLoading() {
@@ -705,12 +715,26 @@ async function initializeWebsite() {
             return null;
         });
 
-        // Load all sections in parallel - allSettled ensures one failure doesn't block others
-        const results = await Promise.allSettled([
-            safeRender(renderHeroBooks, 'Hero Section'),
-
+        // 1. Load CRITICAL sections first (Hero/Featured)
+        // These will likely trigger the fetchAllBooks() call
+        const criticalLoad = Promise.allSettled([
             safeRender(renderFeaturedBooks, 'Featured Books'),
-            safeRender(renderIslamicBooks, 'Islamic Books'),
+            safeRender(renderIslamicBooks, 'Islamic Books')
+        ]);
+
+        // 2. RACE: Hide loader when critical data is ready OR after 1.5s (UI feedback)
+        await Promise.race([
+            criticalLoad,
+            new Promise(resolve => setTimeout(resolve, 1500))
+        ]);
+
+        // 3. Hide loader and enable UI
+        hideLoading();
+        initializeSearch();
+        initializeInteractions();
+
+        // 3. Load other sections in background (Non-blocking)
+        Promise.allSettled([
             safeRender(renderTrendingBooks, 'Trending Books'),
             safeRender(renderNewReleases, 'New Releases'),
             safeRender(renderIndianAuthors, 'Indian Authors'),
@@ -719,22 +743,17 @@ async function initializeWebsite() {
             safeRender(renderFictionBooks, 'Fiction Books'),
             safeRender(renderSidebarBooks, 'Sidebar Books'),
             safeRender(renderTop100Books, 'Top 100')
-        ]);
-
-        // Log any sections that failed
-        const failed = results.filter(r => r.status === 'rejected');
-        if (failed.length > 0) {
-            console.warn(`⚠️ ${failed.length} section(s) had issues loading`);
-        }
-
-        // Initialize content-dependent UI
-        initializeCategoryStrip();
-        initializeTop100Modal();
+        ]).then(() => {
+            // Initialize content-dependent UI after everything is done
+            initializeCategoryStrip();
+            initializeTop100Modal();
+            console.log('✅ All background sections loaded!');
+        });
 
         // Initialize Modern Hero Animations
         const heroText = document.querySelector('.hero-text');
         if (heroText) {
-            heroText.style.opacity = '1'; // Ensure visible if JS runs late
+            heroText.style.opacity = '1';
             const children = heroText.children;
             Array.from(children).forEach((child, index) => {
                 child.style.opacity = '0';
@@ -742,17 +761,13 @@ async function initializeWebsite() {
             });
         }
 
-        console.log('✅ ABC Books website loaded successfully!');
+        console.log('🚀 ABC Books initial content ready!');
+        initializeNewsletter();
+
     } catch (error) {
         console.error('Error initializing website:', error);
-        // Don't show alert - instead gracefully degrade
-        console.warn('⚠️ Some content may not have loaded. The page should still be usable.');
-    } finally {
-        // Always run these - critical for navbar, search, and buttons to work
         hideLoading();
-        initializeSearch();
-        initializeInteractions();
-        initializeNewsletter();
+        console.warn('⚠️ Some content may not have loaded. The page should still be usable.');
     }
 }
 

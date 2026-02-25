@@ -8,54 +8,97 @@ const BOOKS_DATA_API_BASE = (window.location.hostname !== 'localhost' && window.
 // ===== Book Cache =====
 let _cachedBooks = null;
 let _cacheTimestamp = 0;
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+let _fetchPromise = null; // Prevent redundant simultaneous fetches
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes (RAM)
+const PERSISTENT_CACHE_KEY = 'abc_books_data_cache';
+const PERSISTENT_CACHE_TTL = 30 * 60 * 1000; // 30 minutes (Storage)
 
 // ===== Fetch All Books from Database API =====
 async function fetchAllBooks() {
     const now = Date.now();
+
+    // 1. Check RAM Cache
     if (_cachedBooks && (now - _cacheTimestamp) < CACHE_DURATION) {
         return _cachedBooks;
     }
 
-    try {
-        const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('API timeout')), 15000)
-        );
-        const response = await Promise.race([
-            fetch(`${BOOKS_DATA_API_BASE}/books?limit=1000`), // Fetch all books
-            timeoutPromise
-        ]);
-
-        if (!response.ok) throw new Error('API request failed');
-
-        const data = await response.json();
-        if (data && data.books && data.books.length > 0) {
-            _cachedBooks = data.books.map(book => ({
-                id: book.id,
-                title: book.title,
-                author: book.author,
-                price: parseFloat(book.price) || 0,
-                originalPrice: parseFloat(book.original_price) || parseFloat(book.price) || 0,
-                image: book.image,
-                description: book.description,
-                category: book.category,
-                subcategory: book.subcategory,
-                language: book.language,
-                rating: parseFloat(book.rating) || 4.5,
-                isbn: book.isbn,
-                year: book.publish_year,
-                publisher: book.publisher,
-                sections: book.sections || [] // Mapped from backend
-            }));
-            _cacheTimestamp = now;
-            console.log(`📚 Loaded ${_cachedBooks.length} books from database`);
-            return _cachedBooks;
-        }
-        return [];
-    } catch (error) {
-        console.warn('⚠️ Failed to fetch books:', error.message);
-        return _cachedBooks || [];
+    // 2. Check Redundant Fetching (Thundering Herd Protection)
+    if (_fetchPromise) {
+        return _fetchPromise;
     }
+
+    // 3. Check Persistent Storage Cache (Initial Load Speedup)
+    const stored = localStorage.getItem(PERSISTENT_CACHE_KEY);
+    if (stored) {
+        try {
+            const parsed = JSON.parse(stored);
+            if (now - parsed.timestamp < PERSISTENT_CACHE_TTL) {
+                _cachedBooks = parsed.books;
+                _cacheTimestamp = parsed.timestamp;
+                console.log(`⚡ Loaded ${parsed.books.length} books from persistent cache`);
+                return _cachedBooks;
+            }
+        } catch (e) {
+            localStorage.removeItem(PERSISTENT_CACHE_KEY);
+        }
+    }
+
+    // 4. Perform Network Fetch
+    _fetchPromise = (async () => {
+        try {
+            console.log('🌐 Fetching fresh book data from API...');
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('API timeout')), 5000)
+            );
+            const response = await Promise.race([
+                fetch(`${BOOKS_DATA_API_BASE}/books?limit=1000`),
+                timeoutPromise
+            ]);
+
+            if (!response.ok) throw new Error('API request failed');
+
+            const data = await response.json();
+            if (data && data.books) {
+                const mappedBooks = data.books.map(book => ({
+                    id: book.id,
+                    title: book.title,
+                    author: book.author,
+                    price: parseFloat(book.price) || 0,
+                    originalPrice: parseFloat(book.original_price) || parseFloat(book.price) || 0,
+                    image: book.image,
+                    description: book.description,
+                    category: book.category,
+                    subcategory: book.subcategory,
+                    language: book.language,
+                    rating: parseFloat(book.rating) || 4.5,
+                    isbn: book.isbn,
+                    year: book.publish_year,
+                    publisher: book.publisher,
+                    sections: book.sections || []
+                }));
+
+                _cachedBooks = mappedBooks;
+                _cacheTimestamp = Date.now();
+
+                // Save to Storage
+                localStorage.setItem(PERSISTENT_CACHE_KEY, JSON.stringify({
+                    timestamp: _cacheTimestamp,
+                    books: _cachedBooks
+                }));
+
+                console.log(`✅ Loaded ${_cachedBooks.length} books from database`);
+                return _cachedBooks;
+            }
+            return [];
+        } catch (error) {
+            console.warn('⚠️ Failed to fetch fresh books:', error.message);
+            return _cachedBooks || [];
+        } finally {
+            _fetchPromise = null; // Reset promise for next time
+        }
+    })();
+
+    return _fetchPromise;
 }
 
 // ===== Get Books for a Specific Section =====
@@ -131,6 +174,36 @@ async function getBooksForSection(section) {
             } else {
                 autoBooks = sortedByNewest;
                 sliceStart = 24;
+            }
+            break;
+        }
+
+        case 'academic': {
+            const academic = allBooks.filter(b =>
+                (b.category && b.category.toLowerCase().includes('academic')) ||
+                (b.subcategory && b.subcategory.toLowerCase().includes('academic')) ||
+                (b.title && (b.title.toLowerCase().includes('school') || b.title.toLowerCase().includes('guide') || b.title.toLowerCase().includes('study')))
+            );
+            if (academic.length > 0) {
+                autoBooks = academic;
+            } else {
+                autoBooks = sortedByNewest;
+                sliceStart = 30;
+            }
+            break;
+        }
+
+        case 'exam': {
+            const exams = allBooks.filter(b =>
+                (b.title && (b.title.toLowerCase().includes('ctet') || b.title.toLowerCase().includes('csat') || b.title.toLowerCase().includes('exam') || b.title.toLowerCase().includes('paper'))) ||
+                (b.subcategory && b.subcategory.toLowerCase().includes('exam'))
+            );
+            if (exams.length > 0) {
+                autoBooks = exams;
+            } else {
+                // If no specific exams, at least show modern non-islamic books for this section to avoid confusion
+                autoBooks = allBooks.filter(b => b.category !== 'Islamic');
+                if (autoBooks.length === 0) autoBooks = sortedByNewest;
             }
             break;
         }
