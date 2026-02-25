@@ -157,13 +157,14 @@
                         onclick="event.preventDefault(); toggleMobileSubmenu(this)">Categories <i
                             class="fas fa-chevron-down"></i></a>
                     <ul class="mobile-submenu">
-                        <li><a href="pages/search.html?q=quran"><i class="fas fa-mosque"></i> Islamic Books</a></li>
-                        <li><a href="pages/search.html?q=fiction"><i class="fas fa-book"></i> English Fiction</a></li>
-                        <li><a href="pages/search.html?q=arabic"><i class="fas fa-language"></i> Arabic Books</a></li>
-                        <li><a href="pages/search.html?q=children"><i class="fas fa-child"></i> Children's Books</a>
+                        <li><a href="pages/search.html?language=Urdu"><i class="fas fa-book-open"></i> Urdu Books</a>
                         </li>
-                        <li><a href="pages/search.html?q=academic"><i class="fas fa-graduation-cap"></i> Academic</a>
+                        <li><a href="pages/search.html?language=English"><i class="fas fa-language"></i> English
+                                Books</a></li>
+                        <li><a href="pages/search.html?language=Arabic"><i class="fas fa-quran"></i> Arabic Books</a>
                         </li>
+                        <li><a href="pages/search.html?language=Kashmiri"><i class="fas fa-mountain"></i> Kashmiri
+                                Books</a></li>
                     </ul>
                 </li>
                 <li><a href="pages/search.html?q=bestseller" class="mobile-nav-link"><i class="fas fa-star"></i>
@@ -192,33 +193,56 @@
                     <div class="mega-dropdown">
                         <div class="mega-grid">
                             <div class="mega-col">
-                                <h4><i class="fas fa-mosque"></i> Islamic Books</h4>
+                                <h4><i class="fas fa-book-open" style="color:#8B0000"></i> Urdu Books</h4>
                                 <ul>
-                                    <li><a href="pages/search.html?q=quran">Quran & Tafsir</a></li>
-                                    <li><a href="pages/search.html?q=hadith">Hadith Collections</a></li>
-                                    <li><a href="pages/search.html?q=seerah">Seerah (Prophet's Life)</a></li>
-                                    <li><a href="pages/search.html?q=fiqh">Fiqh & Islamic Law</a></li>
-                                    <li><a href="pages/search.html?q=dua">Dua & Supplications</a></li>
+                                    <li><a href="pages/search.html?language=Urdu">All Urdu Books</a></li>
+                                    <li><a href="pages/search.html?language=Urdu&subcategory=Quran+%26+Tafsir">Quran &
+                                            Tafsir</a></li>
+                                    <li><a href="pages/search.html?language=Urdu&subcategory=Hadith">Hadith</a></li>
+                                    <li><a href="pages/search.html?language=Urdu&subcategory=Biography">Biography</a>
+                                    </li>
+                                    <li><a href="pages/search.html?language=Urdu&subcategory=Creed+%26+Fiqh">Creed &
+                                            Fiqh</a></li>
+                                    <li><a href="pages/search.html?language=Urdu&subcategory=Literature+%26+Fiction">Literature
+                                            & Fiction</a></li>
                                 </ul>
                             </div>
                             <div class="mega-col">
-                                <h4><i class="fas fa-book"></i> English Books</h4>
+                                <h4><i class="fas fa-language" style="color:#2c3e50"></i> English Books</h4>
                                 <ul>
-                                    <li><a href="pages/search.html?q=fiction">Islamic Fiction</a></li>
-                                    <li><a href="pages/search.html?q=children">Children's Books</a></li>
-                                    <li><a href="pages/search.html?q=history">Islamic History</a></li>
-                                    <li><a href="pages/search.html?q=self-help">Self-Help & Growth</a></li>
-                                    <li><a href="pages/search.html?q=biography">Biographies</a></li>
+                                    <li><a href="pages/search.html?language=English">All English Books</a></li>
+                                    <li><a href="pages/search.html?language=English&subcategory=Quran+%26+Tafsir">Quran
+                                            & Tafsir</a></li>
+                                    <li><a href="pages/search.html?language=English&subcategory=Hadith">Hadith</a></li>
+                                    <li><a href="pages/search.html?language=English&subcategory=Academic">Academic</a>
+                                    </li>
+                                    <li><a href="pages/search.html?language=English&subcategory=Literature+%26+Fiction">Literature
+                                            & Fiction</a></li>
+                                    <li><a
+                                            href="pages/search.html?language=English&subcategory=Biography">Biographies</a>
+                                    </li>
                                 </ul>
                             </div>
                             <div class="mega-col">
-                                <h4><i class="fas fa-language"></i> Arabic Books</h4>
+                                <h4><i class="fas fa-quran" style="color:#27ae60"></i> Arabic Books</h4>
                                 <ul>
-                                    <li><a href="pages/search.html?q=arabic%20quran">Arabic Quran</a></li>
-                                    <li><a href="pages/search.html?q=arabic%20literature">Arabic Literature</a></li>
-                                    <li><a href="pages/search.html?q=arabic%20grammar">Arabic Grammar</a></li>
-                                    <li><a href="pages/search.html?q=arabic%20learning">Learn Arabic</a></li>
-                                    <li><a href="pages/search.html?q=arabic%20poetry">Arabic Poetry</a></li>
+                                    <li><a href="pages/search.html?language=Arabic">All Arabic Books</a></li>
+                                    <li><a href="pages/search.html?language=Arabic&subcategory=Quran+%26+Tafsir">Quran &
+                                            Tafsir</a></li>
+                                    <li><a href="pages/search.html?language=Arabic&subcategory=Hadith">Hadith</a></li>
+                                    <li><a href="pages/search.html?language=Arabic&subcategory=Arabic+Grammar">Arabic
+                                            Grammar</a></li>
+                                    <li><a href="pages/search.html?language=Arabic&subcategory=Arabic+Literature">Arabic
+                                            Literature</a></li>
+                                    <li><a
+                                            href="pages/search.html?language=Arabic&subcategory=Dictionaries">Dictionaries</a>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="mega-col">
+                                <h4><i class="fas fa-mountain" style="color:#8e44ad"></i> Kashmiri Books</h4>
+                                <ul>
+                                    <li><a href="pages/search.html?language=Kashmiri">All Kashmiri Books</a></li>
                                 </ul>
                             </div>
                         </div>
@@ -511,40 +535,32 @@
             </div>
             <div class="categories-grid">
                 <div class="category-card">
-                    <div class="category-icon fiction-icon"><i class="fas fa-book"></i></div>
-                    <h3>Fiction</h3>
-                    <p>5,000+ Books</p>
-                    <a href="#" class="category-link">Browse Now →</a>
+                    <div class="category-icon" style="background: linear-gradient(135deg, #8B0000, #c0392b);"><i
+                            class="fas fa-book-open"></i></div>
+                    <h3>Urdu Books</h3>
+                    <p>Quran, Hadith, Biography & more</p>
+                    <a href="pages/search.html?language=Urdu" class="category-link">Browse Now →</a>
                 </div>
                 <div class="category-card">
-                    <div class="category-icon nonfiction-icon"><i class="fas fa-lightbulb"></i></div>
-                    <h3>Non-Fiction</h3>
-                    <p>3,500+ Books</p>
-                    <a href="#" class="category-link">Browse Now →</a>
+                    <div class="category-icon" style="background: linear-gradient(135deg, #2c3e50, #3498db);"><i
+                            class="fas fa-language"></i></div>
+                    <h3>English Books</h3>
+                    <p>Academic, Fiction, History & more</p>
+                    <a href="pages/search.html?language=English" class="category-link">Browse Now →</a>
                 </div>
                 <div class="category-card">
-                    <div class="category-icon academic-icon"><i class="fas fa-graduation-cap"></i></div>
-                    <h3>Academic</h3>
-                    <p>8,000+ Books</p>
-                    <a href="#" class="category-link">Browse Now →</a>
+                    <div class="category-icon" style="background: linear-gradient(135deg, #27ae60, #2ecc71);"><i
+                            class="fas fa-quran"></i></div>
+                    <h3>Arabic Books</h3>
+                    <p>Quran, Grammar, Literature & more</p>
+                    <a href="pages/search.html?language=Arabic" class="category-link">Browse Now →</a>
                 </div>
                 <div class="category-card">
-                    <div class="category-icon children-icon"><i class="fas fa-child"></i></div>
-                    <h3>Children's Books</h3>
-                    <p>4,200+ Books</p>
-                    <a href="#" class="category-link">Browse Now →</a>
-                </div>
-                <div class="category-card">
-                    <div class="category-icon business-icon"><i class="fas fa-briefcase"></i></div>
-                    <h3>Business</h3>
-                    <p>2,800+ Books</p>
-                    <a href="#" class="category-link">Browse Now →</a>
-                </div>
-                <div class="category-card">
-                    <div class="category-icon selfhelp-icon"><i class="fas fa-heart"></i></div>
-                    <h3>Self-Help</h3>
-                    <p>3,100+ Books</p>
-                    <a href="#" class="category-link">Browse Now →</a>
+                    <div class="category-icon" style="background: linear-gradient(135deg, #8e44ad, #9b59b6);"><i
+                            class="fas fa-mountain"></i></div>
+                    <h3>Kashmiri Books</h3>
+                    <p>Kashmiri language collection</p>
+                    <a href="pages/search.html?language=Kashmiri" class="category-link">Browse Now →</a>
                 </div>
             </div>
         </div>

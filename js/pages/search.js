@@ -9,14 +9,38 @@ document.addEventListener('DOMContentLoaded', () => {
     // Get search query from URL
     const urlParams = new URLSearchParams(window.location.search);
     const query = urlParams.get('q');
+    const language = urlParams.get('language');
+    const subcategory = urlParams.get('subcategory');
 
     if (query) {
         document.getElementById('searchInput').value = query;
-        performSearch(query);
-    } else {
-        // If no query, maybe load trending or all books?
-        performSearch('');
     }
+
+    // If language param is provided, pre-check appropriate category
+    if (language) {
+        // Uncheck "All Categories" and check the matching language
+        const allCatCheckbox = document.querySelector('input[name="category"][value="all"]');
+        if (allCatCheckbox) allCatCheckbox.checked = false;
+
+        const categoryCheckboxes = document.querySelectorAll('input[name="category"]');
+        categoryCheckboxes.forEach(cb => {
+            if (cb.value !== 'all' && cb.value.toLowerCase() === language.toLowerCase()) {
+                cb.checked = true;
+            } else if (cb.value !== 'all') {
+                cb.checked = false;
+            }
+        });
+
+        // Update the header text
+        const qEl = document.getElementById('searchQuery');
+        if (qEl) {
+            qEl.innerHTML = `Browsing: <strong>${language}</strong>${subcategory ? ` → <strong>${subcategory}</strong>` : ''}`;
+        }
+        document.title = `${language}${subcategory ? ' - ' + subcategory : ''} | ABC Books`;
+    }
+
+    // Perform search (also applies language/subcategory filters from URL)
+    performSearch(query || '', language, subcategory);
 
     // Search on Enter
     document.getElementById('searchInput').addEventListener('keypress', (e) => {
@@ -27,10 +51,100 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
+
+    // ===== Category Checkbox Listeners =====
+    const categoryCheckboxes = document.querySelectorAll('input[name="category"]');
+    categoryCheckboxes.forEach(cb => {
+        cb.addEventListener('change', handleCategoryChange);
+    });
+
+    // ===== Rating Radio Listeners =====
+    const ratingRadios = document.querySelectorAll('input[name="rating"]');
+    ratingRadios.forEach(radio => {
+        radio.addEventListener('change', applyAllFilters);
+    });
 });
 
+// Handle category checkbox change
+function handleCategoryChange(e) {
+    const allCheckbox = document.querySelector('input[name="category"][value="all"]');
+    const otherCheckboxes = document.querySelectorAll('input[name="category"]:not([value="all"])');
+
+    if (e.target.value === 'all') {
+        // If "All Categories" is checked, uncheck all others
+        if (e.target.checked) {
+            otherCheckboxes.forEach(cb => cb.checked = false);
+        }
+    } else {
+        // If a specific category is checked, uncheck "All Categories"
+        if (e.target.checked) {
+            allCheckbox.checked = false;
+        }
+
+        // If no specific category is checked, re-check "All Categories"
+        const anyChecked = Array.from(otherCheckboxes).some(cb => cb.checked);
+        if (!anyChecked) {
+            allCheckbox.checked = true;
+        }
+    }
+
+    applyAllFilters();
+}
+
+// ===== Master Filter Function =====
+// Applies ALL filters together: category + price + rating
+function applyAllFilters() {
+    let filtered = [...allBooks];
+
+    // 1. Category Filter
+    const allCheckbox = document.querySelector('input[name="category"][value="all"]');
+    if (!allCheckbox || !allCheckbox.checked) {
+        const checkedCategories = Array.from(
+            document.querySelectorAll('input[name="category"]:checked')
+        ).map(cb => cb.value.toLowerCase());
+
+        if (checkedCategories.length > 0) {
+            filtered = filtered.filter(book => {
+                const bookLang = (book.language || '').toLowerCase();
+                const bookCat = (book.category || '').toLowerCase();
+
+                return checkedCategories.some(cat => {
+                    if (cat === 'urdu') return bookLang === 'urdu';
+                    if (cat === 'english') return bookLang === 'english';
+                    if (cat === 'arabic') return bookLang === 'arabic';
+                    if (cat === 'kashmiri') return bookLang === 'kashmiri';
+                    if (cat === 'islamic') return bookCat === 'islamic' || bookLang === 'urdu' || bookLang === 'arabic';
+                    return bookLang.includes(cat) || bookCat.includes(cat);
+                });
+            });
+        }
+    }
+
+    // 2. Price Filter
+    const minPrice = parseInt(document.getElementById('minPrice').value) || 0;
+    const maxPrice = parseInt(document.getElementById('maxPrice').value) || Infinity;
+    if (minPrice > 0 || maxPrice < Infinity) {
+        filtered = filtered.filter(book => {
+            const price = parseFloat(book.price) || 0;
+            return price >= minPrice && price <= maxPrice;
+        });
+    }
+
+    // 3. Rating Filter
+    const selectedRating = document.querySelector('input[name="rating"]:checked');
+    if (selectedRating) {
+        const minRating = parseInt(selectedRating.value);
+        filtered = filtered.filter(book => {
+            return (parseFloat(book.rating) || 0) >= minRating;
+        });
+    }
+
+    searchResults = filtered;
+    renderResults();
+}
+
 // Perform search
-async function performSearch(query) {
+async function performSearch(query, language, subcategory) {
     const container = document.getElementById('searchResults');
     const loadingHtml = `
         <div class="loading-state" style="grid-column: 1/-1; text-align: center; padding: 40px;">
@@ -42,35 +156,44 @@ async function performSearch(query) {
     if (container) container.innerHTML = loadingHtml;
 
     try {
-        // Fetch from API
-        // If query is empty, it fetches all (limited)
-        // If query is present, it uses backend search
-        // Note: The backend route sends { books: [...] }
-
         let response;
         if (typeof API !== 'undefined' && API.Books) {
-            response = await API.Books.getAll({ search: query, limit: 100 });
+            response = await API.Books.getAll({ search: query, limit: 200 });
         } else {
             console.error('API not found');
-            // Fallback to empty
             response = { books: [] };
         }
 
         allBooks = response.books || [];
-        // Store in searchResults for filtering
+
+        // Apply URL-based language/subcategory filter on initial load
+        if (language) {
+            allBooks = allBooks.filter(book => {
+                const bookLang = (book.language || '').toLowerCase();
+                return bookLang === language.toLowerCase();
+            });
+        }
+        if (subcategory) {
+            allBooks = allBooks.filter(book => {
+                const bookSub = (book.subcategory || '').toLowerCase();
+                return bookSub === subcategory.toLowerCase();
+            });
+        }
+
         searchResults = [...allBooks];
 
         // Update UI
-        if (query) {
+        if (query && !language) {
             document.title = `"${query}" - Search Results | ABC Books`;
             const qEl = document.getElementById('searchQuery');
             if (qEl) qEl.innerHTML = `Showing results for: <strong>"${query}"</strong>`;
-        } else {
+        } else if (!language) {
             const qEl = document.getElementById('searchQuery');
-            if (qEl) qEl.innerHTML = 'Browse Books';
+            if (qEl) qEl.innerHTML = 'Browse All Books';
         }
 
-        renderResults();
+        // Apply any pre-set filters (e.g., from URL language params that set checkboxes)
+        applyAllFilters();
 
     } catch (error) {
         console.error('Search error:', error);
@@ -111,7 +234,6 @@ function createGridCard(book) {
         ? Math.floor(((book.original_price - book.price) / book.original_price) * 100)
         : 0;
 
-    // Handle image error fallback
     const imageSrc = book.image || 'https://via.placeholder.com/200x300?text=No+Image';
 
     return `
@@ -224,44 +346,39 @@ function sortResults() {
             searchResults.sort((a, b) => (b.rating || 0) - (a.rating || 0));
             break;
         case 'newest':
-            // Assuming IDs or created_at logic, but for now strict relevance from API
+            searchResults.sort((a, b) => (b.id || 0) - (a.id || 0));
             break;
         default:
-            // Relevance or default order
-            searchResults = [...allBooks]; // Reset to API order
-            break;
+            // Relevance: re-apply filters from allBooks order
+            applyAllFilters();
+            return;
     }
     renderResults();
 }
 
-// Apply price filter (Client Side)
+// Apply price filter - calls master filter
 function applyPriceFilter() {
-    const minPrice = parseInt(document.getElementById('minPrice').value) || 0;
-    const maxPrice = parseInt(document.getElementById('maxPrice').value) || Infinity;
-
-    searchResults = allBooks.filter(book => {
-        return book.price >= minPrice && book.price <= maxPrice;
-    });
-
-    renderResults();
+    applyAllFilters();
 }
 
 // Clear filters
 function clearFilters() {
     document.getElementById('minPrice').value = '';
     document.getElementById('maxPrice').value = '';
-    document.querySelectorAll('.filter-options input').forEach(input => {
-        input.checked = input.value === 'all';
-    });
+
+    // Reset category: check "All", uncheck others
+    const allCheckbox = document.querySelector('input[name="category"][value="all"]');
+    if (allCheckbox) allCheckbox.checked = true;
+    document.querySelectorAll('input[name="category"]:not([value="all"])').forEach(cb => cb.checked = false);
+
+    // Reset rating
+    document.querySelectorAll('input[name="rating"]').forEach(r => r.checked = false);
+
     searchResults = [...allBooks];
     renderResults();
 }
 
-// Use shared auth logic for wishlist/cart if possible, 
-// OR replicate simple check. 
-// Ideally we rely on user-auth-api.js exposed functions or shared logic.
-// For now, minimal implementation to work with provided APIs:
-
+// Wishlist/cart integration
 async function addToWishlist(bookId) {
     if (typeof API !== 'undefined' && API.Wishlist) {
         try {
@@ -270,13 +387,11 @@ async function addToWishlist(bookId) {
         } catch (e) {
             if (e.message.includes('login')) {
                 showNotification('Please login first', 'info');
-                // trigger login modal if available
             } else {
                 showNotification('Failed to add to wishlist', 'error');
             }
         }
     } else {
-        // Fallback or legacy logic
         console.warn('API.Wishlist not found');
     }
 }
@@ -300,6 +415,8 @@ function showNotification(message, type = 'info') {
         position: fixed; top: 100px; right: 20px;
         background: ${type === 'success' ? '#27ae60' : '#3498db'};
         color: white; padding: 15px 25px; border-radius: 10px; z-index: 9999;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        animation: slideIn 0.3s ease;
     `;
     document.body.appendChild(notification);
     setTimeout(() => notification.remove(), 3000);
