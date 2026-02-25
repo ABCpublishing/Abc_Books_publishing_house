@@ -152,6 +152,7 @@ function navigateToSection(section) {
         editors: "Editor's Choice",
         featured: 'Featured Books',
         trending: 'Trending Now',
+        bestseller: 'Bestsellers',
         english: 'English Books',
         arabic: 'Arabic Books',
         kashmiri: 'Kashmiri Books',
@@ -220,6 +221,7 @@ async function loadSectionData(section) {
         case 'editors':
         case 'featured':
         case 'trending':
+        case 'bestseller':
             try {
                 const response = await API.Books.getBySection(section);
                 renderSectionBooks(section, response.books || []);
@@ -406,11 +408,12 @@ async function renderBooksTable(books) {
     // Let's try to fetch section maps
     let sectionMap = {};
     try {
-        const [hero, editors, featured, trending] = await Promise.all([
+        const [hero, editors, featured, trending, bestseller] = await Promise.all([
             API.Books.getBySection('hero').catch(() => ({ books: [] })),
             API.Books.getBySection('editors').catch(() => ({ books: [] })),
             API.Books.getBySection('featured').catch(() => ({ books: [] })),
-            API.Books.getBySection('trending').catch(() => ({ books: [] }))
+            API.Books.getBySection('trending').catch(() => ({ books: [] })),
+            API.Books.getBySection('bestseller').catch(() => ({ books: [] }))
         ]);
 
         books.forEach(b => {
@@ -419,6 +422,7 @@ async function renderBooksTable(books) {
             if (editors.books?.find(eb => eb.id === b.id)) sectionMap[b.id].push('Editors');
             if (featured.books?.find(fb => fb.id === b.id)) sectionMap[b.id].push('Featured');
             if (trending.books?.find(tb => tb.id === b.id)) sectionMap[b.id].push('Trending');
+            if (bestseller.books?.find(bb => bb.id === b.id)) sectionMap[b.id].push('Bestseller');
         });
     } catch (e) { console.warn('Could not load section badges', e); }
 

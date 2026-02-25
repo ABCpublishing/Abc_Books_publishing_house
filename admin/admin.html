@@ -104,6 +104,10 @@
                     <i class="fas fa-trending-up"></i>
                     <span>Trending Now</span>
                 </a>
+                <a href="#" class="nav-item" data-section="bestseller">
+                    <i class="fas fa-crown"></i>
+                    <span>Bestsellers</span>
+                </a>
                 <a href="#" class="nav-item" data-section="english">
                     <i class="fas fa-language"></i>
                     <span>English Books</span>
@@ -442,6 +446,18 @@
                     <div id="trendingBooks" class="books-grid"></div>
                 </section>
 
+                <!-- Bestsellers Management -->
+                <section id="bestsellerSection" class="content-section">
+                    <div class="section-header">
+                        <h2>Bestseller Books</h2>
+                        <button class="btn-primary" onclick="showAddToSectionModal('bestseller')">
+                            <i class="fas fa-plus"></i>
+                            Add to Bestsellers
+                        </button>
+                    </div>
+                    <div id="bestsellerBooks" class="books-grid"></div>
+                </section>
+
                 <!-- English Books Management -->
                 <section id="englishSection" class="content-section">
                     <div class="section-header">
@@ -736,6 +752,10 @@
                         <label class="checkbox-label">
                             <input type="checkbox" name="sections" value="trending">
                             <span>Trending Now</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="sections" value="bestseller">
+                            <span>⭐ Bestseller</span>
                         </label>
                     </div>
                 </div>

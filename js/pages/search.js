@@ -11,36 +11,55 @@ document.addEventListener('DOMContentLoaded', () => {
     const query = urlParams.get('q');
     const language = urlParams.get('language');
     const subcategory = urlParams.get('subcategory');
+    const section = urlParams.get('section');
 
     if (query) {
         document.getElementById('searchInput').value = query;
     }
 
-    // If language param is provided, pre-check appropriate category
-    if (language) {
-        // Uncheck "All Categories" and check the matching language
-        const allCatCheckbox = document.querySelector('input[name="category"][value="all"]');
-        if (allCatCheckbox) allCatCheckbox.checked = false;
-
-        const categoryCheckboxes = document.querySelectorAll('input[name="category"]');
-        categoryCheckboxes.forEach(cb => {
-            if (cb.value !== 'all' && cb.value.toLowerCase() === language.toLowerCase()) {
-                cb.checked = true;
-            } else if (cb.value !== 'all') {
-                cb.checked = false;
-            }
-        });
-
-        // Update the header text
+    // If section param is provided (e.g., ?section=bestseller), load that section
+    if (section) {
+        const sectionLabels = {
+            'bestseller': 'Bestsellers',
+            'trending': 'Trending Now',
+            'featured': 'Featured Books',
+            'newReleases': 'New Releases',
+            'editors': "Editor's Choice"
+        };
+        const label = sectionLabels[section] || section;
         const qEl = document.getElementById('searchQuery');
-        if (qEl) {
-            qEl.innerHTML = `Browsing: <strong>${language}</strong>${subcategory ? ` → <strong>${subcategory}</strong>` : ''}`;
-        }
-        document.title = `${language}${subcategory ? ' - ' + subcategory : ''} | ABC Books`;
-    }
+        if (qEl) qEl.innerHTML = `Browsing: <strong>${label}</strong>`;
+        document.title = `${label} | ABC Books`;
 
-    // Perform search (also applies language/subcategory filters from URL)
-    performSearch(query || '', language, subcategory);
+        loadSectionBooks(section);
+        // Skip normal search flow
+    } else {
+        // If language param is provided, pre-check appropriate category
+        if (language) {
+            // Uncheck "All Categories" and check the matching language
+            const allCatCheckbox = document.querySelector('input[name="category"][value="all"]');
+            if (allCatCheckbox) allCatCheckbox.checked = false;
+
+            const categoryCheckboxes = document.querySelectorAll('input[name="category"]');
+            categoryCheckboxes.forEach(cb => {
+                if (cb.value !== 'all' && cb.value.toLowerCase() === language.toLowerCase()) {
+                    cb.checked = true;
+                } else if (cb.value !== 'all') {
+                    cb.checked = false;
+                }
+            });
+
+            // Update the header text
+            const qEl = document.getElementById('searchQuery');
+            if (qEl) {
+                qEl.innerHTML = `Browsing: <strong>${language}</strong>${subcategory ? ` → <strong>${subcategory}</strong>` : ''}`;
+            }
+            document.title = `${language}${subcategory ? ' - ' + subcategory : ''} | ABC Books`;
+        }
+
+        // Perform search (also applies language/subcategory filters from URL)
+        performSearch(query || '', language, subcategory);
+    }
 
     // Search on Enter
     document.getElementById('searchInput').addEventListener('keypress', (e) => {
@@ -370,6 +389,47 @@ function sortResults() {
             return;
     }
     renderResults();
+}
+
+// Load books by section (e.g., bestseller, trending)
+async function loadSectionBooks(section) {
+    const container = document.getElementById('searchResults');
+    const loadingHtml = `
+        <div class="loading-state" style="grid-column: 1/-1; text-align: center; padding: 40px;">
+            <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--primary-color);"></i>
+            <p>Loading books...</p>
+        </div>
+    `;
+    if (container) container.innerHTML = loadingHtml;
+
+    try {
+        let books = [];
+        if (typeof API !== 'undefined' && API.Books) {
+            const response = await API.Books.getBySection(section);
+            books = response.books || [];
+        }
+
+        allBooks = books;
+        searchResults = [...allBooks];
+
+        const countEl = document.getElementById('resultsCount');
+        if (countEl) countEl.textContent = `Showing ${searchResults.length} result${searchResults.length !== 1 ? 's' : ''}`;
+
+        renderResults();
+
+        // If no books in section, show a helpful message
+        if (searchResults.length === 0) {
+            const noResults = document.getElementById('noResults');
+            if (noResults) {
+                noResults.style.display = 'block';
+                noResults.querySelector('h2').textContent = 'No Bestsellers Yet';
+                noResults.querySelector('p').textContent = 'Bestsellers will appear here once the admin marks books as bestsellers.';
+            }
+        }
+    } catch (error) {
+        console.error('Section load error:', error);
+        if (container) container.innerHTML = `<p class="error-msg">Error loading books. Please try again.</p>`;
+    }
 }
 
 // Apply price filter - calls master filter
