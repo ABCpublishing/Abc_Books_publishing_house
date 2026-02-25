@@ -431,6 +431,7 @@ async function renderBooksTable(books) {
 
         return `
             <tr>
+                <td><code style="background:#f0f0f0;padding:2px 6px;border-radius:4px;font-size:12px;">${book.id}</code></td>
                 <td><img src="${book.image}" alt="${book.title}" class="book-img" onerror="this.src='https://via.placeholder.com/50x70?text=No+Image'"></td>
                 <td>${book.title}</td>
                 <td>${book.author}</td>
