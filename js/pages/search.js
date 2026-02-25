@@ -63,6 +63,22 @@ document.addEventListener('DOMContentLoaded', () => {
     ratingRadios.forEach(radio => {
         radio.addEventListener('change', applyAllFilters);
     });
+
+    // ===== Price Filter: Enter key handling & Apply button ID =====
+    const minInput = document.getElementById('minPrice');
+    const maxInput = document.getElementById('maxPrice');
+    const applyBtn = document.querySelector('.btn-apply-price');
+    if (minInput) {
+        minInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') applyPriceFilter();
+        });
+    }
+    if (maxInput) {
+        maxInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') applyPriceFilter();
+        });
+    }
+    if (applyBtn) applyBtn.id = 'applyPriceBtn';
 });
 
 // Handle category checkbox change
