@@ -1,105 +1,43 @@
 // Category Management Functions
-// This file handles all category-related operations in the admin panel
+// This file handles all category-related operations in the admin panel using the database API
 
-// Initialize default categories if none exist
-function initializeCategories() {
-    if (!localStorage.getItem('categories')) {
-        const defaultCategories = [
-            // Dropdown Menu Categories
-            {
-                id: 'cat-1',
-                name: 'English Books',
-                type: 'dropdown',
-                icon: 'fa-book',
-                subcategories: ['Fiction', 'Non-Fiction', "Children's Books", 'Educational', 'Self-Help'],
-                visible: true
-            },
-            {
-                id: 'cat-2',
-                name: 'Arabic Books',
-                type: 'dropdown',
-                icon: 'fa-book',
-                subcategories: ['Islamic Literature', 'Quran & Tafsir', 'Hadith Collections', 'Arabic Language', 'Islamic History'],
-                visible: true
-            },
-            {
-                id: 'cat-3',
-                name: 'Urdu Books',
-                type: 'dropdown',
-                icon: 'fa-book',
-                subcategories: ['Islamic Books', 'Poetry (Shayari)', 'Urdu Literature', 'Religious Studies', 'Urdu Novels'],
-                visible: true
-            },
-            // Quick Strip Categories
-            {
-                id: 'cat-4',
-                name: 'Best Seller',
-                type: 'strip',
-                icon: 'fa-trophy',
-                visible: true
-            },
-            {
-                id: 'cat-5',
-                name: 'Award Winners',
-                type: 'strip',
-                icon: 'fa-award',
-                visible: true
-            },
-            {
-                id: 'cat-6',
-                name: 'Box Sets',
-                type: 'strip',
-                icon: 'fa-boxes-stacked',
-                visible: true
-            },
-            // Showcase Categories
-            {
-                id: 'cat-7',
-                name: 'Fiction',
-                type: 'showcase',
-                icon: 'fa-book',
-                bookCount: 5000,
-                visible: true
-            },
-            {
-                id: 'cat-8',
-                name: 'Non-Fiction',
-                type: 'showcase',
-                icon: 'fa-lightbulb',
-                bookCount: 3500,
-                visible: true
-            },
-            {
-                id: 'cat-9',
-                name: 'Academic',
-                type: 'showcase',
-                icon: 'fa-graduation-cap',
-                bookCount: 8000,
-                visible: true
-            }
-        ];
-        localStorage.setItem('categories', JSON.stringify(defaultCategories));
-    }
-    loadCategoriesTable();
+// Initialize categories
+async function initializeCategories() {
+    await loadCategoriesTable();
 }
 
 // Show Add Category Modal
-function showAddCategoryModal() {
+async function showAddCategoryModal() {
     document.getElementById('categoryModalTitle').textContent = 'Add New Category';
     document.getElementById('categoryForm').reset();
     document.getElementById('categoryId').value = '';
-    document.getElementById('categoryModal').classList.add('active');
 
-    // Show/hide fields based on type
-    document.getElementById('categoryType').addEventListener('change', handleCategoryTypeChange);
+    // Populate parent category dropdown (only for subcategories)
+    await populateParentCategories();
+
+    document.getElementById('categoryModal').classList.add('active');
 }
 
-// Handle category type change
+async function populateParentCategories() {
+    try {
+        const response = await API.Categories.getLanguages();
+        const languages = response.languages || [];
+        const parentSelect = document.getElementById('categoryType'); // Reusing this select for Parent if needed, but wait
+
+        // Actually, let's keep the 'categoryType' for now but maybe rename its purpose or labels
+        // For the new schema, we have 'Language' (is_language=true) or 'Subcategory' (parent_id set)
+    } catch (e) {
+        console.error('Error loading languages for parent selection', e);
+    }
+}
+
+// Handle category type change (Legacy/UI compatibility)
 function handleCategoryTypeChange() {
     const type = document.getElementById('categoryType').value;
     const subcategoriesGroup = document.getElementById('subcategoriesGroup');
     const bookCountGroup = document.getElementById('bookCountGroup');
 
+    // This UI logic is legacy but we'll adapt it
     if (type === 'dropdown') {
         subcategoriesGroup.style.display = 'block';
         bookCountGroup.style.display = 'none';
@@ -156,159 +94,138 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 
-function saveCategory() {
+async function saveCategory() {
     const id = document.getElementById('categoryId').value;
     const name = document.getElementById('categoryName').value.trim();
     const type = document.getElementById('categoryType').value;
     const icon = document.getElementById('categoryIcon').value;
-    const subcategoriesText = document.getElementById('categorySubcategories').value.trim();
-    const bookCount = document.getElementById('categoryBookCount').value;
     const visible = document.getElementById('categoryVisible').checked;
 
-    if (!name || !type || !icon) {
+    if (!name || !icon) {
         alert('Please fill in all required fields');
         return;
     }
 
-    const category = {
-        id: id || 'cat-' + Date.now(),
+    // Map the UI "Type" to database fields if needed, or just use name/slug
+    // For now, let's treat Languages as "dropdown" type from old UI
+    const categoryData = {
         name,
-        type,
         icon,
-        visible
+        visible,
+        is_language: type === 'dropdown',
+        slug: name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
     };
 
-    // Add type-specific fields
-    if (type === 'dropdown' && subcategoriesText) {
-        category.subcategories = subcategoriesText.split('\n').filter(s => s.trim() !== '');
-    }
-
-    if (type === 'showcase' && bookCount) {
-        category.bookCount = parseInt(bookCount);
-    }
-
-    let categories = JSON.parse(localStorage.getItem('categories') || '[]');
-
-    if (id) {
-        // Update existing category
-        const index = categories.findIndex(cat => cat.id === id);
-        if (index !== -1) {
-            categories[index] = category;
+    try {
+        if (id) {
+            await API.Categories.update(id, categoryData);
+            alert('Category updated successfully!');
+        } else {
+            await API.Categories.create(categoryData);
+            alert('Category added successfully!');
         }
-    } else {
-        // Add new category
-        categories.push(category);
+        closeCategoryModal();
+        loadCategoriesTable();
+    } catch (error) {
+        console.error('Error saving category:', error);
+        alert('Error saving category: ' + error.message);
     }
-
-    localStorage.setItem('categories', JSON.stringify(categories));
-    closeCategoryModal();
-    loadCategoriesTable();
-    alert('Category saved successfully!');
 }
 
 // Load Categories Table
-function loadCategoriesTable() {
-    const categories = JSON.parse(localStorage.getItem('categories') || '[]');
+async function loadCategoriesTable() {
     const tbody = document.getElementById('categoriesTableBody');
-
     if (!tbody) return;
 
-    if (categories.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="no-data">No categories added yet</td></tr>';
-        return;
-    }
+    tbody.innerHTML = '<tr><td colspan="6" class="no-data"><i class="fas fa-spinner fa-spin"></i> Loading categories from database...</td></tr>';
 
-    tbody.innerHTML = categories.map(cat => `
-        <tr>
-            <td><i class="fas ${cat.icon}" style="font-size: 20px; color: var(--primary-color);"></i></td>
-            <td><strong>${cat.name}</strong></td>
-            <td><span class="badge">${formatCategoryType(cat.type)}</span></td>
-            <td>${getSubcategoriesDisplay(cat)}</td>
-            <td>
-                <label class="checkbox-label">
-                    <input type="checkbox" ${cat.visible ? 'checked' : ''} onchange="toggleCategoryVisibility('${cat.id}')">
-                    <span>${cat.visible ? 'Visible' : 'Hidden'}</span>
-                </label>
-            </td>
-            <td>
-                <div class="action-icons">
-                    <button class="icon-btn edit" onclick="editCategory('${cat.id}')" title="Edit">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="icon-btn delete" onclick="deleteCategory('${cat.id}')" title="Delete">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </td>
-        </tr>
-    `).join('');
-}
+    try {
+        const response = await API.Categories.getAll();
+        const categories = response.all || [];
 
-function formatCategoryType(type) {
-    const types = {
-        'dropdown': 'Dropdown Menu',
-        'strip': 'Quick Strip',
-        'showcase': 'Showcase'
-    };
-    return types[type] || type;
-}
+        if (categories.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="no-data">No categories found in database</td></tr>';
+            return;
+        }
 
-function getSubcategoriesDisplay(cat) {
-    if (cat.subcategories && cat.subcategories.length > 0) {
-        return cat.subcategories.slice(0, 2).join(', ') +
-            (cat.subcategories.length > 2 ? '...' : '');
+        tbody.innerHTML = categories.map(cat => `
+            <tr>
+                <td><i class="fas ${cat.icon || 'fa-book'}" style="font-size: 20px; color: var(--primary-color);"></i></td>
+                <td><strong>${cat.name}</strong></td>
+                <td><span class="badge">${cat.is_language ? 'Language' : 'Subcategory'}</span></td>
+                <td>${cat.slug}</td>
+                <td>
+                    <label class="checkbox-label">
+                        <input type="checkbox" ${cat.visible ? 'checked' : ''} onchange="toggleCategoryVisibility('${cat.id}')">
+                        <span>${cat.visible ? 'Visible' : 'Hidden'}</span>
+                    </label>
+                </td>
+                <td>
+                    <div class="action-icons">
+                        <button class="icon-btn edit" onclick="editCategory('${cat.id}')" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="icon-btn delete" onclick="deleteCategory('${cat.id}')" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading categories:', error);
+        tbody.innerHTML = `<tr><td colspan="6" class="no-data">Error: ${error.message}</td></tr>`;
     }
-    if (cat.bookCount) {
-        return `${cat.bookCount}+ books`;
-    }
-    return '-';
 }
 
 // Edit Category
-function editCategory(id) {
-    const categories = JSON.parse(localStorage.getItem('categories') || '[]');
-    const category = categories.find(cat => cat.id === id);
+async function editCategory(id) {
+    try {
+        const response = await API.Categories.getById(id);
+        const category = response.category;
 
-    if (!category) return;
+        if (!category) return;
 
-    document.getElementById('categoryModalTitle').textContent = 'Edit Category';
-    document.getElementById('categoryId').value = category.id;
-    document.getElementById('categoryName').value = category.name;
-    document.getElementById('categoryType').value = category.type;
-    document.getElementById('categoryIcon').value = category.icon;
-    document.getElementById('categoryVisible').checked = category.visible;
+        document.getElementById('categoryModalTitle').textContent = 'Edit Category';
+        document.getElementById('categoryId').value = category.id;
+        document.getElementById('categoryName').value = category.name;
+        document.getElementById('categoryType').value = category.is_language ? 'dropdown' : '';
+        document.getElementById('categoryIcon').value = category.icon;
+        document.getElementById('categoryVisible').checked = category.visible;
 
-    if (category.subcategories) {
-        document.getElementById('categorySubcategories').value = category.subcategories.join('\n');
+        document.getElementById('categoryModal').classList.add('active');
+    } catch (error) {
+        alert('Error loading category details');
     }
-
-    if (category.bookCount) {
-        document.getElementById('categoryBookCount').value = category.bookCount;
-    }
-
-    handleCategoryTypeChange();
-    document.getElementById('categoryModal').classList.add('active');
 }
 
 // Delete Category
-function deleteCategory(id) {
+async function deleteCategory(id) {
     if (!confirm('Are you sure you want to delete this category?')) return;
 
-    let categories = JSON.parse(localStorage.getItem('categories') || '[]');
-    categories = categories.filter(cat => cat.id !== id);
-    localStorage.setItem('categories', JSON.stringify(categories));
-    loadCategoriesTable();
-    alert('Category deleted successfully!');
+    try {
+        await API.Categories.delete(id);
+        alert('Category deleted successfully!');
+        loadCategoriesTable();
+    } catch (error) {
+        alert('Error deleting category: ' + error.message);
+    }
 }
 
 // Toggle Category Visibility
-function toggleCategoryVisibility(id) {
-    let categories = JSON.parse(localStorage.getItem('categories') || '[]');
-    const category = categories.find(cat => cat.id === id);
-
-    if (category) {
-        category.visible = !category.visible;
-        localStorage.setItem('categories', JSON.stringify(categories));
+async function toggleCategoryVisibility(id) {
+    try {
+        const response = await API.Categories.getById(id);
+        const category = response.category;
+        if (category) {
+            await API.Categories.update(id, {
+                ...category,
+                visible: !category.visible
+            });
+            loadCategoriesTable();
+        }
+    } catch (error) {
+        console.error('Error toggling visibility:', error);
     }
 }
 
@@ -326,42 +243,56 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
-function filterCategoriesByType(type) {
-    const categories = JSON.parse(localStorage.getItem('categories') || '[]');
-    const filtered = categories.filter(cat => cat.type === type);
+async function filterCategoriesByType(type) {
+    // Basic mapping for legacy tabs
+    try {
+        const response = await API.Categories.getAll();
+        const allCategories = response.all || [];
 
-    const tbody = document.getElementById('categoriesTableBody');
-    if (!tbody) return;
+        let filtered = [];
+        if (type === 'dropdown') {
+            filtered = allCategories.filter(c => c.is_language);
+        } else if (type === 'strip') {
+            filtered = allCategories.filter(c => !c.is_language);
+        } else {
+            filtered = allCategories;
+        }
 
-    if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="no-data">No ${formatCategoryType(type)} categories added yet</td></tr>`;
-        return;
+        const tbody = document.getElementById('categoriesTableBody');
+        if (!tbody) return;
+
+        if (filtered.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" class="no-data">No categories found for this filter</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = filtered.map(cat => `
+            <tr>
+                <td><i class="fas ${cat.icon || 'fa-book'}" style="font-size: 20px; color: var(--primary-color);"></i></td>
+                <td><strong>${cat.name}</strong></td>
+                <td><span class="badge">${cat.is_language ? 'Language' : 'Subcategory'}</span></td>
+                <td>${cat.slug}</td>
+                <td>
+                    <label class="checkbox-label">
+                        <input type="checkbox" ${cat.visible ? 'checked' : ''} onchange="toggleCategoryVisibility('${cat.id}')">
+                        <span>${cat.visible ? 'Visible' : 'Hidden'}</span>
+                    </label>
+                </td>
+                <td>
+                    <div class="action-icons">
+                        <button class="icon-btn edit" onclick="editCategory('${cat.id}')" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="icon-btn delete" onclick="deleteCategory('${cat.id}')" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    } catch (e) {
+        console.error(e);
     }
-
-    tbody.innerHTML = filtered.map(cat => `
-        <tr>
-            <td><i class="fas ${cat.icon}" style="font-size: 20px; color: var(--primary-color);"></i></td>
-            <td><strong>${cat.name}</strong></td>
-            <td><span class="badge">${formatCategoryType(cat.type)}</span></td>
-            <td>${getSubcategoriesDisplay(cat)}</td>
-            <td>
-                <label class="checkbox-label">
-                    <input type="checkbox" ${cat.visible ? 'checked' : ''} onchange="toggleCategoryVisibility('${cat.id}')">
-                    <span>${cat.visible ? 'Visible' : 'Hidden'}</span>
-                </label>
-            </td>
-            <td>
-                <div class="action-icons">
-                    <button class="icon-btn edit" onclick="editCategory('${cat.id}')" title="Edit">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="icon-btn delete" onclick="deleteCategory('${cat.id}')" title="Delete">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </td>
-        </tr>
-    `).join('');
 }
 
 // Initialize categories when the page loads

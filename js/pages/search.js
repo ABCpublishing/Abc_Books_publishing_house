@@ -174,6 +174,20 @@ function applyAllFilters() {
         });
     }
 
+    // Apply sorting if a sort option is selected
+    const sortBy = document.getElementById('sortBy')?.value;
+    if (sortBy && sortBy !== 'relevance') {
+        if (sortBy === 'priceLow') {
+            filtered.sort((a, b) => (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0));
+        } else if (sortBy === 'priceHigh') {
+            filtered.sort((a, b) => (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0));
+        } else if (sortBy === 'rating') {
+            filtered.sort((a, b) => (parseFloat(b.rating) || 0) - (parseFloat(a.rating) || 0));
+        } else if (sortBy === 'newest') {
+            filtered.sort((a, b) => (parseInt(b.id) || 0) - (parseInt(a.id) || 0));
+        }
+    }
+
     searchResults = filtered;
     renderResults();
 }
@@ -276,10 +290,10 @@ function createGridCard(book) {
             <div class="book-image">
                 ${discount > 0 ? `<span class="discount-tag">-${discount}%</span>` : ''}
                 <div class="quick-actions">
-                    <button onclick="event.stopPropagation(); addToWishlist('${book.id}')" title="Add to Wishlist">
+                    <button onclick="event.stopPropagation(); handleAddToWishlist('${book.id}')" title="Add to Wishlist">
                         <i class="far fa-heart"></i>
                     </button>
-                    <button onclick="event.stopPropagation(); addToCart('${book.id}')" title="Add to Cart">
+                    <button onclick="event.stopPropagation(); handleAddToCart('${book.id}')" title="Add to Cart">
                         <i class="fas fa-shopping-cart"></i>
                     </button>
                 </div>
@@ -322,7 +336,7 @@ function createListCard(book) {
                         ${book.original_price ? `<span class="original-price">₹${book.original_price}</span>` : ''}
                     </div>
                     <div class="book-actions">
-                        <button class="btn-add-cart" onclick="event.stopPropagation(); addToCart('${book.id}')">
+                        <button class="btn-add-cart" onclick="event.stopPropagation(); handleAddToCart('${book.id}')">
                             <i class="fas fa-shopping-cart"></i> Add to Cart
                         </button>
                     </div>
@@ -367,28 +381,8 @@ function toggleView(view) {
 
 // Sort results (Client Side)
 function sortResults() {
-    const sortBy = document.getElementById('sortBy')?.value;
-    if (!sortBy) return;
-
-    switch (sortBy) {
-        case 'priceLow':
-            searchResults.sort((a, b) => a.price - b.price);
-            break;
-        case 'priceHigh':
-            searchResults.sort((a, b) => b.price - a.price);
-            break;
-        case 'rating':
-            searchResults.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-            break;
-        case 'newest':
-            searchResults.sort((a, b) => (b.id || 0) - (a.id || 0));
-            break;
-        default:
-            // Relevance: re-apply filters from allBooks order
-            applyAllFilters();
-            return;
-    }
-    renderResults();
+    // Just re-apply all filters, which will now also apply the selected sort
+    applyAllFilters();
 }
 
 // Load books by section (e.g., bestseller, trending)
@@ -454,46 +448,22 @@ function clearFilters() {
     renderResults();
 }
 
-// Wishlist/cart integration
-async function addToWishlist(bookId) {
-    if (typeof API !== 'undefined' && API.Wishlist) {
-        try {
-            await API.Wishlist.add(bookId);
-            showNotification('Added to wishlist!', 'success');
-        } catch (e) {
-            if (e.message.includes('login')) {
-                showNotification('Please login first', 'info');
-            } else {
-                showNotification('Failed to add to wishlist', 'error');
-            }
-        }
+// Wishlist/cart integration using global books-data.js functions
+function handleAddToWishlist(bookId) {
+    const book = searchResults.find(b => String(b.id) === String(bookId));
+    if (book && typeof addToWishlist === 'function') {
+        addToWishlist(bookId, book);
     } else {
-        console.warn('API.Wishlist not found');
+        console.warn('addToWishlist function not available or book not found');
     }
 }
 
-async function addToCart(bookId) {
-    if (typeof API !== 'undefined' && API.Cart) {
-        try {
-            await API.Cart.add(bookId, 1);
-            showNotification('Added to cart!', 'success');
-        } catch (e) {
-            showNotification('Please login to use cart', 'info');
-        }
+function handleAddToCart(bookId) {
+    const book = searchResults.find(b => String(b.id) === String(bookId));
+    if (book && typeof addToCart === 'function') {
+        addToCart(bookId, book);
+    } else {
+        console.warn('addToCart function not available or book not found');
     }
 }
 
-function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.className = `simple-notification ${type}`;
-    notification.innerHTML = message;
-    notification.style.cssText = `
-        position: fixed; top: 100px; right: 20px;
-        background: ${type === 'success' ? '#27ae60' : '#3498db'};
-        color: white; padding: 15px 25px; border-radius: 10px; z-index: 9999;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.2);
-        animation: slideIn 0.3s ease;
-    `;
-    document.body.appendChild(notification);
-    setTimeout(() => notification.remove(), 3000);
-}

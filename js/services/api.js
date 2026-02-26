@@ -11,19 +11,34 @@ console.log(`🔗 API Base URL: ${API_BASE_URL} (${isProduction ? 'Production' :
 
 // Token management
 const TokenManager = {
-    get: () => localStorage.getItem('jwt_token'),
-    set: (token) => localStorage.setItem('jwt_token', token),
-    remove: () => localStorage.removeItem('jwt_token'),
+    get: () => localStorage.getItem('accessToken') || localStorage.getItem('token') || localStorage.getItem('jwt_token'),
+    set: (token) => {
+        localStorage.setItem('accessToken', token);
+        localStorage.setItem('token', token);
+        localStorage.setItem('jwt_token', token); // KEEP FOR BACKWARD COMPATIBILITY
+    },
+    remove: () => {
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('token');
+        localStorage.removeItem('jwt_token');
+    },
     isValid: () => {
         const token = TokenManager.get();
         if (!token) return false;
 
         try {
+            // If it's not a 3-part JWT, just check if it exists
+            const parts = token.split('.');
+            if (parts.length !== 3) {
+                return true; // Consider it valid if it exists but isn't a JWT (for dev/demo)
+            }
+
             // Decode JWT to check expiration
-            const payload = JSON.parse(atob(token.split('.')[1]));
+            const payload = JSON.parse(atob(parts[1]));
             return payload.exp * 1000 > Date.now();
-        } catch {
-            return false;
+        } catch (e) {
+            console.warn('Token validation error:', e);
+            return !!token; // Fallback to existence check
         }
     }
 };
@@ -81,8 +96,9 @@ const AuthAPI = {
             body: JSON.stringify(userData)
         });
 
-        if (data.token) {
-            TokenManager.set(data.token);
+        const tokenToSet = data.accessToken || data.token;
+        if (tokenToSet) {
+            TokenManager.set(tokenToSet);
         }
 
         return data;
@@ -94,8 +110,9 @@ const AuthAPI = {
             body: JSON.stringify(credentials)
         });
 
-        if (data.token) {
-            TokenManager.set(data.token);
+        const tokenToSet = data.accessToken || data.token;
+        if (tokenToSet) {
+            TokenManager.set(tokenToSet);
         }
 
         return data;
@@ -103,6 +120,13 @@ const AuthAPI = {
 
     async getCurrentUser() {
         return await apiRequest('/auth/me');
+    },
+
+    async forgotPassword(email) {
+        return await apiRequest('/auth/forgot-password', {
+            method: 'POST',
+            body: JSON.stringify({ email })
+        });
     },
 
     logout() {
@@ -222,6 +246,16 @@ const OrdersAPI = {
             method: 'PATCH',
             body: JSON.stringify({ status })
         });
+    },
+
+    async getById(orderId) {
+        return await apiRequest(`/orders/${orderId}`);
+    },
+
+    async delete(orderId) {
+        return await apiRequest(`/orders/${orderId}`, {
+            method: 'DELETE'
+        });
     }
 };
 
@@ -242,6 +276,45 @@ const UsersAPI = {
     }
 };
 
+// ===== Categories API =====
+const CategoriesAPI = {
+    async getAll() {
+        return await apiRequest('/categories');
+    },
+
+    async getLanguages() {
+        return await apiRequest('/categories/languages');
+    },
+
+    async getSubcategories(languageSlug) {
+        return await apiRequest(`/categories/language/${languageSlug}`);
+    },
+
+    async getById(id) {
+        return await apiRequest(`/categories/${id}`);
+    },
+
+    async create(categoryData) {
+        return await apiRequest('/categories', {
+            method: 'POST',
+            body: JSON.stringify(categoryData)
+        });
+    },
+
+    async update(id, categoryData) {
+        return await apiRequest(`/categories/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(categoryData)
+        });
+    },
+
+    async delete(id) {
+        return await apiRequest(`/categories/${id}`, {
+            method: 'DELETE'
+        });
+    }
+};
+
 // Export all APIs
 window.API = {
     Auth: AuthAPI,
@@ -250,6 +323,7 @@ window.API = {
     Wishlist: WishlistAPI,
     Orders: OrdersAPI,
     Users: UsersAPI,
+    Categories: CategoriesAPI,
     Token: TokenManager
 };
 

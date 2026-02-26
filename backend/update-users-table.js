@@ -12,7 +12,7 @@ async function updateUsersTable() {
         // Add verification columns
         await sql`
             ALTER TABLE users 
-            ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT FALSE,
+            ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT TRUE,
             ADD COLUMN IF NOT EXISTS verification_token VARCHAR(255)
         `;
 

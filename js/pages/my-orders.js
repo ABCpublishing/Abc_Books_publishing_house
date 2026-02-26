@@ -5,19 +5,92 @@ let currentFilter = 'all';
 
 // Initialize page
 document.addEventListener('DOMContentLoaded', () => {
-    loadOrders();
+    const user = JSON.parse(localStorage.getItem('abc_books_current_user'));
+    if (!user) {
+        // Show guest tracking UI or redirect to login
+        showGuestTrackingUI();
+    } else {
+        loadOrders(user.id);
+    }
     initializeFilters();
     initializeSearch();
 });
 
+function showGuestTrackingUI() {
+    const container = document.getElementById('ordersList');
+    const emptyState = document.getElementById('emptyState');
+
+    container.innerHTML = `
+        <div class="guest-track-card" style="background: #fff; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); text-align: center; max-width: 500px; margin: 40px auto;">
+            <div style="font-size: 50px; color: var(--primary-color); margin-bottom: 20px;">
+                <i class="fas fa-truck-fast"></i>
+            </div>
+            <h2 style="margin-bottom: 15px; font-family: 'Playfair Display', serif;">Quick Order Tracking</h2>
+            <p style="color: #666; margin-bottom: 25px;">Enter your Order ID below to track its status without logging in.</p>
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <input type="text" id="trackOrderId" placeholder="Order ID (e.g. ORD-12345)" style="flex: 1; padding: 12px; border: 2px solid #eee; border-radius: 8px; font-size: 16px;">
+                <button onclick="trackOrderQuick()" style="background: var(--primary-color); color: white; border: none; padding: 0 25px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.3s hover;">Track</button>
+            </div>
+            <button onclick="showLoginModal()" style="background: none; border: none; color: var(--primary-color); font-weight: 500; cursor: pointer; text-decoration: underline;">Login to view full history</button>
+        </div>
+    `;
+    emptyState.style.display = 'none';
+}
+
+async function trackOrderQuick() {
+    const orderId = document.getElementById('trackOrderId').value.trim();
+    if (!orderId) return alert('Please enter an Order ID');
+
+    try {
+        const response = await API.Orders.getById(orderId);
+        if (response.order) {
+            window.location.href = `order-detail.html?id=${orderId}`;
+        } else {
+            alert('Order not found. Please check the ID and try again.');
+        }
+    } catch (e) {
+        alert('Order not found or search failed.');
+    }
+}
+
 // Load orders
-function loadOrders() {
-    allOrders = JSON.parse(localStorage.getItem('abc_orders') || '[]');
+async function loadOrders(userId) {
+    const container = document.getElementById('ordersList');
+    container.innerHTML = '<div class="loading-state"><i class="fas fa-spinner fa-spin"></i><p>Fetching your orders...</p></div>';
 
-    // Sort by date (newest first)
-    allOrders.sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate));
+    try {
+        // First check local storage for newly placed orders (if any)
+        const localOrders = JSON.parse(localStorage.getItem('abc_books_orders') || '[]');
 
-    renderOrders();
+        // Fetch from API
+        const response = await API.Orders.getByUser(userId);
+        const apiOrders = response.orders || [];
+
+        // Merge and remove duplicates (prefer API data)
+        const apiOrderIds = new Set(apiOrders.map(o => o.order_id));
+        const mergedOrders = [
+            ...apiOrders,
+            ...localOrders.filter(lo => !apiOrderIds.has(lo.order_id || lo.orderId))
+        ];
+
+        allOrders = mergedOrders.map(o => ({
+            orderId: o.order_id || o.orderId,
+            orderDate: o.created_at || o.orderDate,
+            total: o.total,
+            status: o.status || 'confirmed',
+            items: o.items || []
+        }));
+
+        // Sort by date (newest first)
+        allOrders.sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate));
+
+        renderOrders();
+    } catch (error) {
+        console.error('Error loading orders:', error);
+        // Fallback to local storage if API fails
+        allOrders = JSON.parse(localStorage.getItem('abc_books_orders') || '[]');
+        renderOrders();
+    }
 }
 
 // Render orders

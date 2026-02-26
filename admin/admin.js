@@ -18,6 +18,7 @@ const ADMIN_CREDENTIALS = {
 document.addEventListener('DOMContentLoaded', function () {
     checkAuth();
     initializeEventListeners();
+    initializeCategoriesForBooks(); // Populate language/category dropdown
 });
 
 // ===== AUTHENTICATION =====
@@ -179,16 +180,26 @@ async function loadDashboardData() {
         let featuredCount = 0;
 
         // Fetch counts for specific sections (parallel)
-        const [heroBooks, editorsBooks, featuredBooks] = await Promise.all([
+        const [heroBooks, editorsBooks, featuredBooks, usersRes, ordersRes] = await Promise.all([
             API.Books.getBySection('hero').catch(() => ({ books: [] })),
             API.Books.getBySection('editors').catch(() => ({ books: [] })),
-            API.Books.getBySection('featured').catch(() => ({ books: [] }))
+            API.Books.getBySection('featured').catch(() => ({ books: [] })),
+            API.Users.getAll().catch(() => ({ users: [] })),
+            API.Orders.getAll().catch(() => ({ orders: [] }))
         ]);
 
         document.getElementById('totalBooksCount').textContent = allBooks.length;
         document.getElementById('heroCount').textContent = heroBooks.books?.length || 0;
         document.getElementById('editorsCount').textContent = editorsBooks.books?.length || 0;
         document.getElementById('featuredCount').textContent = featuredBooks.books?.length || 0;
+
+        // Update users and orders if elements exist
+        if (document.getElementById('usersCount')) {
+            document.getElementById('usersCount').textContent = usersRes.users?.length || 0;
+        }
+        if (document.getElementById('ordersCount')) {
+            document.getElementById('ordersCount').textContent = ordersRes.orders?.length || 0;
+        }
 
         // Load activity log
         loadActivityLog();
@@ -217,6 +228,9 @@ async function loadSectionData(section) {
         case 'users':
             renderUsersTable();
             break;
+        case 'pages':
+            renderPagesTable();
+            break;
         case 'hero':
         case 'editors':
         case 'featured':
@@ -228,6 +242,13 @@ async function loadSectionData(section) {
             } catch (error) {
                 console.error(`Error loading ${section} books:`, error);
                 document.getElementById(`${section}Books`).innerHTML = '<p class="no-data">Error loading books</p>';
+            }
+            break;
+        case 'categories':
+            if (typeof loadCategoriesTable === 'function') {
+                loadCategoriesTable();
+            } else {
+                console.error('loadCategoriesTable not found. Make sure category-manager.js is loaded.');
             }
             break;
         case 'english':
@@ -245,6 +266,62 @@ async function loadSectionData(section) {
             }
             break;
     }
+}
+
+// ===== RENDER USERS TABLE =====
+async function renderUsersTable() {
+    const tbody = document.getElementById('usersTableBody');
+    if (!tbody) return;
+
+    tbody.innerHTML = '<tr><td colspan="7" class="no-data"><i class="fas fa-spinner fa-spin"></i> Loading users...</td></tr>';
+
+    try {
+        const response = await API.Users.getAll();
+        const users = response.users || [];
+
+        if (users.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="no-data">No users found</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = users.map(user => `
+            <tr>
+                <td><strong>${user.id}</strong></td>
+                <td>${user.first_name} ${user.last_name}</td>
+                <td>${user.email}</td>
+                <td>${user.role || 'customer'}</td>
+                <td>${new Date(user.created_at).toLocaleDateString()}</td>
+                <td><span class="badge" style="background: #e1f5fe; color: #01579b;">Active</span></td>
+                <td>
+                    <div class="action-icons">
+                        <button class="icon-btn delete" onclick="deleteUserAPI(${user.id})" title="Delete User">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    } catch (error) {
+        tbody.innerHTML = `<tr><td colspan="7" class="no-data">Error loading users: ${error.message}</td></tr>`;
+    }
+}
+
+async function deleteUserAPI(userId) {
+    if (!confirm('Are you sure you want to delete this user?')) return;
+    try {
+        await API.Users.delete(userId);
+        alert('User deleted successfully!');
+        renderUsersTable();
+    } catch (error) {
+        alert('Error: ' + error.message);
+    }
+}
+
+// ===== RENDER PAGES TABLE (Placeholder) =====
+function renderPagesTable() {
+    const tbody = document.getElementById('pagesTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="6" class="no-data">Dynamic pages management coming in the next update!</td></tr>';
 }
 
 // ===== RENDER ORDERS TABLE (Existing Logic Preserved) =====
@@ -318,20 +395,91 @@ async function updateOrderStatusAPI(orderId, newStatus) {
 
 async function viewOrderDetailsAPI(orderId) {
     try {
-        // Implementation similar to previous logic, simplified reference
-        const response = await fetch(`${API_BASE_URL || '/api'}/orders/${orderId}`);
-        // Using fetch directly as API.Orders.getById wasn't explicitly defined in provided snippet but getAll was
-        // Actually I can define getById if I want, but sticking to existing logic pattern
-        const data = await response.json();
+        const data = await API.Orders.getById(orderId);
         const order = data.order;
         if (!order) { alert('Order not found'); return; }
 
-        let itemsList = (order.items || []).map(item => `• ${item.title || item.book_title} (Qty: ${item.quantity}) - ₹${item.price * item.quantity}`).join('\n');
+        let itemsList = (order.items || []).map(item => `
+            <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee;">
+                <div>
+                    <strong>${item.title || item.book_title}</strong><br>
+                    <small style="color: #666;">By: ${item.author || item.book_author || 'N/A'}</small>
+                </div>
+                <div style="text-align: right;">
+                    <span>Qty: ${item.quantity}</span><br>
+                    <strong style="color: #27ae60;">₹${item.price * item.quantity}</strong>
+                </div>
+            </div>
+        `).join('');
 
-        alert(`ORDER #${order.order_id}\nDate: ${new Date(order.created_at).toLocaleString()}\nStatus: ${order.status}\n\nCustomer: ${order.shipping_first_name} ${order.shipping_last_name}\nEmail: ${order.shipping_email}\n\nItems:\n${itemsList}\n\nTotal: ₹${order.total}`);
+        const modalBody = document.getElementById('orderModalBody');
+        const modalDate = new Date(order.created_at).toLocaleString('en-IN', { dateStyle: 'long', timeStyle: 'short' });
+
+        modalBody.innerHTML = `
+            <div style="margin-bottom: 20px;">
+                <h3 style="margin: 0; color: #2c3e50; font-size: 24px;">ORDER #${order.order_id}</h3>
+                <span style="display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; background-color: #f1f5f9; color: #64748b; margin-top: 5px;">Status: ${order.status.toUpperCase()}</span>
+                <p style="color: #7f8c8d; font-size: 14px; margin: 5px 0 0 0;"><i class="fas fa-calendar-alt"></i> ${modalDate}</p>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; background: #f8fbff; padding: 15px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #e2e8f0;">
+                <div>
+                    <h4 style="margin: 0 0 10px 0; color: #34495e; font-size: 16px;"><i class="fas fa-user"></i> Customer Info</h4>
+                    <p style="margin: 0;"><strong>Name:</strong> ${order.shipping_first_name} ${order.shipping_last_name}</p>
+                    <p style="margin: 5px 0 0 0;"><strong>Email:</strong> ${order.shipping_email}</p>
+                    <p style="margin: 5px 0 0 0;"><strong>Phone:</strong> ${order.shipping_phone || 'N/A'}</p>
+                </div>
+                <div>
+                    <h4 style="margin: 0 0 10px 0; color: #34495e; font-size: 16px;"><i class="fas fa-shipping-fast"></i> Shipping Details</h4>
+                    <p style="margin: 0;">${order.shipping_address1}</p>
+                    ${order.shipping_address2 ? `<p style="margin: 0;">${order.shipping_address2}</p>` : ''}
+                    <p style="margin: 0;">${order.shipping_city}, ${order.shipping_state} - ${order.shipping_pincode}</p>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <h4 style="margin: 0 0 10px 0; color: #34495e; font-size: 18px; border-bottom: 2px solid #eee; padding-bottom: 5px;">Order Items</h4>
+                ${itemsList}
+            </div>
+
+            <div style="text-align: right; background: #fffaf0; padding: 15px; border-radius: 8px; border: 1px solid #fbd38d;">
+                <div style="display: flex; justify-content: flex-end; gap: 20px;">
+                    <div style="text-align: left;">
+                        <p style="margin: 0 0 5px 0;">Subtotal:</p>
+                        <p style="margin: 0 0 5px 0;">Discount:</p>
+                        <h3 style="margin: 5px 0 0 0; color: #2c3e50;">Total:</h3>
+                    </div>
+                    <div style="text-align: right;">
+                        <p style="margin: 0 0 5px 0;">₹${order.subtotal || order.total}</p>
+                        <p style="margin: 0 0 5px 0; color: #e74c3c;">-₹${order.discount || 0}</p>
+                        <h3 style="margin: 5px 0 0 0; color: #27ae60;">₹${order.total}</h3>
+                    </div>
+                </div>
+                <p style="margin: 10px 0 0 0; font-size: 13px; color: #718096;">Payment Method: ${order.payment_method || 'N/A'}</p>
+            </div>
+        `;
+
+        document.getElementById('orderModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
     } catch (error) {
         alert('Error: ' + error.message);
     }
+}
+
+async function deleteOrderAPI(orderId) {
+    if (!confirm('Are you sure you want to delete this order?')) return;
+    try {
+        await API.Orders.delete(orderId);
+        alert('Order deleted successfully!');
+        renderOrdersTable();
+    } catch (error) {
+        alert('Error: ' + error.message);
+    }
+}
+
+function closeOrderModal() {
+    document.getElementById('orderModal').classList.remove('active');
+    document.body.style.overflow = 'auto';
 }
 
 async function deleteOrderAPI(orderId) {
@@ -840,97 +988,110 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// ===== SUBCATEGORIES SYSTEM =====
-// Different subcategories for each language
+// ===== DYNAMIC CATEGORIES SYSTEM =====
+// Different subcategories for each language (Fallback for when DB is empty)
 const SUBCATEGORIES_BY_LANGUAGE = {
     'Urdu': [
         { value: 'Quran & Tafsir', label: '📖 Quran & Tafsir' },
         { value: 'Hadith', label: '📜 Hadith' },
         { value: 'Biography', label: '👤 Biography' },
         { value: 'Creed & Fiqh', label: '⚖️ Creed & Fiqh' },
-        { value: 'Hajj & Umrah', label: '🕋 Hajj & Umrah' },
-        { value: 'Salah & Supplication', label: '🤲 Salah & Supplication' },
-        { value: 'Ramadan', label: '🌙 Ramadan' },
-        { value: 'Women & Children', label: '👩‍👧 Women & Children' },
-        { value: 'History', label: '🏛️ History' },
-        { value: 'School Books', label: '📚 School Books' },
-        { value: 'Competitive & Entrance', label: '🎯 Competitive & Entrance' },
-        { value: 'Higher Education', label: '🎓 Higher Education' },
-        { value: 'Literature & Fiction', label: '📕 Literature & Fiction' },
-        { value: 'Stationery', label: '✏️ Stationery' }
+        { value: 'Literature & Fiction', label: '📕 Literature & Fiction' }
     ],
     'English': [
         { value: 'Quran & Tafsir', label: '📖 Quran & Tafsir' },
         { value: 'Hadith', label: '📜 Hadith' },
-        { value: 'Biography', label: '👤 Biography' },
-        { value: 'Creed & Fiqh', label: '⚖️ Creed & Fiqh' },
-        { value: 'Hajj & Umrah', label: '🕋 Hajj & Umrah' },
-        { value: 'Salah & Supplication', label: '🤲 Salah & Supplication' },
-        { value: 'Ramadan', label: '🌙 Ramadan' },
-        { value: 'Women & Children', label: '👩‍👧 Women & Children' },
-        { value: 'History', label: '🏛️ History' },
         { value: 'Academic', label: '🎓 Academic' },
-        { value: 'School Books', label: '📚 School Books' },
-        { value: 'Competitive & Entrance', label: '🎯 Competitive & Entrance' },
-        { value: 'Higher Education', label: '🎓 Higher Education' },
-        { value: 'Literature & Fiction', label: '📕 Literature & Fiction' },
-        { value: 'Stationery', label: '✏️ Stationery' }
+        { value: 'Literature & Fiction', label: '📕 Literature & Fiction' }
     ],
     'Arabic': [
         { value: 'Quran & Tafsir', label: '📖 Quran & Tafsir' },
         { value: 'Hadith', label: '📜 Hadith' },
-        { value: 'Biography', label: '👤 Biography' },
-        { value: 'Creed & Fiqh', label: '⚖️ Creed & Fiqh' },
-        { value: 'Hajj & Umrah', label: '🕋 Hajj & Umrah' },
-        { value: 'Salah & Supplication', label: '🤲 Salah & Supplication' },
-        { value: 'Ramadan', label: '🌙 Ramadan' },
-        { value: 'Women & Children', label: '👩‍👧 Women & Children' },
-        { value: 'History', label: '🏛️ History' },
-        { value: 'Arabic Grammar', label: '📝 Arabic Grammar' },
-        { value: 'Arabic Literature', label: '📕 Arabic Literature' },
-        { value: 'Dictionaries', label: '📚 Dictionaries' }
+        { value: 'Arabic Grammar', label: '📝 Arabic Grammar' }
     ],
     'Kashmiri': [
-        { value: 'Quran & Tafsir', label: '📖 Quran & Tafsir' },
-        { value: 'Hadith', label: '📜 Hadith' },
-        { value: 'Biography', label: '👤 Biography' },
-        { value: 'Creed & Fiqh', label: '⚖️ Creed & Fiqh' },
         { value: 'Kashmiri Poetry', label: '🎭 Kashmiri Poetry' },
-        { value: 'Kashmiri Literature', label: '📕 Kashmiri Literature' },
-        { value: 'History', label: '🏛️ History' },
-        { value: 'Culture & Tradition', label: '🏔️ Culture & Tradition' },
-        { value: 'Women & Children', label: '👩‍👧 Women & Children' },
-        { value: 'School Books', label: '📚 School Books' }
+        { value: 'Kashmiri Literature', label: '📕 Kashmiri Literature' }
     ]
 };
 
+// Load languages for the book form
+async function initializeCategoriesForBooks() {
+    const languageSelect = document.getElementById('bookLanguage');
+    if (!languageSelect) return;
+
+    try {
+        const response = await API.Categories.getLanguages();
+        const languages = response.languages || [];
+
+        // Save some default options if API fails or returns empty
+        const displayLanguages = languages.length > 0 ? languages : [
+            { name: 'Urdu', slug: 'Urdu' },
+            { name: 'English', slug: 'English' },
+            { name: 'Arabic', slug: 'Arabic' },
+            { name: 'Kashmiri', slug: 'Kashmiri' }
+        ];
+
+        languageSelect.innerHTML = '<option value="">-- Select Category --</option>';
+        displayLanguages.forEach(lang => {
+            const option = document.createElement('option');
+            option.value = lang.name;
+            option.textContent = lang.name;
+            languageSelect.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Error loading languages for book form:', error);
+    }
+}
+
 // Load subcategories based on selected language
-function loadSubcategories() {
+async function loadSubcategories() {
     const languageSelect = document.getElementById('bookLanguage');
     const subcategorySelect = document.getElementById('bookSubcategory');
+    if (!languageSelect || !subcategorySelect) return;
+
     const language = languageSelect.value;
 
     // Clear existing options
     subcategorySelect.innerHTML = '';
 
     if (!language) {
-        subcategorySelect.innerHTML = '<option value="">-- Select Language First --</option>';
+        subcategorySelect.innerHTML = '<option value="">-- Select Category First --</option>';
         return;
     }
 
-    // Add default option
-    subcategorySelect.innerHTML = '<option value="">-- Select Subcategory --</option>';
+    // Add loading indicator
+    subcategorySelect.innerHTML = '<option value="">Loading...</option>';
 
-    // Get subcategories for selected language
-    const subcategories = SUBCATEGORIES_BY_LANGUAGE[language] || [];
+    try {
+        // Fetch subcategories for the selected language
+        // We use the language name as slug for now as per current DB setup
+        const response = await API.Categories.getSubcategories(language);
+        const subcategories = response.subcategories || [];
 
-    // Add subcategories
-    subcategories.forEach(sub => {
-        const option = document.createElement('option');
-        option.value = sub.value;
-        option.textContent = sub.label;
-        subcategorySelect.appendChild(option);
-    });
+        subcategorySelect.innerHTML = '<option value="">-- Select Subcategory --</option>';
+
+        if (subcategories.length === 0) {
+            // Fallback to legacy categories if none found in DB for this language
+            const legacySub = SUBCATEGORIES_BY_LANGUAGE[language] || [];
+            legacySub.forEach(sub => {
+                const option = document.createElement('option');
+                option.value = sub.value;
+                option.textContent = sub.label;
+                subcategorySelect.appendChild(option);
+            });
+        } else {
+            subcategories.forEach(sub => {
+                const option = document.createElement('option');
+                option.value = sub.name;
+                option.textContent = sub.name;
+                subcategorySelect.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Error loading subcategories:', error);
+        subcategorySelect.innerHTML = '<option value="">Error loading</option>';
+    }
 
     // Update the hidden category field for backward compatibility
     document.getElementById('bookCategory').value = language;

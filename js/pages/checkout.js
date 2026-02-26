@@ -20,7 +20,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (!currentUser && !hasValidToken) {
         console.log('❌ User not logged in, redirecting...');
-        alert('Please login to proceed with checkout');
+        if (typeof showNotification === 'function') {
+            showNotification('Please login to proceed with checkout', 'error');
+        } else {
+            alert('Please login to proceed with checkout');
+        }
         window.location.href = '../index.html';
         return;
     }
@@ -28,31 +32,33 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('✅ User logged in:', currentUser?.name || 'Token User');
 
     // WARN if no valid token (Legacy session or token expired)
+    // Only show if we're actually logged in locally but the server connection (token) is dead
     if (currentUser && !hasValidToken) {
         console.warn('⚠️ User has session but no valid API token');
-        const container = document.querySelector('.checkout-container'); // Note: Make sure this class exists, or use main container
-        // Fallback if checkout-container doesn't exist (it seems checkout-grid is the main wrapper)
         const target = document.querySelector('.checkout-grid') || document.querySelector('.container');
 
         const warning = document.createElement('div');
-        warning.className = 'form-error-banner';
-        warning.style.display = 'flex';
-        warning.style.marginBottom = '20px';
-        warning.style.justifyContent = 'center';
-        warning.style.padding = '15px';
-        warning.style.borderRadius = '8px';
-        warning.style.background = '#fff3cd';
-        warning.style.color = '#856404';
-        warning.style.border = '1px solid #ffeeba';
+        warning.className = 'offline-warning-banner';
+        warning.style.cssText = `
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            padding: 12px 20px;
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            font-size: 14px;
+        `;
 
         warning.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <i class="fas fa-exclamation-triangle"></i>
-                <span>
-                    <strong>Note:</strong> You are in offline mode. Orders will be saved locally but not synced to the server. 
-                    <a href="#" onclick="API.Auth.logout(); window.location.href='../index.html'; return false;" style="text-decoration: underline; color: inherit; font-weight: bold;">Click here to re-login</a> to sync.
-                </span>
-            </div>
+            <i class="fas fa-exclamation-triangle"></i>
+            <span>
+                <strong>Note:</strong> You are in offline mode. Orders will be saved locally but not synced to the server. 
+                <a href="#" onclick="if(window.API) API.Auth.logout(); window.location.href='../index.html'; return false;" style="text-decoration: underline; color: inherit; font-weight: bold; margin-left: 5px;">Click here to re-login</a> to sync.
+            </span>
         `;
 
         if (target) {
@@ -102,7 +108,7 @@ async function loadCartItems() {
     // If no items from API, try localStorage
     if (cartItems.length === 0) {
         console.log('📦 Trying localStorage...');
-        const localCart = JSON.parse(localStorage.getItem('abc_cart') || '[]');
+        const localCart = JSON.parse(localStorage.getItem('abc_books_cart') || '[]');
         if (localCart.length > 0) {
             cartItems = localCart;
             console.log('✅ Loaded', cartItems.length, 'items from localStorage');
@@ -198,7 +204,7 @@ function calculateTotals() {
 // Remove item from cart
 function removeItem(bookId) {
     cartItems = cartItems.filter(item => item.id !== bookId);
-    localStorage.setItem('abc_cart', JSON.stringify(cartItems));
+    localStorage.setItem('abc_books_cart', JSON.stringify(cartItems));
     loadCartItems();
     loadSummaryItems();
     calculateTotals();
@@ -235,7 +241,7 @@ function loadSavedAddress() {
 
     // If user is logged in, load their specific address
     if (user && user.id) {
-        const userAddress = localStorage.getItem(`abc_user_${user.id}_address`);
+        const userAddress = localStorage.getItem(`abc_books_user_${user.id}_address`);
 
         if (userAddress) {
             const address = JSON.parse(userAddress);
@@ -482,14 +488,14 @@ async function processOrder(paymentMethod, paymentId = null) {
         // Save address for future (user-specific)
         const currentUser = JSON.parse(localStorage.getItem('abc_books_current_user') || 'null');
         if (currentUser && currentUser.id) {
-            localStorage.setItem(`abc_user_${currentUser.id}_address`, JSON.stringify(orderData.shipping));
+            localStorage.setItem(`abc_books_user_${currentUser.id}_address`, JSON.stringify(orderData.shipping));
         }
 
         // Try to save order to API (if available)
         let apiOrderSuccess = false;
-        const jwtToken = localStorage.getItem('jwt_token');
+        const jwtToken = (typeof API !== 'undefined' && API.Token) ? API.Token.get() : (localStorage.getItem('accessToken') || localStorage.getItem('token') || localStorage.getItem('jwt_token'));
 
-        console.log('🔐 JWT Token exists:', !!jwtToken);
+        console.log('🔐 Token exists:', !!jwtToken);
         console.log('👤 Current user:', currentUser);
 
         if (typeof API !== 'undefined' && jwtToken && currentUser && currentUser.id) {
@@ -580,13 +586,13 @@ async function processOrder(paymentMethod, paymentId = null) {
         }
 
         // Save order to localStorage
-        let orders = JSON.parse(localStorage.getItem('abc_orders') || '[]');
+        let orders = JSON.parse(localStorage.getItem('abc_books_orders') || '[]');
         orders.push(orderData);
-        localStorage.setItem('abc_orders', JSON.stringify(orders));
+        localStorage.setItem('abc_books_orders', JSON.stringify(orders));
         console.log('✅ Order saved to localStorage');
 
         // Clear cart
-        localStorage.setItem('abc_cart', JSON.stringify([]));
+        localStorage.setItem('abc_books_cart', JSON.stringify([]));
         console.log('✅ Cart cleared');
 
         // Show success modal

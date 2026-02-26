@@ -2,9 +2,9 @@
 
 // Check if user is logged in
 function checkAuth() {
-    const user = JSON.parse(localStorage.getItem('abc_current_user') || 'null');
+    const user = JSON.parse(localStorage.getItem('abc_books_current_user') || 'null');
     if (!user) {
-        window.location.href = 'index.html';
+        window.location.href = '../index.html'; // Path correction for pages directory
         return null;
     }
     return user;
@@ -60,9 +60,9 @@ function initializeNav() {
 
 // Load dashboard statistics
 function loadDashboardData() {
-    const orders = JSON.parse(localStorage.getItem('abc_orders') || '[]');
-    const wishlist = JSON.parse(localStorage.getItem('abc_wishlist') || '[]');
-    const cart = JSON.parse(localStorage.getItem('abc_cart') || '[]');
+    const orders = JSON.parse(localStorage.getItem('abc_books_orders') || '[]');
+    const wishlist = JSON.parse(localStorage.getItem('abc_books_wishlist') || '[]');
+    const cart = JSON.parse(localStorage.getItem('abc_books_cart') || '[]');
 
     // Calculate total spent
     const totalSpent = orders.reduce((sum, order) => sum + (order.total || 0), 0);
@@ -75,7 +75,7 @@ function loadDashboardData() {
 
 // Load recent orders
 function loadRecentOrders() {
-    const orders = JSON.parse(localStorage.getItem('abc_orders') || '[]');
+    const orders = JSON.parse(localStorage.getItem('abc_books_orders') || '[]');
     const container = document.getElementById('recentOrdersList');
     const allContainer = document.getElementById('allOrdersList');
 
@@ -135,7 +135,7 @@ function viewOrder(orderId) {
 
 // Load wishlist preview
 function loadWishlistPreview() {
-    const wishlist = JSON.parse(localStorage.getItem('abc_wishlist') || '[]');
+    const wishlist = JSON.parse(localStorage.getItem('abc_books_wishlist') || '[]');
     const container = document.getElementById('wishlistGrid');
 
     if (wishlist.length === 0) {
@@ -167,11 +167,11 @@ function loadWishlistPreview() {
 
 // Move item from wishlist to cart
 function moveToCart(itemId) {
-    const wishlist = JSON.parse(localStorage.getItem('abc_wishlist') || '[]');
+    const wishlist = JSON.parse(localStorage.getItem('abc_books_wishlist') || '[]');
     const item = wishlist.find(i => i.id === itemId);
 
     if (item) {
-        let cart = JSON.parse(localStorage.getItem('abc_cart') || '[]');
+        let cart = JSON.parse(localStorage.getItem('abc_books_cart') || '[]');
         const existingIndex = cart.findIndex(c => c.id === itemId);
 
         if (existingIndex >= 0) {
@@ -180,7 +180,7 @@ function moveToCart(itemId) {
             cart.push({ ...item, quantity: 1 });
         }
 
-        localStorage.setItem('abc_cart', JSON.stringify(cart));
+        localStorage.setItem('abc_books_cart', JSON.stringify(cart));
         removeFromWishlist(itemId);
         showNotification('Item moved to cart!', 'success');
         loadDashboardData();
@@ -189,16 +189,16 @@ function moveToCart(itemId) {
 
 // Remove from wishlist
 function removeFromWishlist(itemId) {
-    let wishlist = JSON.parse(localStorage.getItem('abc_wishlist') || '[]');
+    let wishlist = JSON.parse(localStorage.getItem('abc_books_wishlist') || '[]');
     wishlist = wishlist.filter(item => item.id !== itemId);
-    localStorage.setItem('abc_wishlist', JSON.stringify(wishlist));
+    localStorage.setItem('abc_books_wishlist', JSON.stringify(wishlist));
     loadWishlistPreview();
     loadDashboardData();
 }
 
 // Load profile data
 function loadProfileData() {
-    const user = JSON.parse(localStorage.getItem('abc_current_user') || '{}');
+    const user = JSON.parse(localStorage.getItem('abc_books_current_user') || '{}');
 
     if (user.name) {
         const names = user.name.split(' ');
@@ -218,7 +218,7 @@ function loadProfileData() {
 
 // Load saved addresses
 function loadAddresses() {
-    const addresses = JSON.parse(localStorage.getItem('abc_addresses') || '[]');
+    const addresses = JSON.parse(localStorage.getItem('abc_books_addresses') || '[]');
     const container = document.getElementById('addressesList');
 
     if (addresses.length === 0) {
@@ -270,14 +270,14 @@ function saveProfile() {
     const dob = document.getElementById('dob').value;
     const gender = document.querySelector('input[name="gender"]:checked')?.value;
 
-    const user = JSON.parse(localStorage.getItem('abc_current_user') || '{}');
+    const user = JSON.parse(localStorage.getItem('abc_books_current_user') || '{}');
     user.name = `${firstName} ${lastName}`.trim();
     user.email = email;
     user.phone = phone;
     user.dob = dob;
     user.gender = gender;
 
-    localStorage.setItem('abc_current_user', JSON.stringify(user));
+    localStorage.setItem('abc_books_current_user', JSON.stringify(user));
 
     // Update display
     document.getElementById('userName').textContent = user.name || 'Welcome!';
@@ -308,9 +308,9 @@ function changePassword() {
     }
 
     // In a real app, verify current password with server
-    const user = JSON.parse(localStorage.getItem('abc_current_user') || '{}');
+    const user = JSON.parse(localStorage.getItem('abc_books_current_user') || '{}');
     user.password = newPassword; // Note: Never store plain passwords in production!
-    localStorage.setItem('abc_current_user', JSON.stringify(user));
+    localStorage.setItem('abc_books_current_user', JSON.stringify(user));
 
     document.getElementById('passwordForm').reset();
     showNotification('Password changed successfully!', 'success');
@@ -331,9 +331,9 @@ function showAddAddressModal() {
         isDefault: false
     };
 
-    let addresses = JSON.parse(localStorage.getItem('abc_addresses') || '[]');
+    let addresses = JSON.parse(localStorage.getItem('abc_books_addresses') || '[]');
     addresses.push(address);
-    localStorage.setItem('abc_addresses', JSON.stringify(addresses));
+    localStorage.setItem('abc_books_addresses', JSON.stringify(addresses));
 
     loadAddresses();
     showNotification('Address added successfully!', 'success');
@@ -343,9 +343,9 @@ function showAddAddressModal() {
 function deleteAddress(index) {
     if (!confirm('Are you sure you want to delete this address?')) return;
 
-    let addresses = JSON.parse(localStorage.getItem('abc_addresses') || '[]');
+    let addresses = JSON.parse(localStorage.getItem('abc_books_addresses') || '[]');
     addresses.splice(index, 1);
-    localStorage.setItem('abc_addresses', JSON.stringify(addresses));
+    localStorage.setItem('abc_books_addresses', JSON.stringify(addresses));
 
     loadAddresses();
     showNotification('Address deleted', 'success');
@@ -353,12 +353,12 @@ function deleteAddress(index) {
 
 // Set default address
 function setDefaultAddress(index) {
-    let addresses = JSON.parse(localStorage.getItem('abc_addresses') || '[]');
+    let addresses = JSON.parse(localStorage.getItem('abc_books_addresses') || '[]');
     addresses = addresses.map((addr, i) => ({
         ...addr,
         isDefault: i === index
     }));
-    localStorage.setItem('abc_addresses', JSON.stringify(addresses));
+    localStorage.setItem('abc_books_addresses', JSON.stringify(addresses));
 
     loadAddresses();
     showNotification('Default address updated', 'success');
@@ -366,8 +366,11 @@ function setDefaultAddress(index) {
 
 // Logout
 function logout() {
-    localStorage.removeItem('abc_current_user');
-    window.location.href = 'index.html';
+    localStorage.removeItem('abc_books_current_user');
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('token');
+    localStorage.removeItem('jwt_token');
+    window.location.href = '../index.html';
 }
 
 // Helper: Capitalize first letter

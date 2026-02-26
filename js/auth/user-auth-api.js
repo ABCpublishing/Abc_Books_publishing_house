@@ -9,28 +9,99 @@ if (typeof API === 'undefined') {
 // Current user state (cached from API)
 let currentUserCache = null;
 
+// ===== GLOBAL UI HELPERS =====
+// Show notification if not already defined in another script
+if (typeof showNotification === 'undefined') {
+    window.showNotification = function (message, type = 'success') {
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.innerHTML = `
+            <i class="fas ${type === 'success' ? 'fa-check-circle' : (type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle')}"></i>
+            <span>${message}</span>
+        `;
+
+        // Base styles for notification
+        notification.style.cssText = `
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            background: ${type === 'success' ? 'linear-gradient(135deg, #27ae60, #2ecc71)' :
+                (type === 'error' ? 'linear-gradient(135deg, #e74c3c, #ff4757)' : 'linear-gradient(135deg, #3498db, #5dade2)')};
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            z-index: 10000;
+            animation: slideIn 0.3s ease;
+        `;
+
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    };
+
+    // Add required keyframes if not present
+    if (!document.getElementById('notification-styles')) {
+        const style = document.createElement('style');
+        style.id = 'notification-styles';
+        style.textContent = `
+            @keyframes slideIn { from { transform: translateX(100px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+            @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100px); opacity: 0; } }
+        `;
+        document.head.appendChild(style);
+    }
+}
+
 // ===== HELPER FUNCTIONS =====
 async function getCurrentUser() {
-    // Return cached user if available
+    // 1. Definitively check physical token presence FIRST to avoid any async/cache race conditions
+    const directToken = localStorage.getItem('accessToken') || localStorage.getItem('token') || localStorage.getItem('jwt_token');
+
+    if (!directToken) {
+        // If no token physically exists, absolutely force unauthenticated state immediately
+        currentUserCache = null;
+        return null;
+    }
+
+    // 2. Return cached user if available
     if (currentUserCache) {
         return currentUserCache;
     }
 
-    // Check if we have a token
-    if (!API.Token.isValid()) {
-        return null;
+    // 3. We have a token. Let's try to get fresh data from the API
+    try {
+        if (typeof API !== 'undefined' && API.Auth) {
+            const response = await API.Auth.getCurrentUser();
+            const user = response.user || response;
+            if (user && user.id) {
+                currentUserCache = user;
+                localStorage.setItem('abc_books_current_user', JSON.stringify(user));
+                return user;
+            }
+        }
+    } catch (error) {
+        console.warn('⚠️ Could not fetch user from API, trying localStorage fallback...', error);
     }
 
-    try {
-        // Fetch current user from API
-        const user = await API.Auth.getCurrentUser();
-        currentUserCache = user;
-        return user;
-    } catch (error) {
-        console.error('Error getting current user:', error);
-        API.Token.remove();
-        return null;
+    // 4. API failed, but we DO have a literal token. Fallback to local storage user object.
+    const savedUser = localStorage.getItem('abc_books_current_user');
+    if (savedUser) {
+        try {
+            const user = JSON.parse(savedUser);
+            currentUserCache = user;
+            return user;
+        } catch (e) {
+            console.error('Error parsing saved user:', e);
+        }
     }
+
+    return null;
 }
 
 function clearUserCache() {
@@ -67,6 +138,30 @@ function switchToSignup() {
 
 function switchToLogin() {
     closeSignupModal();
+    showLoginModal();
+}
+
+// ----- Forgot Password Modal Functions -----
+function showForgotModal(event) {
+    if (event) event.preventDefault();
+    closeLoginModal();
+    if (typeof resetFormErrors === 'function') resetFormErrors('forgotForm');
+
+    // Reset borders and success messages
+    const successBanner = document.getElementById('forgotFormSuccess');
+    if (successBanner) successBanner.style.display = 'none';
+
+    document.getElementById('forgotModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeForgotModal() {
+    document.getElementById('forgotModal').classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+function switchToLoginReset() {
+    closeForgotModal();
     showLoginModal();
 }
 
@@ -156,9 +251,20 @@ async function handleLogin(event) {
 
         if (response.user) {
             currentUserCache = response.user;
-            // ✅ CRITICAL: Save user to localStorage for checkout to recognize the session
+
+            // ✅ CRITICAL RUNTIME FIX: Directly force token write to localStorage 
+            // Ensures persistence even if TokenManager fails to sync
+            if (response.token || response.accessToken) {
+                const finalToken = response.accessToken || response.token;
+                localStorage.setItem('accessToken', finalToken);
+                localStorage.setItem('token', finalToken);
+                localStorage.setItem('jwt_token', finalToken);
+                console.log('✅ Tokens securely written to localStorage:', finalToken.substring(0, 15) + '...');
+            }
+
             localStorage.setItem('abc_books_current_user', JSON.stringify(response.user));
             console.log('✅ User saved to localStorage:', response.user);
+
             closeLoginModal();
             await updateUserUI();
             await loadUserData();
@@ -171,6 +277,12 @@ async function handleLogin(event) {
         }
     } catch (error) {
         console.error('Login error:', error);
+
+        // Wipe local ghosts on failed login attempts to prevent UI desync
+        clearUserCache();
+        localStorage.removeItem('abc_books_current_user');
+        if (typeof updateUserUI === 'function') updateUserUI();
+
         if (error.message.toLowerCase().includes('password')) {
             showInputError('loginPassword', 'Incorrect password');
         } else if (error.message.toLowerCase().includes('found')) {
@@ -267,6 +379,53 @@ async function handleSignup(event) {
     }
 }
 
+async function handleForgotPassword(event) {
+    event.preventDefault();
+
+    const formId = 'forgotForm';
+    const emailInput = document.getElementById('forgotEmail');
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    const successBanner = document.getElementById('forgotFormSuccess');
+
+    resetFormErrors(formId);
+    if (successBanner) successBanner.style.display = 'none';
+
+    // Validation
+    if (!emailInput.value.trim()) {
+        showInputError('forgotEmail', 'Email is required');
+        return;
+    } else if (!/\S+@\S+\.\S+/.test(emailInput.value)) {
+        showInputError('forgotEmail', 'Please enter a valid email address');
+        return;
+    }
+
+    setLoadingState(submitBtn, true);
+
+    try {
+        const response = await API.Auth.forgotPassword(emailInput.value);
+
+        if (successBanner) {
+            successBanner.querySelector('span').textContent = response.message || 'Reset link sent! Please check your email inbox.';
+            successBanner.style.display = 'flex';
+            emailInput.value = ''; // Clear input on success
+        } else {
+            if (typeof showNotification === 'function') {
+                showNotification('Password reset link sent to your email!', 'success');
+            }
+            closeForgotModal();
+        }
+    } catch (error) {
+        console.error('Forgot password error:', error);
+        if (error.message.toLowerCase().includes('found')) {
+            showInputError('forgotEmail', 'No account found with this email');
+        } else {
+            showFormBannerError(formId, error.message || 'Failed to send reset link. Please try again.');
+        }
+    } finally {
+        setLoadingState(submitBtn, false);
+    }
+}
+
 // ===== PENDING ACTION EXECUTION =====
 
 /**
@@ -284,8 +443,8 @@ function getCheckoutPath() {
  * Process pending action after login/signup
  */
 async function processPendingAction() {
-    const pendingAction = localStorage.getItem('abc_pending_action');
-    const pendingBookData = localStorage.getItem('abc_pending_book');
+    const pendingAction = localStorage.getItem('abc_books_pending_action');
+    const pendingBookData = localStorage.getItem('abc_books_pending_book');
 
     if (!pendingAction || !pendingBookData) {
         return;
@@ -300,8 +459,8 @@ async function processPendingAction() {
         }
 
         // Clear pending data first
-        localStorage.removeItem('abc_pending_action');
-        localStorage.removeItem('abc_pending_book');
+        localStorage.removeItem('abc_books_pending_action');
+        localStorage.removeItem('abc_books_pending_book');
 
         const { bookId, bookData, quantity } = pending;
 
@@ -312,7 +471,7 @@ async function processPendingAction() {
             // Add to cart and redirect to checkout
             try {
                 // Save to localStorage first (backup)
-                let localCart = JSON.parse(localStorage.getItem('abc_cart') || '[]');
+                let localCart = JSON.parse(localStorage.getItem('abc_books_cart') || '[]');
                 const existingIndex = localCart.findIndex(item => item.id === bookId);
 
                 if (existingIndex >= 0) {
@@ -327,7 +486,7 @@ async function processPendingAction() {
                         quantity: quantity || 1
                     });
                 }
-                localStorage.setItem('abc_cart', JSON.stringify(localCart));
+                localStorage.setItem('abc_books_cart', JSON.stringify(localCart));
                 console.log('✅ Buy Now: Saved to localStorage cart');
 
                 // Try API as well
@@ -361,7 +520,7 @@ async function processPendingAction() {
             // Just add to cart - save to localStorage first
             try {
                 // Save to localStorage first (backup)
-                let localCart = JSON.parse(localStorage.getItem('abc_cart') || '[]');
+                let localCart = JSON.parse(localStorage.getItem('abc_books_cart') || '[]');
                 const existingIndex = localCart.findIndex(item => item.id === bookId);
 
                 if (existingIndex >= 0) {
@@ -376,7 +535,7 @@ async function processPendingAction() {
                         quantity: quantity || 1
                     });
                 }
-                localStorage.setItem('abc_cart', JSON.stringify(localCart));
+                localStorage.setItem('abc_books_cart', JSON.stringify(localCart));
                 console.log('✅ Pending action: Saved to localStorage cart');
 
                 // Try API as well
@@ -502,8 +661,8 @@ async function addToWishlist(bookId, bookData) {
     const user = await getCurrentUser();
     if (!user) {
         // ✅ SAVE PENDING ACTION for auto-continue after login
-        localStorage.setItem('abc_pending_action', 'add_to_wishlist');
-        localStorage.setItem('abc_pending_book', JSON.stringify({
+        localStorage.setItem('abc_books_pending_action', 'add_to_wishlist');
+        localStorage.setItem('abc_books_pending_book', JSON.stringify({
             bookId: bookId,
             bookData: bookData,
             quantity: 1,
@@ -646,8 +805,8 @@ async function addToCart(bookId, bookData) {
     const user = await getCurrentUser();
     if (!user) {
         // ✅ SAVE PENDING ACTION for auto-continue after login
-        localStorage.setItem('abc_pending_action', 'add_to_cart');
-        localStorage.setItem('abc_pending_book', JSON.stringify({
+        localStorage.setItem('abc_books_pending_action', 'add_to_cart');
+        localStorage.setItem('abc_books_pending_book', JSON.stringify({
             bookId: bookId,
             bookData: bookData,
             quantity: 1,
@@ -665,7 +824,7 @@ async function addToCart(bookId, bookData) {
 
     try {
         // ✅ ALWAYS save to localStorage first (as backup)
-        let localCart = JSON.parse(localStorage.getItem('abc_cart') || '[]');
+        let localCart = JSON.parse(localStorage.getItem('abc_books_cart') || '[]');
         const existingIndex = localCart.findIndex(item => item.id === bookId);
 
         if (existingIndex >= 0) {
@@ -680,7 +839,7 @@ async function addToCart(bookId, bookData) {
                 quantity: 1
             });
         }
-        localStorage.setItem('abc_cart', JSON.stringify(localCart));
+        localStorage.setItem('abc_books_cart', JSON.stringify(localCart));
         console.log('✅ Saved to localStorage cart:', localCart);
 
         // Try to save to API as well
@@ -893,6 +1052,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         if (e.key === 'Escape') {
             closeLoginModal();
             closeSignupModal();
+            closeForgotModal();
             closeWishlist();
             closeCart();
         }

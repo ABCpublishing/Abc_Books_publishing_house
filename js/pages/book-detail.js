@@ -57,7 +57,7 @@ async function loadBookDetails() {
     }
 
     // FALLBACK: Try localStorage data
-    const data = localStorage.getItem('abc_books_data');
+    const data = localStorage.getItem('abc_books_data_cache');
     if (data) {
         const parsed = JSON.parse(data);
         currentBook = parsed.books.find(b => b.id === bookId || String(b.id) === bookId);
@@ -184,7 +184,7 @@ async function loadRelatedBooks() {
 
     // Fallback to localStorage
     if (allBooks.length === 0) {
-        const data = localStorage.getItem('abc_books_data');
+        const data = localStorage.getItem('abc_books_data_cache');
         if (data) {
             const parsed = JSON.parse(data);
             allBooks = parsed.books || [];
@@ -246,233 +246,72 @@ function decreaseQty() {
 async function addToCartDetail() {
     if (!currentBook) return;
 
-    // Check if user is logged in - Strict check using token
-    const token = localStorage.getItem('jwt_token');
-    const currentUser = JSON.parse(localStorage.getItem('abc_books_current_user') || 'null');
-
-    if (!token || !currentUser || !currentUser.id) {
-        // User is NOT logged in - show login modal
-        showNotification('Please login or create an account to add items to cart', 'info');
-
-        // Show login modal if available
-        if (typeof showLoginModal === 'function') {
-            setTimeout(() => showLoginModal(), 100);
-        } else {
-            // Fallback: try to find and show the login modal directly
-            const loginModal = document.getElementById('loginModal');
-            if (loginModal) {
-                loginModal.classList.add('active');
-                if (document.getElementById('loginTabBtn')) {
-                    document.getElementById('loginTabBtn').click();
-                }
-                document.body.style.overflow = 'hidden';
-            }
-        }
-        return;
-    }
-
-    // User IS logged in - proceed with adding to cart
     const qty = parseInt(document.getElementById('quantity').value) || 1;
 
-    try {
-        // Try to use API if available
-        if (typeof API !== 'undefined' && typeof addToCart === 'function') {
-            try {
-                // Fetch books from database
-                const response = await fetch(`${BOOK_DETAIL_API_BASE}/books`);
-                if (response.ok) {
-                    const books = await response.json();
-                    const dbBook = books.find(b => b.isbn === currentBook.id);
-
-                    if (dbBook) {
-                        // Use API-integrated cart
-                        for (let i = 0; i < qty; i++) {
-                            await addToCart(dbBook.id, currentBook);
-                        }
-                        showNotification(`${currentBook.title} added to cart!`, 'success');
-                        updateCartBadge();
-                        return;
-                    }
-                }
-            } catch (apiError) {
-                console.log('API not available, using localStorage fallback');
-            }
+    // Use the central addToCart from user-auth-api.js
+    // It already handles login checks and pending actions!
+    if (typeof addToCart === 'function') {
+        // We pass currentBook as bookData
+        for (let i = 0; i < qty; i++) {
+            await addToCart(currentBook.id, currentBook);
         }
-
-        // Fallback to localStorage cart
-        let cart = JSON.parse(localStorage.getItem('abc_cart') || '[]');
-
-        // Check if book already in cart
-        const existingItem = cart.find(item => item.id === currentBook.id);
-
-        if (existingItem) {
-            existingItem.quantity = (existingItem.quantity || 1) + qty;
-        } else {
-            cart.push({
-                id: currentBook.id,
-                title: currentBook.title,
-                author: currentBook.author,
-                price: currentBook.price,
-                image: currentBook.image,
-                quantity: qty
-            });
-        }
-
-        localStorage.setItem('abc_cart', JSON.stringify(cart));
-        showNotification(`${currentBook.title} added to cart!`, 'success');
-        updateCartBadge();
-
-    } catch (error) {
-        console.error('Error adding to cart:', error);
-        showNotification('Error adding to cart. Please try again.', 'error');
+    } else {
+        console.error('addToCart function not found');
+        showNotification('Error: Shop services not ready', 'error');
     }
 }
 
-// Buy Now - Check login first, then direct purchase
+// Buy Now - use the shared logic in user-auth-api.js
 async function buyNow() {
     if (!currentBook) return;
 
-    // Check if user is logged in - Strict check using token
-    const token = localStorage.getItem('jwt_token');
-    const currentUser = JSON.parse(localStorage.getItem('abc_books_current_user') || 'null');
+    const qty = parseInt(document.getElementById('quantity').value) || 1;
 
-    if (!token || !currentUser || !currentUser.id) {
-        // User is NOT logged in - save pending action and show login modal
-        localStorage.setItem('abc_pending_action', 'buy_now');
+    // Check precise physical token presence immediately 
+    const hasToken = localStorage.getItem('accessToken') || localStorage.getItem('token') || localStorage.getItem('jwt_token');
 
-        // Also save the current book and quantity for later
-        const qty = parseInt(document.getElementById('quantity').value) || 1;
-        localStorage.setItem('abc_pending_book', JSON.stringify({
-            book: currentBook,
-            quantity: qty
+    if (!hasToken) {
+        // Save pending action
+        localStorage.setItem('abc_books_pending_action', 'buy_now');
+        localStorage.setItem('abc_books_pending_book', JSON.stringify({
+            bookId: currentBook.id,
+            bookData: currentBook,
+            quantity: qty,
+            source: 'book-detail'
         }));
 
-        showNotification('Please login or create an account to continue', 'info');
-
-        // Show login modal if available
-        if (typeof showLoginModal === 'function') {
-            setTimeout(() => showLoginModal(), 100);
-        } else {
-            // Fallback: try to find and show the login modal directly
-            const loginModal = document.getElementById('loginModal');
-            if (loginModal) {
-                loginModal.classList.add('active');
-                if (document.getElementById('loginTabBtn')) {
-                    document.getElementById('loginTabBtn').click();
-                }
-                document.body.style.overflow = 'hidden';
-            }
-        }
+        if (typeof showNotification === 'function') showNotification('Please login to continue purchase', 'info');
+        if (typeof showLoginModal === 'function') showLoginModal();
         return;
     }
 
-    // User IS logged in - proceed with purchase
-    continueBuyNow();
-}
-
-// Continue Buy Now after login (or if already logged in)
-function continueBuyNow() {
-    // Check if there's a pending book (from before login)
-    const pendingBookData = localStorage.getItem('abc_pending_book');
-    let bookToAdd = currentBook;
-    let qtyToAdd = 1;
-
-    if (pendingBookData) {
-        // Use the pending book data
-        const pending = JSON.parse(pendingBookData);
-        bookToAdd = pending.book;
-        qtyToAdd = pending.quantity;
-        // Clear the pending data
-        localStorage.removeItem('abc_pending_book');
-    } else {
-        // Use current page data
-        qtyToAdd = parseInt(document.getElementById('quantity')?.value) || 1;
-    }
-
-    if (!bookToAdd) {
-        showNotification('Error: Book data not found', 'error');
-        return;
-    }
-
-    try {
-        // Directly add to localStorage cart for quick purchase
-        let cart = JSON.parse(localStorage.getItem('abc_cart') || '[]');
-
-        // Check if book already in cart
-        const existingItem = cart.find(item => item.id === bookToAdd.id);
-
-        if (existingItem) {
-            existingItem.quantity = (existingItem.quantity || 1) + qtyToAdd;
-        } else {
-            cart.push({
-                id: bookToAdd.id,
-                title: bookToAdd.title,
-                author: bookToAdd.author,
-                price: bookToAdd.price,
-                image: bookToAdd.image,
-                quantity: qtyToAdd
-            });
+    // Already logged in - add to cart and go to checkout
+    if (typeof addToCart === 'function') {
+        for (let i = 0; i < qty; i++) {
+            await addToCart(currentBook.id, currentBook);
         }
 
-        localStorage.setItem('abc_cart', JSON.stringify(cart));
-
-        // Show quick notification and redirect
-        showNotification('Redirecting to checkout...', 'success');
-
-        // Redirect to checkout immediately
-        setTimeout(() => {
-            window.location.href = 'checkout.html';
-        }, 500);
-
-    } catch (error) {
-        console.error('Error in continue buy now:', error);
-        showNotification('Error processing request. Please try again.', 'error');
+        // Redirect to checkout
+        const isInsidePages = window.location.pathname.includes('/pages/');
+        window.location.href = isInsidePages ? 'checkout.html' : 'pages/checkout.html';
     }
 }
 
-// Add to wishlist - CHECK LOGIN FIRST
-function addToWishlistDetail() {
+// Add to wishlist - use shared logic from user-auth-api.js
+async function addToWishlistDetail() {
     if (!currentBook) return;
-
-    // Check if user is logged in
-    const currentUser = JSON.parse(localStorage.getItem('abc_books_current_user') || 'null');
-
-    if (!currentUser || !currentUser.email) {
-        // User is NOT logged in - show login modal
-        showNotification('Please login to add items to wishlist', 'info');
-
-        // Show login modal if available
-        if (typeof showLoginModal === 'function') {
-            setTimeout(() => showLoginModal(), 500);
-        } else {
-            const loginModal = document.getElementById('loginModal');
-            if (loginModal) {
-                loginModal.classList.add('active');
-                document.body.style.overflow = 'hidden';
-            }
-        }
-        return;
-    }
-
-    // User IS logged in - add to wishlist
-    let wishlist = JSON.parse(localStorage.getItem('abc_wishlist') || '[]');
-
-    if (!wishlist.find(item => item.id === currentBook.id)) {
-        wishlist.push({
+    if (typeof addToWishlist === 'function') {
+        const bookData = {
             id: currentBook.id,
             title: currentBook.title,
             author: currentBook.author,
             price: currentBook.price,
             image: currentBook.image
-        });
-        localStorage.setItem('abc_wishlist', JSON.stringify(wishlist));
-        showNotification(`${currentBook.title} added to wishlist!`, 'success');
-    } else {
-        showNotification('Already in wishlist', 'info');
+        };
+        await addToWishlist(currentBook.id, bookData);
     }
-
-    updateWishlistBadge();
 }
+
 
 // Share book
 function shareBook() {
@@ -489,19 +328,42 @@ function shareBook() {
     }
 }
 
-// Update cart badge
-function updateCartBadge() {
-    const cart = JSON.parse(localStorage.getItem('abc_cart') || '[]');
-    const count = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
-    const badge = document.getElementById('cartCount');
-    if (badge) badge.textContent = count;
+// Show error
+function showError(message) {
+    document.querySelector('.book-detail-main').innerHTML = `
+        <div class="container" style="text-align: center; padding: 100px 20px;">
+            <i class="fas fa-exclamation-circle" style="font-size: 4rem; color: #e74c3c; margin-bottom: 20px;"></i>
+            <h2 style="color: #2c1810; margin-bottom: 15px;">Oops! Book Not Found</h2>
+            <p style="color: #666; margin-bottom: 25px;">${message}</p>
+            <a href="../index.html" style="display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #8B4513, #A0522D); color: white; text-decoration: none; border-radius: 10px; font-weight: 600;">
+                <i class="fas fa-home"></i> Back to Home
+            </a>
+        </div>
+    `;
 }
 
-// Update wishlist badge
-function updateWishlistBadge() {
-    const wishlist = JSON.parse(localStorage.getItem('abc_wishlist') || '[]');
-    const badge = document.getElementById('wishlistCount');
-    if (badge) badge.textContent = wishlist.length;
+// Tab functionality
+function initializeTabs() {
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabPanels = document.querySelectorAll('.tab-panel');
+
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const targetTab = btn.dataset.tab;
+
+            // Update buttons
+            tabBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            // Update panels
+            tabPanels.forEach(panel => {
+                panel.classList.remove('active');
+                if (panel.id === `${targetTab}Panel`) {
+                    panel.classList.add('active');
+                }
+            });
+        });
+    });
 }
 
 // Show notification
@@ -536,185 +398,6 @@ function showNotification(message, type = 'success') {
     }, 3000);
 }
 
-// Show error
-function showError(message) {
-    document.querySelector('.book-detail-main').innerHTML = `
-        <div class="container" style="text-align: center; padding: 100px 20px;">
-            <i class="fas fa-exclamation-circle" style="font-size: 4rem; color: #e74c3c; margin-bottom: 20px;"></i>
-            <h2 style="color: #2c1810; margin-bottom: 15px;">Oops! Book Not Found</h2>
-            <p style="color: #666; margin-bottom: 25px;">${message}</p>
-            <a href="index.html" style="display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #8B4513, #A0522D); color: white; text-decoration: none; border-radius: 10px; font-weight: 600;">
-                <i class="fas fa-home"></i> Back to Home
-            </a>
-        </div>
-    `;
-}
-
-// Tab functionality
-function initializeTabs() {
-    const tabBtns = document.querySelectorAll('.tab-btn');
-    const tabPanels = document.querySelectorAll('.tab-panel');
-
-    tabBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const targetTab = btn.dataset.tab;
-
-            // Update buttons
-            tabBtns.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-
-            // Update panels
-            tabPanels.forEach(panel => {
-                panel.classList.remove('active');
-                if (panel.id === `${targetTab}Panel`) {
-                    panel.classList.add('active');
-                }
-            });
-        });
-    });
-}
-
-// Cart sidebar functions - CHECK LOGIN FIRST
-function toggleCart() {
-    // Check if user is logged in
-    const currentUser = JSON.parse(localStorage.getItem('abc_books_current_user') || 'null');
-
-    if (!currentUser || !currentUser.email) {
-        // User is NOT logged in - show login modal
-        showNotification('Please login to view your cart', 'info');
-
-        // Show login modal if available
-        if (typeof showLoginModal === 'function') {
-            setTimeout(() => showLoginModal(), 500);
-        } else {
-            const loginModal = document.getElementById('loginModal');
-            if (loginModal) {
-                loginModal.classList.add('active');
-                document.body.style.overflow = 'hidden';
-            }
-        }
-        return;
-    }
-
-    // User IS logged in - open cart
-    document.getElementById('cartPanel').classList.toggle('open');
-    document.getElementById('cartOverlay').classList.toggle('active');
-    loadCartItems();
-}
-
-function closeCart() {
-    document.getElementById('cartPanel').classList.remove('open');
-    document.getElementById('cartOverlay').classList.remove('active');
-}
-
-function loadCartItems() {
-    const container = document.getElementById('cartContent');
-    const cart = JSON.parse(localStorage.getItem('abc_cart') || '[]');
-
-    if (cart.length === 0) {
-        container.innerHTML = '<p class="empty-message"><i class="fas fa-shopping-cart"></i> Your cart is empty</p>';
-        document.getElementById('cartTotal').textContent = '₹0';
-        return;
-    }
-
-    let total = 0;
-    container.innerHTML = cart.map(item => {
-        const itemTotal = item.price * item.quantity;
-        total += itemTotal;
-        return `
-            <div class="cart-item">
-                <img src="${item.image}" alt="${item.title}" onerror="this.src='data:image/svg+xml,...'">
-                <div class="item-details">
-                    <h4>${item.title}</h4>
-                    <p>₹${item.price} × ${item.quantity}</p>
-                </div>
-                <button onclick="removeFromCart('${item.id}')" class="remove-btn"><i class="fas fa-trash"></i></button>
-            </div>
-        `;
-    }).join('');
-
-    document.getElementById('cartTotal').textContent = `₹${total}`;
-}
-
-function removeFromCart(bookId) {
-    let cart = JSON.parse(localStorage.getItem('abc_cart') || '[]');
-    cart = cart.filter(item => item.id !== bookId);
-    localStorage.setItem('abc_cart', JSON.stringify(cart));
-    loadCartItems();
-    updateCartBadge();
-}
-
-function proceedToCheckout() {
-    window.location.href = 'checkout.html';
-}
-
-// Wishlist sidebar functions - CHECK LOGIN FIRST
-function toggleWishlist() {
-    // Check if user is logged in
-    const currentUser = JSON.parse(localStorage.getItem('abc_books_current_user') || 'null');
-
-    if (!currentUser || !currentUser.email) {
-        // User is NOT logged in - show login modal
-        showNotification('Please login to view your wishlist', 'info');
-
-        // Show login modal if available
-        if (typeof showLoginModal === 'function') {
-            setTimeout(() => showLoginModal(), 500);
-        } else {
-            const loginModal = document.getElementById('loginModal');
-            if (loginModal) {
-                loginModal.classList.add('active');
-                document.body.style.overflow = 'hidden';
-            }
-        }
-        return;
-    }
-
-    // User IS logged in - open wishlist
-    document.getElementById('wishlistPanel').classList.toggle('open');
-    document.getElementById('wishlistOverlay').classList.toggle('active');
-    loadWishlistItems();
-}
-
-function closeWishlist() {
-    document.getElementById('wishlistPanel').classList.remove('open');
-    document.getElementById('wishlistOverlay').classList.remove('active');
-}
-
-function loadWishlistItems() {
-    const container = document.getElementById('wishlistContent');
-    const wishlist = JSON.parse(localStorage.getItem('abc_wishlist') || '[]');
-
-    if (wishlist.length === 0) {
-        container.innerHTML = '<p class="empty-message"><i class="fas fa-heart-broken"></i> Your wishlist is empty</p>';
-        return;
-    }
-
-    container.innerHTML = wishlist.map(item => `
-        <div class="wishlist-item">
-            <img src="${item.image}" alt="${item.title}">
-            <div class="item-details">
-                <h4>${item.title}</h4>
-                <p>₹${item.price}</p>
-            </div>
-            <button onclick="removeFromWishlist('${item.id}')" class="remove-btn"><i class="fas fa-times"></i></button>
-        </div>
-    `).join('');
-}
-
-function removeFromWishlist(bookId) {
-    let wishlist = JSON.parse(localStorage.getItem('abc_wishlist') || '[]');
-    wishlist = wishlist.filter(item => item.id !== bookId);
-    localStorage.setItem('abc_wishlist', JSON.stringify(wishlist));
-    loadWishlistItems();
-    updateWishlistBadge();
-}
-
-// Show review form
-function showReviewForm() {
-    showNotification('Review feature coming soon!', 'info');
-}
-
 // Add CSS animation
 const style = document.createElement('style');
 style.textContent = `
@@ -726,46 +409,16 @@ style.textContent = `
         from { transform: translateX(0); opacity: 1; }
         to { transform: translateX(100px); opacity: 0; }
     }
-    .cart-item, .wishlist-item {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 12px;
-        border-bottom: 1px solid #f0f0f0;
-    }
-    .cart-item img, .wishlist-item img {
-        width: 60px;
-        height: 80px;
-        object-fit: cover;
-        border-radius: 5px;
-    }
-    .cart-item .item-details, .wishlist-item .item-details {
-        flex: 1;
-    }
-    .cart-item h4, .wishlist-item h4 {
-        font-size: 14px;
-        margin-bottom: 5px;
-        color: #333;
-    }
-    .cart-item p, .wishlist-item p {
-        font-size: 13px;
-        color: #27ae60;
-        font-weight: 600;
-    }
-    .remove-btn {
-        background: none;
-        border: none;
-        color: #e74c3c;
-        cursor: pointer;
-        padding: 5px;
-    }
 `;
 document.head.appendChild(style);
 
 // Initialize page
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    // Initial UI update to reflect login state from the start
+    if (typeof updateUserUI === 'function') {
+        await updateUserUI();
+    }
+
     loadBookDetails();
     initializeTabs();
-    updateCartBadge();
-    updateWishlistBadge();
 });

@@ -326,20 +326,18 @@ function viewBookDetail(bookId) {
 
 // ===== Card-Specific Action Functions =====
 
-// Check if user is logged in using JWT token OR localStorage
+// Check if user is logged in using accurate token presence
 function isUserLoggedIn() {
-    // Method 1: Check API token (if API is loaded)
-    if (typeof API !== 'undefined' && API.Token && API.Token.isValid()) {
-        return true;
+    // Check if any recognized token exists
+    const hasToken = localStorage.getItem('accessToken') || localStorage.getItem('token') || localStorage.getItem('jwt_token');
+
+    // Method 1: Check API token fully if API is configured
+    if (typeof API !== 'undefined' && API.Token) {
+        return API.Token.isValid();
     }
 
-    // Method 2: Check localStorage user (fallback for pages without API)
-    const currentUser = JSON.parse(localStorage.getItem('abc_books_current_user') || 'null');
-    if (currentUser && currentUser.email) {
-        return true;
-    }
-
-    return false;
+    // Method 2: Fallback to token presence
+    return !!hasToken;
 }
 
 // Show login required notification and modal
@@ -390,8 +388,8 @@ async function addToCartCard(bookId, bookData) {
     // Check if user is logged in
     if (!isUserLoggedIn()) {
         // ✅ SAVE PENDING ACTION for auto-continue after login
-        localStorage.setItem('abc_pending_action', 'add_to_cart');
-        localStorage.setItem('abc_pending_book', JSON.stringify({
+        localStorage.setItem('abc_books_pending_action', 'add_to_cart');
+        localStorage.setItem('abc_books_pending_book', JSON.stringify({
             bookId: bookId,
             bookData: bookData,
             quantity: 1,
@@ -423,8 +421,8 @@ async function buyNow(bookId, bookData) {
     // Check if user is logged in
     if (!isUserLoggedIn()) {
         // ✅ SAVE PENDING ACTION for auto-continue after login
-        localStorage.setItem('abc_pending_action', 'buy_now');
-        localStorage.setItem('abc_pending_book', JSON.stringify({
+        localStorage.setItem('abc_books_pending_action', 'buy_now');
+        localStorage.setItem('abc_books_pending_book', JSON.stringify({
             bookId: bookId,
             bookData: bookData,
             quantity: 1,
@@ -459,77 +457,15 @@ async function buyNow(bookId, bookData) {
     }
 }
 
-// ===== Cart & Wishlist Functions =====
-
-function addToCart(bookId, book) {
-    // ✅ CHECK IF USER IS LOGGED IN FIRST
-    if (!isUserLoggedIn()) {
-        // Save pending action for auto-continue after login
-        localStorage.setItem('abc_pending_action', 'add_to_cart');
-        localStorage.setItem('abc_pending_book', JSON.stringify({
-            bookId: bookId,
-            bookData: book,
-            quantity: 1,
-            source: 'homepage'
-        }));
-
-        requireLogin('add to cart');
-        return;
-    }
-
-    // User is logged in - proceed with adding to cart
-    let cart = JSON.parse(localStorage.getItem('abc_cart') || '[]');
-
-    const existingIndex = cart.findIndex(item => item.id === bookId);
-    if (existingIndex >= 0) {
-        cart[existingIndex].quantity = (cart[existingIndex].quantity || 1) + 1;
-    } else {
-        cart.push({ ...book, id: bookId, quantity: 1 });
-    }
-
-    localStorage.setItem('abc_cart', JSON.stringify(cart));
-    updateCartBadge();
-    showNotification(`${book.title || 'Book'} added to cart!`, 'success');
-}
-
-function addToWishlist(bookId, book) {
-    // ✅ CHECK IF USER IS LOGGED IN FIRST
-    if (!isUserLoggedIn()) {
-        // Save pending action for auto-continue after login
-        localStorage.setItem('abc_pending_action', 'add_to_wishlist');
-        localStorage.setItem('abc_pending_book', JSON.stringify({
-            bookId: bookId,
-            bookData: book,
-            quantity: 1,
-            source: 'homepage'
-        }));
-
-        requireLogin('add to wishlist');
-        return;
-    }
-
-    // User is logged in - proceed with adding to wishlist
-    let wishlist = JSON.parse(localStorage.getItem('abc_wishlist') || '[]');
-
-    if (!wishlist.some(item => item.id === bookId)) {
-        wishlist.push({ ...book, id: bookId });
-        localStorage.setItem('abc_wishlist', JSON.stringify(wishlist));
-        updateWishlistBadge();
-        showNotification(`${book.title || 'Book'} added to wishlist!`, 'success');
-    } else {
-        showNotification('Already in wishlist', 'info');
-    }
-}
-
 function updateCartBadge() {
-    const cart = JSON.parse(localStorage.getItem('abc_cart') || '[]');
+    const cart = JSON.parse(localStorage.getItem('abc_books_cart') || '[]');
     const count = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
     const badge = document.getElementById('cartCount');
     if (badge) badge.textContent = count;
 }
 
 function updateWishlistBadge() {
-    const wishlist = JSON.parse(localStorage.getItem('abc_wishlist') || '[]');
+    const wishlist = JSON.parse(localStorage.getItem('abc_books_wishlist') || '[]');
     const badge = document.getElementById('wishlistCount');
     if (badge) badge.textContent = wishlist.length;
 }

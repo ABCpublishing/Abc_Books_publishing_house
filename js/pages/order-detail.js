@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Load order details
-function loadOrderDetails() {
+async function loadOrderDetails() {
     const urlParams = new URLSearchParams(window.location.search);
     const orderId = urlParams.get('id');
 
@@ -17,29 +17,87 @@ function loadOrderDetails() {
         return;
     }
 
-    // Find order
-    const orders = JSON.parse(localStorage.getItem('abc_orders') || '[]');
-    currentOrder = orders.find(o => o.orderId === orderId);
+    try {
+        // Fetch order from API
+        const response = await API.Orders.getById(orderId);
 
-    if (!currentOrder) {
-        window.location.href = 'my-orders.html';
-        return;
+        if (response.order) {
+            const apiOrder = response.order;
+            currentOrder = {
+                orderId: apiOrder.order_id,
+                orderDate: apiOrder.created_at,
+                status: apiOrder.status,
+                total: apiOrder.total,
+                subtotal: apiOrder.subtotal,
+                discount: apiOrder.discount,
+                paymentMethod: apiOrder.payment_method,
+                items: apiOrder.items || [],
+                shipping: {
+                    firstName: apiOrder.shipping_first_name,
+                    lastName: apiOrder.shipping_last_name,
+                    email: apiOrder.shipping_email,
+                    phone: apiOrder.shipping_phone,
+                    address1: apiOrder.shipping_address1,
+                    city: apiOrder.shipping_city,
+                    state: apiOrder.shipping_state,
+                    pincode: apiOrder.shipping_pincode
+                }
+            };
+        } else {
+            // Fallback: Check local storage for newly placed orders not yet synced
+            const orders = JSON.parse(localStorage.getItem('abc_books_orders') || '[]');
+            currentOrder = orders.find(o => o.orderId === orderId);
+        }
+
+        if (!currentOrder) {
+            alert('Order not found!');
+            window.location.href = 'my-orders.html';
+            return;
+        }
+
+        updateOrderDetailUI(orderId);
+    } catch (error) {
+        console.error('Error fetching order details:', error);
+        // Fallback to local storage
+        const orders = JSON.parse(localStorage.getItem('abc_books_orders') || '[]');
+        currentOrder = orders.find(o => o.orderId === orderId);
+
+        if (!currentOrder) {
+            alert('Order not found!');
+            window.location.href = 'my-orders.html';
+            return;
+        }
+
+        updateOrderDetailUI(orderId);
     }
+}
 
+function updateOrderDetailUI(orderId) {
     // Update page
     document.title = `Order #${orderId} | ABC Books`;
-    document.getElementById('breadcrumbOrderId').textContent = `#${orderId}`;
-    document.getElementById('orderIdTitle').textContent = `#${orderId}`;
+
+    // Safety check for UI elements
+    const breadcrumbEl = document.getElementById('breadcrumbOrderId');
+    const titleEl = document.getElementById('orderIdTitle');
+    if (breadcrumbEl) breadcrumbEl.textContent = `#${orderId}`;
+    if (titleEl) titleEl.textContent = `#${orderId}`;
 
     // Update status badge
     const status = (currentOrder.status || 'confirmed').toLowerCase();
     const statusBadge = document.getElementById('orderStatusBadge');
-    statusBadge.textContent = capitalizeFirst(status);
-    statusBadge.className = `status-badge ${status}`;
+    if (statusBadge) {
+        statusBadge.textContent = capitalizeFirst(status);
+        statusBadge.className = `status-badge ${status}`;
+    }
 
     // Show cancel button if order can be cancelled
-    if (status === 'confirmed' || status === 'processing') {
-        document.getElementById('cancelBtn').style.display = 'flex';
+    const cancelBtn = document.getElementById('cancelBtn');
+    if (cancelBtn) {
+        if (status === 'confirmed' || status === 'processing') {
+            cancelBtn.style.display = 'flex';
+        } else {
+            cancelBtn.style.display = 'none';
+        }
     }
 
     // Load sections
@@ -227,12 +285,12 @@ function cancelOrder() {
     if (!confirm('Are you sure you want to cancel this order?')) return;
 
     // Update order status
-    let orders = JSON.parse(localStorage.getItem('abc_orders') || '[]');
+    let orders = JSON.parse(localStorage.getItem('abc_books_orders') || '[]');
     const orderIndex = orders.findIndex(o => o.orderId === currentOrder.orderId);
 
     if (orderIndex >= 0) {
         orders[orderIndex].status = 'cancelled';
-        localStorage.setItem('abc_orders', JSON.stringify(orders));
+        localStorage.setItem('abc_books_orders', JSON.stringify(orders));
     }
 
     // Reload page

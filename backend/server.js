@@ -105,15 +105,18 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'ABC Books API v2.0 (Verified) is running!' });
 });
 
-// Maintenance Route - Fix DB Schema
-app.get('/api/fix-db-schema', async (req, res) => {
+// Maintenance Route - Verify All Users
+app.get('/api/verify-all-users', async (req, res) => {
     try {
-        await req.sql`ALTER TABLE books ALTER COLUMN image TYPE TEXT`;
-        await req.sql`ALTER TABLE books ALTER COLUMN description TYPE TEXT`;
-        res.send('✅ Schema updated successfully! Columns "image" and "description" are now TEXT type.');
+        const result = await req.sql`UPDATE users SET is_verified = TRUE WHERE is_verified = FALSE RETURNING id, email`;
+        res.json({
+            success: true,
+            message: `✅ Successfully verified ${result.length} users.`,
+            users: result
+        });
     } catch (error) {
-        console.error('Schema update failed:', error);
-        res.status(500).send('Schema update failed: ' + error.message);
+        console.error('Verification failed:', error);
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 

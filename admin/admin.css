@@ -1246,3 +1246,45 @@ body {
         padding: 30px 20px;
     }
 }
+
+/* ===== PRINT STYLES FOR INVOICE ===== */
+@media print {
+    body * {
+        visibility: hidden;
+    }
+
+    #orderModal {
+        position: absolute;
+        left: 0;
+        top: 0;
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        background: white;
+    }
+
+    #orderModal .modal-content,
+    #orderModal .modal-content * {
+        visibility: visible;
+    }
+
+    #orderModal .modal-header h2 {
+        visibility: visible;
+    }
+
+    #orderModal .modal-content {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        max-width: 100%;
+        box-shadow: none;
+        border: none;
+        overflow: visible;
+    }
+
+    #orderModal .modal-footer,
+    #orderModal .close-modal {
+        display: none !important;
+    }
+}

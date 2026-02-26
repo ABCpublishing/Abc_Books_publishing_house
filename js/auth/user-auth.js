@@ -535,7 +535,8 @@ function updateCartCount() {
 
 // ===== USER MENU FUNCTIONS =====
 function viewOrders() {
-    alert('Order history feature coming soon!');
+    const isInsidePages = window.location.pathname.includes('/pages/');
+    window.location.href = isInsidePages ? 'my-orders.html' : 'pages/my-orders.html';
 }
 
 function viewWishlist() {

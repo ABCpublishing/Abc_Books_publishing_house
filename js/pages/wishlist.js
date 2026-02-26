@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Load wishlist
 function loadWishlist() {
-    wishlistItems = JSON.parse(localStorage.getItem('abc_wishlist') || '[]');
+    wishlistItems = JSON.parse(localStorage.getItem('abc_books_wishlist') || '[]');
     renderWishlist();
 }
 
@@ -76,7 +76,7 @@ function viewBook(bookId) {
 // Remove from wishlist
 function removeFromWishlist(itemId) {
     wishlistItems = wishlistItems.filter(item => item.id !== itemId);
-    localStorage.setItem('abc_wishlist', JSON.stringify(wishlistItems));
+    localStorage.setItem('abc_books_wishlist', JSON.stringify(wishlistItems));
 
     // Animate removal
     const itemElement = document.querySelector(`[data-id="${itemId}"]`);
@@ -98,7 +98,7 @@ function moveToCart(itemId) {
     if (!item) return;
 
     // Add to cart
-    let cart = JSON.parse(localStorage.getItem('abc_cart') || '[]');
+    let cart = JSON.parse(localStorage.getItem('abc_books_cart') || '[]');
     const existingIndex = cart.findIndex(c => c.id === itemId);
 
     if (existingIndex >= 0) {
@@ -107,7 +107,7 @@ function moveToCart(itemId) {
         cart.push({ ...item, quantity: 1 });
     }
 
-    localStorage.setItem('abc_cart', JSON.stringify(cart));
+    localStorage.setItem('abc_books_cart', JSON.stringify(cart));
 
     // Remove from wishlist
     removeFromWishlist(itemId);
@@ -119,7 +119,7 @@ function moveToCart(itemId) {
 function addAllToCart() {
     if (wishlistItems.length === 0) return;
 
-    let cart = JSON.parse(localStorage.getItem('abc_cart') || '[]');
+    let cart = JSON.parse(localStorage.getItem('abc_books_cart') || '[]');
 
     wishlistItems.forEach(item => {
         const existingIndex = cart.findIndex(c => c.id === item.id);
@@ -131,11 +131,11 @@ function addAllToCart() {
         }
     });
 
-    localStorage.setItem('abc_cart', JSON.stringify(cart));
+    localStorage.setItem('abc_books_cart', JSON.stringify(cart));
 
     // Clear wishlist
     wishlistItems = [];
-    localStorage.setItem('abc_wishlist', JSON.stringify(wishlistItems));
+    localStorage.setItem('abc_books_wishlist', JSON.stringify(wishlistItems));
 
     renderWishlist();
     showNotification('All items added to cart!', 'success');
@@ -146,7 +146,7 @@ function clearWishlist() {
     if (!confirm('Are you sure you want to clear your wishlist?')) return;
 
     wishlistItems = [];
-    localStorage.setItem('abc_wishlist', JSON.stringify(wishlistItems));
+    localStorage.setItem('abc_books_wishlist', JSON.stringify(wishlistItems));
     renderWishlist();
     showNotification('Wishlist cleared');
 }
