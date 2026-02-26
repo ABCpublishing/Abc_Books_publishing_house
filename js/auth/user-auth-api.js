@@ -631,24 +631,27 @@ async function loadWishlistItems() {
             return;
         }
 
-        content.innerHTML = wishlist.map(item => `
-            <div class="wishlist-item">
-                <img src="${item.image}" alt="${item.title}">
-                <div class="item-details">
-                    <h4>${item.title}</h4>
-                    <p>${item.author}</p>
-                    <div class="item-price">₹${item.price}</div>
+        content.innerHTML = wishlist.map(item => {
+            const price = parseFloat(item.price) || 0;
+            return `
+                <div class="wishlist-item">
+                    <img src="${item.image}" alt="${item.title}" onerror="this.src='https://via.placeholder.com/50x70?text=Book'">
+                    <div class="item-details">
+                        <h4>${item.title}</h4>
+                        <p>${item.author}</p>
+                        <div class="item-price">₹${price.toFixed(2)}</div>
+                    </div>
+                    <div class="item-actions">
+                        <button class="btn-icon" onclick="addToCartFromWishlist(${item.book_id})" title="Add to Cart">
+                            <i class="fas fa-shopping-cart"></i>
+                        </button>
+                        <button class="btn-icon" onclick="removeFromWishlist(${item.id})" title="Remove">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
                 </div>
-                <div class="item-actions">
-                    <button class="btn-icon" onclick="addToCartFromWishlist(${item.book_id})" title="Add to Cart">
-                        <i class="fas fa-shopping-cart"></i>
-                    </button>
-                    <button class="btn-icon" onclick="removeFromWishlist(${item.id})" title="Remove">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
     } catch (error) {
         console.error('Error loading wishlist:', error);
         content.innerHTML = '<p class="empty-message">Error loading wishlist</p>';
@@ -775,24 +778,28 @@ async function loadCartItems() {
             return;
         }
 
-        content.innerHTML = cart.map(item => `
-            <div class="cart-item">
-                <img src="${item.image}" alt="${item.title}">
-                <div class="item-details">
-                    <h4>${item.title}</h4>
-                    <p>${item.author}</p>
-                    <div class="item-price">₹${item.price}</div>
-                    <div class="item-quantity">
-                        <button onclick="updateQuantity(${item.id}, ${item.quantity - 1})">-</button>
-                        <span>${item.quantity}</span>
-                        <button onclick="updateQuantity(${item.id}, ${item.quantity + 1})">+</button>
+        content.innerHTML = cart.map(item => {
+            const price = parseFloat(item.price) || 0;
+            const qty = parseInt(item.quantity) || 1;
+            return `
+                <div class="cart-item">
+                    <img src="${item.image}" alt="${item.title}" onerror="this.src='https://via.placeholder.com/50x70?text=Book'">
+                    <div class="item-details">
+                        <h4>${item.title}</h4>
+                        <p>${item.author}</p>
+                        <div class="item-price">₹${price.toFixed(2)}</div>
+                        <div class="item-quantity">
+                            <button onclick="updateQuantity(${item.id}, ${qty - 1})">-</button>
+                            <span>${qty}</span>
+                            <button onclick="updateQuantity(${item.id}, ${qty + 1})">+</button>
+                        </div>
                     </div>
+                    <button class="btn-remove" onclick="removeFromCart(${item.id})">
+                        <i class="fas fa-times"></i>
+                    </button>
                 </div>
-                <button class="btn-remove" onclick="removeFromCart(${item.id})">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-        `).join('');
+            `;
+        }).join('');
 
         updateCartTotal(cart);
     } catch (error) {
@@ -893,8 +900,16 @@ async function updateQuantity(cartId, newQuantity) {
 }
 
 function updateCartTotal(cart) {
-    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    document.getElementById('cartTotal').textContent = `₹${total.toFixed(2)}`;
+    if (!Array.isArray(cart)) return;
+    const total = cart.reduce((sum, item) => {
+        const price = parseFloat(item.price) || 0;
+        const qty = parseInt(item.quantity) || 1;
+        return sum + (price * qty);
+    }, 0);
+    const cartTotalEl = document.getElementById('cartTotal');
+    if (cartTotalEl) {
+        cartTotalEl.textContent = `₹${(total || 0).toFixed(2)}`;
+    }
 }
 
 async function proceedToCheckout() {
@@ -988,12 +1003,12 @@ async function updateCartCount() {
         let totalItems = 0;
         if (Array.isArray(cart)) {
             totalItems = cart.reduce((total, item) => {
-                const qty = parseInt(item.quantity) || 1;
-                return total + qty;
+                const qty = parseInt(item.quantity);
+                return total + (isNaN(qty) ? 1 : qty);
             }, 0);
         }
 
-        countElement.textContent = totalItems || 0;
+        countElement.textContent = isNaN(totalItems) ? 0 : totalItems;
     } catch (error) {
         console.error('Error updating cart count:', error);
         countElement.textContent = '0';

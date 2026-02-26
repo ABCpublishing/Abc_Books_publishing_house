@@ -458,16 +458,32 @@ async function buyNow(bookId, bookData) {
 }
 
 function updateCartBadge() {
-    const cart = JSON.parse(localStorage.getItem('abc_books_cart') || '[]');
-    const count = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
-    const badge = document.getElementById('cartCount');
-    if (badge) badge.textContent = count;
+    try {
+        const cart = JSON.parse(localStorage.getItem('abc_books_cart') || '[]');
+        if (!Array.isArray(cart)) {
+            const badge = document.getElementById('cartCount');
+            if (badge) badge.textContent = '0';
+            return;
+        }
+        const count = cart.reduce((sum, item) => {
+            const qty = parseInt(item.quantity) || 1;
+            return sum + qty;
+        }, 0);
+        const badge = document.getElementById('cartCount');
+        if (badge) badge.textContent = isNaN(count) ? 0 : count;
+    } catch (e) {
+        console.error('Error updating cart badge:', e);
+    }
 }
 
 function updateWishlistBadge() {
-    const wishlist = JSON.parse(localStorage.getItem('abc_books_wishlist') || '[]');
-    const badge = document.getElementById('wishlistCount');
-    if (badge) badge.textContent = wishlist.length;
+    try {
+        const wishlist = JSON.parse(localStorage.getItem('abc_books_wishlist') || '[]');
+        const badge = document.getElementById('wishlistCount');
+        if (badge) badge.textContent = Array.isArray(wishlist) ? wishlist.length : 0;
+    } catch (e) {
+        console.error('Error updating wishlist badge:', e);
+    }
 }
 
 function showNotification(message, type = 'info') {
