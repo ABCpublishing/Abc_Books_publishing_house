@@ -338,7 +338,9 @@ async function renderUsersTable() {
     const tbody = document.getElementById('usersTableBody');
     if (!tbody) return;
 
-    tbody.innerHTML = '<tr><td colspan="7" class="no-data"><i class="fas fa-spinner fa-spin"></i> Loading users...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="no-data"><i class="fas fa-spinner fa-spin"></i> Loading users...</td></tr>';
+    document.getElementById('selectAllUsers').checked = false;
+    updateBulkDeleteBtn();
 
     try {
         const response = await API.Users.getAll();
@@ -349,12 +351,13 @@ async function renderUsersTable() {
         if (userCountStat) userCountStat.textContent = users.length;
 
         if (users.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="no-data">No users found</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="no-data">No users found</td></tr>';
             return;
         }
 
         tbody.innerHTML = users.map(user => `
             <tr>
+                <td><input type="checkbox" class="user-checkbox" value="${user.id}" onchange="updateBulkDeleteBtn()"></td>
                 <td><strong>${user.id}</strong></td>
                 <td>${user.name || 'User'}</td>
                 <td>${user.email}</td>
@@ -385,15 +388,70 @@ async function renderUsersTable() {
         `).join('');
     } catch (error) {
         if (error.message.includes('Access denied')) {
-            tbody.innerHTML = `<tr><td colspan="7" class="no-data" style="color: #e74c3c; padding: 30px;">
+            tbody.innerHTML = `<tr><td colspan="8" class="no-data" style="color: #e74c3c; padding: 30px;">
                 <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-bottom: 10px;"></i><br>
                 <strong>Admin Privileges Required</strong><br>
                 Your current session does not have permission to view users.<br>
                 <button onclick="handleLogout()" class="btn-primary" style="margin-top: 15px; padding: 8px 20px;">Log Out & Sign In Again</button>
             </td></tr>`;
         } else {
-            tbody.innerHTML = `<tr><td colspan="7" class="no-data">Error loading users: ${error.message}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8" class="no-data">Error loading users: ${error.message}</td></tr>`;
         }
+    }
+}
+
+// User checkbox helpers
+function toggleAllUsers(source) {
+    const checkboxes = document.querySelectorAll('.user-checkbox');
+    checkboxes.forEach(cb => cb.checked = source.checked);
+    updateBulkDeleteBtn();
+}
+
+function updateBulkDeleteBtn() {
+    const checkedBoxes = document.querySelectorAll('.user-checkbox:checked');
+    const bulkBtn = document.getElementById('bulkDeleteUsersBtn');
+
+    // Also update "Select All" checked state appropriately
+    const selectAllCheckbox = document.getElementById('selectAllUsers');
+    const totalCheckboxes = document.querySelectorAll('.user-checkbox');
+    if (selectAllCheckbox && totalCheckboxes.length > 0) {
+        selectAllCheckbox.checked = checkedBoxes.length === totalCheckboxes.length;
+    }
+
+    if (bulkBtn) {
+        bulkBtn.style.display = checkedBoxes.length > 0 ? 'inline-block' : 'none';
+        bulkBtn.innerHTML = `<i class="fas fa-trash-alt"></i> Delete Selected (${checkedBoxes.length})`;
+    }
+}
+
+async function bulkDeleteUsers() {
+    const checkedBoxes = document.querySelectorAll('.user-checkbox:checked');
+    if (checkedBoxes.length === 0) return;
+
+    if (!confirm(`Are you sure you want to delete ${checkedBoxes.length} selected users? This action cannot be undone.`)) {
+        return;
+    }
+
+    const ids = Array.from(checkedBoxes).map(cb => cb.value);
+    const bulkBtn = document.getElementById('bulkDeleteUsersBtn');
+    bulkBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+    bulkBtn.disabled = true;
+
+    try {
+        // Execute deletions in sequence to avoid overwhelming the server or DB connections
+        for (const id of ids) {
+            await API.Users.delete(id);
+        }
+        showNotification(`Successfully deleted ${checkedBoxes.length} users`, 'success');
+        renderUsersTable(); // Re-render the table
+        loadDashboardData(); // Refresh summary stats
+    } catch (error) {
+        console.error('Error during bulk deletion:', error);
+        alert('Some users could not be deleted: ' + error.message);
+        renderUsersTable(); // Re-render to reflect any partial success
+    } finally {
+        bulkBtn.disabled = false;
+        bulkBtn.style.display = 'none';
     }
 }
 
