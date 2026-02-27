@@ -1137,3 +1137,243 @@ async function populateBookFormForEdit(book) {
         checkbox.checked = bookSections.includes(checkbox.value);
     });
 }
+// ===== ORDER MANAGEMENT FUNCTIONS (IMPLEMENTED) =====
+async function renderOrdersTable() {
+    const tbody = document.getElementById('ordersTableBody');
+    if (!tbody) return;
+
+    try {
+        const data = await API.Orders.getAll();
+        const orders = data.orders || [];
+
+        // Update dashboard count if exists
+        const countEl = document.getElementById('ordersCount');
+        if (countEl) countEl.textContent = orders.length;
+
+        if (orders.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="no-data">No orders found</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = orders.map(order => `
+            <tr>
+                <td><strong>${order.order_id}</strong></td>
+                <td>
+                    <div class="customer-info" style="font-size: 13px;">
+                        <div>${order.customer_name || 'Guest'}</div>
+                        <small style="color: #888;">${order.shipping_email || ''}</small>
+                    </div>
+                </td>
+                <td>${order.items?.length || 0} items</td>
+                <td>₹${order.total}</td>
+                <td>${new Date(order.created_at).toLocaleDateString()}</td>
+                <td>
+                    <span class="status-badge status-${(order.status || 'pending').toLowerCase().replace(/ /g, '_')}">
+                        ${order.status || 'Pending'}
+                    </span>
+                </td>
+                <td>
+                    <div class="action-icons">
+                        <button class="icon-btn view" onclick="viewOrderDetails('${order.id}')" title="View Details">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="icon-btn delete" onclick="deleteOrder('${order.id}')" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+
+    } catch (error) {
+        console.error('Error loading orders:', error);
+        tbody.innerHTML = `<tr><td colspan="7" class="no-data">Error: ${error.message}</td></tr>`;
+    }
+}
+
+async function viewOrderDetails(orderId) {
+    try {
+        const response = await API.Orders.getById(orderId);
+        const order = response.order;
+        if (!order) return;
+
+        const modal = document.getElementById('orderModal');
+        const body = document.getElementById('orderModalBody');
+
+        // Populate Management Form
+        document.getElementById('mgmtOrderId').value = order.id;
+        document.getElementById('mgmtStatus').value = order.status || 'pending';
+        document.getElementById('mgmtCourier').value = order.courier_name || '';
+        document.getElementById('mgmtTracking').value = order.tracking_id || '';
+        document.getElementById('mgmtDeliveryDate').value = order.estimated_delivery_date ? order.estimated_delivery_date.split('T')[0] : '';
+        document.getElementById('mgmtNotes').value = '';
+
+        // Format Items HTML
+        const itemsHtml = order.items.map(item => `
+            <div class="order-item-detail" style="display: flex; align-items: center; gap: 15px; padding: 10px 0; border-bottom: 1px solid #eee;">
+                <img src="${item.image}" alt="${item.title}" style="width: 40px; height: 60px; object-fit: cover; border-radius: 4px;">
+                <div style="flex: 1;">
+                    <div style="font-weight: 600; font-size: 14px;">${item.title}</div>
+                    <small style="color: #666;">Qty: ${item.quantity} x ₹${item.price}</small>
+                </div>
+                <div style="font-weight: 600;">₹${item.quantity * item.price}</div>
+            </div>
+        `).join('');
+
+        // Format History HTML
+        const historyHtml = (order.history || []).map(h => `
+            <div class="history-step" style="position: relative; padding-left: 20px; border-left: 2px solid #667eea; margin-bottom: 15px;">
+                <div style="position: absolute; left: -7px; top: 0; width: 12px; height: 12px; border-radius: 50%; background: #667eea; border: 2px solid white;"></div>
+                <div style="font-weight: 600; font-size: 13px; text-transform: capitalize;">${h.status.replace(/_/g, ' ')}</div>
+                <div style="font-size: 11px; color: #888;">${new Date(h.created_at).toLocaleString()}</div>
+                <div style="font-size: 13px; color: #555; margin-top: 2px;">${h.notes || ''}</div>
+            </div>
+        `).join('');
+
+        body.innerHTML = `
+            <div class="order-details-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div class="order-info-col">
+                    <h4 style="margin-bottom: 10px; color: #333; border-bottom: 2px solid #eee; padding-bottom: 5px;">Customer & Shipping</h4>
+                    <div style="margin-bottom: 15px;">
+                        <strong>${order.shipping_first_name} ${order.shipping_last_name}</strong><br>
+                        ${order.shipping_email}<br>
+                        ${order.shipping_phone}
+                    </div>
+                    <strong>Address:</strong><br>
+                    ${order.shipping_address1}<br>
+                    ${order.shipping_address2 ? order.shipping_address2 + '<br>' : ''}
+                    ${order.shipping_city}, ${order.shipping_state} - ${order.shipping_pincode}
+                </div>
+                <div class="order-status-col">
+                    <h4 style="margin-bottom: 10px; color: #333; border-bottom: 2px solid #eee; padding-bottom: 5px;">Payment & Status</h4>
+                    <div><strong>Order ID:</strong> ${order.order_id}</div>
+                    <div><strong>Method:</strong> ${order.payment_method.toUpperCase()}</div>
+                    <div style="margin-top: 10px;">
+                        <strong>Current Status:</strong> <span class="status-badge status-${order.status}">${order.status}</span>
+                    </div>
+                    ${order.tracking_id ? `
+                        <div style="margin-top: 10px; padding: 10px; background: #eef2ff; border-radius: 8px;">
+                            <strong>Tracking Info:</strong><br>
+                            Courier: ${order.courier_name || 'N/A'}<br>
+                            ID: ${order.tracking_id}
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+
+            <div class="order-items-section" style="margin-top: 25px;">
+                <h4 style="margin-bottom: 10px; color: #333; border-bottom: 2px solid #eee; padding-bottom: 5px;">Order Items</h4>
+                ${itemsHtml}
+                <div style="text-align: right; margin-top: 15px; font-size: 18px;">
+                    <span style="color: #666;">Total Amount:</span> <strong>₹${order.total}</strong>
+                </div>
+            </div>
+
+            <div class="order-history-section" style="margin-top: 25px;">
+                <h4 style="margin-bottom: 15px; color: #333; border-bottom: 2px solid #eee; padding-bottom: 5px;">Order Timeline</h4>
+                <div class="timeline" style="margin-top: 10px;">
+                    ${historyHtml || '<p style="color: #999;">No history records found</p>'}
+                </div>
+            </div>
+        `;
+
+        modal.classList.add('active');
+    } catch (error) {
+        console.error('Error opening order details:', error);
+        alert('Failed to load order details');
+    }
+}
+
+function closeOrderModal() {
+    document.getElementById('orderModal').classList.remove('active');
+}
+
+async function updateOrderStatusFromAdmin() {
+    const orderId = document.getElementById('mgmtOrderId').value;
+    const status = document.getElementById('mgmtStatus').value;
+    const courier_name = document.getElementById('mgmtCourier').value;
+    const tracking_id = document.getElementById('mgmtTracking').value;
+    const estimated_delivery_date = document.getElementById('mgmtDeliveryDate').value;
+    const notes = document.getElementById('mgmtNotes').value;
+
+    if (!orderId) return;
+
+    try {
+        // We need to call the PATCH /api/orders/:id/status endpoint
+        // Our API service needs a wrapper for this or we can use fetch
+        const token = API.Token.get();
+        // Detect environment
+        const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+        const baseUrl = isProduction ? '/api' : 'http://localhost:3001/api';
+
+        const response = await fetch(`${baseUrl}/orders/${orderId}/status`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                status,
+                courier_name,
+                tracking_id,
+                estimated_delivery_date,
+                notes
+            })
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            alert('Order updated successfully!');
+            logActivity(`Updated order status: ${orderId} to ${status}`);
+
+            // Refresh view
+            viewOrderDetails(orderId);
+            renderOrdersTable();
+        } else {
+            throw new Error(result.error || 'Update failed');
+        }
+    } catch (error) {
+        console.error('Error updating order:', error);
+        alert('Error: ' + error.message);
+    }
+}
+
+async function deleteOrder(orderId) {
+    if (!confirm('Are you sure you want to delete this order? This action cannot be undone.')) return;
+
+    try {
+        await API.Orders.delete(orderId);
+        alert('Order deleted successfully');
+        logActivity(`Deleted order: ${orderId}`);
+        renderOrdersTable();
+    } catch (error) {
+        alert('Error deleting order: ' + error.message);
+    }
+}
+
+// Ensure orders are loaded when navigating to orders section
+const originalNavigateToSection = window.navigateToSection;
+window.navigateToSection = function (sectionId) {
+    if (sectionId === 'orders') {
+        renderOrdersTable();
+    }
+    // Call original if it exists or handle manually
+    document.querySelectorAll('.content-section').forEach(section => {
+        section.classList.remove('active');
+    });
+    const target = document.getElementById(sectionId + 'Section');
+    if (target) target.classList.add('active');
+
+    // Update active nav item
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+        if (item.getAttribute('data-section') === sectionId) {
+            item.classList.add('active');
+        }
+    });
+
+    // Close mobile menu if open
+    const sidebar = document.querySelector('.admin-sidebar');
+    if (sidebar) sidebar.classList.remove('active');
+};

@@ -558,8 +558,73 @@
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <div class="order-modal-body" id="orderModalBody" style="padding: 20px; font-size: 15px; line-height: 1.6;">
+            <div class="order-modal-body" id="orderModalBody"
+                style="padding: 20px; font-size: 15px; line-height: 1.6; max-height: 60vh; overflow-y: auto;">
                 <!-- Order content will be injected here -->
+            </div>
+
+            <div class="order-management-controls"
+                style="margin: 0 20px 20px; padding: 15px; background: #f8f9fa; border-radius: 12px; border: 1px solid #e9ecef;">
+                <h3
+                    style="margin-bottom: 12px; font-size: 16px; font-weight: 600; color: #333; display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-truck-loading" style="color: #667eea;"></i> Management Controls
+                </h3>
+                <form id="orderManagementForm">
+                    <input type="hidden" id="mgmtOrderId">
+                    <div class="form-row"
+                        style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                        <div class="form-group">
+                            <label
+                                style="display: block; margin-bottom: 5px; font-size: 12px; font-weight: 600; color: #666; text-transform: uppercase;">Status</label>
+                            <select id="mgmtStatus"
+                                style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: white;">
+                                <option value="pending">Pending</option>
+                                <option value="paid">Paid</option>
+                                <option value="confirmed">Confirmed</option>
+                                <option value="processing">Processing</option>
+                                <option value="shipped">Shipped</option>
+                                <option value="out_for_delivery">Out for Delivery</option>
+                                <option value="delivered">Delivered</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label
+                                style="display: block; margin-bottom: 5px; font-size: 12px; font-weight: 600; color: #666; text-transform: uppercase;">Courier
+                                Name</label>
+                            <input type="text" id="mgmtCourier" placeholder="e.g. BlueDart"
+                                style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
+                        </div>
+                    </div>
+                    <div class="form-row"
+                        style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                        <div class="form-group">
+                            <label
+                                style="display: block; margin-bottom: 5px; font-size: 12px; font-weight: 600; color: #666; text-transform: uppercase;">Tracking
+                                ID</label>
+                            <input type="text" id="mgmtTracking" placeholder="Tracking Number"
+                                style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
+                        </div>
+                        <div class="form-group">
+                            <label
+                                style="display: block; margin-bottom: 5px; font-size: 12px; font-weight: 600; color: #666; text-transform: uppercase;">Est.
+                                Delivery Date</label>
+                            <input type="date" id="mgmtDeliveryDate"
+                                style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label
+                            style="display: block; margin-bottom: 5px; font-size: 12px; font-weight: 600; color: #666; text-transform: uppercase;">Admin
+                            Notes (Visible in History)</label>
+                        <textarea id="mgmtNotes" rows="2" placeholder="Notes for history log..."
+                            style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; resize: vertical;"></textarea>
+                    </div>
+                    <button type="button" class="btn-primary" onclick="updateOrderStatusFromAdmin()"
+                        style="width: 100%; padding: 12px; border-radius: 8px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-weight: 600; box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);">
+                        <i class="fas fa-save" style="margin-right: 8px;"></i> Save Update & Notify System
+                    </button>
+                </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn-secondary" onclick="closeOrderModal()">Close</button>
