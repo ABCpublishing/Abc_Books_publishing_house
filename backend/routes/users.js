@@ -1,14 +1,14 @@
-// ===== Users Routes (Admin) =====
 const express = require('express');
+const { authenticateAdmin } = require('../middleware/security');
 const router = express.Router();
 
 // Get all users (admin)
-router.get('/', async (req, res) => {
+router.get('/', authenticateAdmin, async (req, res) => {
     try {
         const sql = req.sql;
 
         const users = await sql`
-            SELECT id, name, email, phone, created_at, updated_at
+            SELECT id, name, email, phone, is_admin, created_at, updated_at
             FROM users
             ORDER BY created_at DESC
         `;
@@ -99,6 +99,35 @@ router.delete('/:id', async (req, res) => {
     } catch (error) {
         console.error('Delete user error:', error);
         res.status(500).json({ error: 'Failed to delete user' });
+    }
+});
+
+// Update user role (admin)
+router.patch('/:id/role', authenticateAdmin, async (req, res) => {
+    try {
+        const sql = req.sql;
+        const { id } = req.params;
+        const { is_admin } = req.body;
+
+        const result = await sql`
+            UPDATE users 
+            SET is_admin = ${is_admin}, updated_at = NOW()
+            WHERE id = ${id}
+            RETURNING id, name, is_admin
+        `;
+
+        if (result.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        res.json({
+            success: true,
+            message: `User ${result[0].name} updated to ${result[0].is_admin ? 'Admin' : 'Customer'}`,
+            user: result[0]
+        });
+    } catch (error) {
+        console.error('Update role error:', error);
+        res.status(500).json({ error: 'Failed to update user role' });
     }
 });
 

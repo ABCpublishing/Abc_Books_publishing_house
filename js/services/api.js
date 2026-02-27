@@ -6,6 +6,7 @@ const isProduction = window.location.hostname !== 'localhost' && window.location
 const API_BASE_URL = isProduction
     ? '/api'  // Same domain in production (Vercel serverless)
     : 'http://localhost:3001/api';  // Local development
+window.API_BASE_URL = API_BASE_URL; // Make globally accessible
 
 console.log(`🔗 API Base URL: ${API_BASE_URL} (${isProduction ? 'Production' : 'Development'})`);
 
@@ -272,6 +273,13 @@ const UsersAPI = {
     async delete(id) {
         return await apiRequest(`/users/${id}`, {
             method: 'DELETE'
+        });
+    },
+
+    async updateRole(id, is_admin) {
+        return await apiRequest(`/users/${id}/role`, {
+            method: 'PATCH',
+            body: JSON.stringify({ is_admin })
         });
     }
 };

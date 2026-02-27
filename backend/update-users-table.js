@@ -9,11 +9,14 @@ async function updateUsersTable() {
     try {
         console.log('📦 Updating users table...');
 
-        // Add verification columns
+        // Add verification and reset columns
         await sql`
             ALTER TABLE users 
             ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT TRUE,
-            ADD COLUMN IF NOT EXISTS verification_token VARCHAR(255)
+            ADD COLUMN IF NOT EXISTS verification_token VARCHAR(255),
+            ADD COLUMN IF NOT EXISTS reset_password_token VARCHAR(255),
+            ADD COLUMN IF NOT EXISTS reset_password_expires TIMESTAMP,
+            ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE
         `;
 
         console.log('✅ verification columns added to users table');

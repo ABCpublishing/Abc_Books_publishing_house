@@ -32,6 +32,10 @@ async function loadOrderDetails() {
                 discount: apiOrder.discount,
                 paymentMethod: apiOrder.payment_method,
                 items: apiOrder.items || [],
+                history: apiOrder.history || [],
+                trackingId: apiOrder.tracking_id,
+                courierName: apiOrder.courier_name,
+                estimatedDelivery: apiOrder.estimated_delivery_date,
                 shipping: {
                     firstName: apiOrder.shipping_first_name,
                     lastName: apiOrder.shipping_last_name,
@@ -111,8 +115,40 @@ function updateOrderDetailUI(orderId) {
 // Load order timeline
 function loadTimeline() {
     const container = document.getElementById('orderTimeline');
-    const status = (currentOrder.status || 'confirmed').toLowerCase();
 
+    // Show tracking info if available
+    let trackingInfoHtml = '';
+    if (currentOrder.trackingId) {
+        trackingInfoHtml = `
+            <div class="tracking-info-box" style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid var(--primary-color);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <span style="font-weight: 600; color: #555;"><i class="fas fa-truck"></i> Shipment Tracking</span>
+                    <span class="status-badge shipped" style="font-size: 11px;">Active</span>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div>
+                        <p style="font-size: 12px; color: #888; margin: 0;">Courier</p>
+                        <p style="font-weight: 600; margin: 0;">${currentOrder.courierName || 'Standard Shipping'}</p>
+                    </div>
+                    <div>
+                        <p style="font-size: 12px; color: #888; margin: 0;">Tracking ID</p>
+                        <p style="font-weight: 600; margin: 0; color: var(--primary-color);">${currentOrder.trackingId}</p>
+                    </div>
+                </div>
+                ${currentOrder.estimatedDelivery ? `
+                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee;">
+                    <p style="font-size: 12px; color: #888; margin: 0;">Estimated Delivery</p>
+                    <p style="font-weight: 600; margin: 0; color: #27ae60;">${new Date(currentOrder.estimatedDelivery).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                </div>
+                ` : ''}
+            </div>
+        `;
+    }
+
+    const status = (currentOrder.status || 'confirmed').toLowerCase();
+    const history = currentOrder.history || [];
+
+    // Base steps for timeline
     const steps = [
         { id: 'confirmed', title: 'Order Confirmed', desc: 'Your order has been placed' },
         { id: 'processing', title: 'Processing', desc: 'Preparing your order' },
@@ -125,7 +161,38 @@ function loadTimeline() {
 
     let cancelled = status === 'cancelled';
 
-    container.innerHTML = steps.map((step, index) => {
+    // If we have real history, use it
+    if (history.length > 0) {
+        container.innerHTML = trackingInfoHtml + history.map((event, index) => {
+            const isLatest = index === history.length - 1;
+            const date = new Date(event.created_at).toLocaleDateString('en-IN', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            return `
+                <div class="timeline-step completed ${isLatest ? 'current' : ''}">
+                    <div class="timeline-dot">
+                        <i class="fas ${event.status === 'cancelled' ? 'fa-times' : 'fa-check'}"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <h4>${capitalizeFirst(event.status)}</h4>
+                        <p>${event.notes || ''}</p>
+                        <span class="timeline-date">${date}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // If not delivered or cancelled, show what's next (optional)
+        return;
+    }
+
+    // Fallback to hardcoded steps for orders without history
+    container.innerHTML = trackingInfoHtml + steps.map((step, index) => {
         let stepClass = '';
         if (cancelled) {
             stepClass = index === 0 ? 'completed' : '';

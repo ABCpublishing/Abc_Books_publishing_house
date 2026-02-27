@@ -18,7 +18,11 @@ const ADMIN_CREDENTIALS = {
 document.addEventListener('DOMContentLoaded', function () {
     checkAuth();
     initializeEventListeners();
-    initializeCategoriesForBooks(); // Populate language/category dropdown
+    initializeCategoriesForBooks();
+
+    // Set initial active state based on hash or default
+    const hash = window.location.hash.slice(1) || 'overview';
+    navigateToSection(hash);
 });
 
 // ===== AUTHENTICATION =====
@@ -40,7 +44,28 @@ function showLogin() {
 function showDashboard() {
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('adminDashboard').style.display = 'flex';
+    updateAdminProfile();
     loadDashboardData();
+}
+
+function updateAdminProfile() {
+    const token = API.Token.get();
+    if (!token) return;
+
+    try {
+        const parts = token.split('.');
+        if (parts.length === 3) {
+            const payload = JSON.parse(atob(parts[1]));
+            const email = payload.email || 'Admin';
+            const adminLabel = document.querySelector('.admin-user span');
+            if (adminLabel) adminLabel.textContent = email;
+
+            // Log for debug
+            console.log('👤 Admin Session:', email);
+        }
+    } catch (e) {
+        console.error('Error decoding token:', e);
+    }
 }
 
 // ===== EVENT LISTENERS =====
@@ -104,18 +129,40 @@ function initializeEventListeners() {
 }
 
 // Handle Login
-function handleLogin(e) {
+async function handleLogin(e) {
     e.preventDefault();
 
-    const username = document.getElementById('username').value;
+    let username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
 
-    if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
-        localStorage.setItem(STORAGE_KEYS.ADMIN_AUTH, 'true');
-        logActivity('Admin logged in');
-        showDashboard();
-    } else {
-        alert('Invalid credentials! Please try again.');
+    // Support legacy "admin" username (case-insensitive)
+    if (username.toLowerCase() === 'admin') {
+        username = 'admin@abcbooks.com';
+    }
+
+    // Try real API login
+    try {
+        const response = await fetch(`${API_BASE_URL}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: username, password })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && (data.token || data.accessToken)) {
+            const token = data.token || data.accessToken;
+            API.Token.set(token); // Store for API services
+            localStorage.setItem(STORAGE_KEYS.ADMIN_AUTH, 'true'); // Show UI visibility
+            localStorage.setItem('abc_admin_user', JSON.stringify(data.user)); // Store admin profile
+            logActivity(`Admin logged in: ${username}`);
+            showDashboard();
+        } else {
+            alert('Login failed: ' + (data.error || 'Invalid credentials'));
+        }
+    } catch (error) {
+        console.error('Login error:', error);
+        alert('Authentication system unavailable. Please check your internet connection or server status.');
     }
 }
 
@@ -123,6 +170,8 @@ function handleLogin(e) {
 function handleLogout() {
     if (confirm('Are you sure you want to logout?')) {
         localStorage.setItem(STORAGE_KEYS.ADMIN_AUTH, 'false');
+        // Clear all API tokens
+        API.Token.remove();
         logActivity('Admin logged out');
         showLogin();
     }
@@ -133,14 +182,17 @@ function navigateToSection(section) {
     // Update active nav item
     document.querySelectorAll('.nav-item').forEach(item => {
         item.classList.remove('active');
+        if (item.getAttribute('data-section') === section) {
+            item.classList.add('active');
+        }
     });
-    document.querySelector(`[data-section="${section}"]`).classList.add('active');
 
     // Update active content section
     document.querySelectorAll('.content-section').forEach(sec => {
         sec.classList.remove('active');
     });
-    document.getElementById(`${section}Section`).classList.add('active');
+    const sectionEl = document.getElementById(`${section}Section`);
+    if (sectionEl) sectionEl.classList.add('active');
 
     // Update page title
     const titles = {
@@ -159,7 +211,8 @@ function navigateToSection(section) {
         kashmiri: 'Kashmiri Books',
         settings: 'Settings'
     };
-    document.getElementById('pageTitle').textContent = titles[section] || 'Dashboard';
+    const titleEl = document.getElementById('pageTitle');
+    if (titleEl) titleEl.textContent = titles[section] || 'Dashboard';
 
     // Load section data
     loadSectionData(section);
@@ -184,8 +237,14 @@ async function loadDashboardData() {
             API.Books.getBySection('hero').catch(() => ({ books: [] })),
             API.Books.getBySection('editors').catch(() => ({ books: [] })),
             API.Books.getBySection('featured').catch(() => ({ books: [] })),
-            API.Users.getAll().catch(() => ({ users: [] })),
-            API.Orders.getAll().catch(() => ({ orders: [] }))
+            API.Users.getAll().catch(error => {
+                if (error.message.includes('Access denied') || error.message.includes('Admin privileges')) throw error;
+                return { users: [] };
+            }),
+            API.Orders.getAll().catch(error => {
+                if (error.message.includes('Access denied') || error.message.includes('Admin privileges')) throw error;
+                return { orders: [] };
+            })
         ]);
 
         document.getElementById('totalBooksCount').textContent = allBooks.length;
@@ -205,6 +264,12 @@ async function loadDashboardData() {
         loadActivityLog();
     } catch (error) {
         console.error('Error loading dashboard data:', error);
+        if (error.message.includes('Access denied') || error.message.includes('Admin privileges')) {
+            alert('Your session is invalid or you lack admin privileges. Please log in again.');
+            localStorage.setItem(STORAGE_KEYS.ADMIN_AUTH, 'false');
+            API.Token.remove();
+            showLogin();
+        }
     }
 }
 
@@ -279,6 +344,10 @@ async function renderUsersTable() {
         const response = await API.Users.getAll();
         const users = response.users || [];
 
+        // Update counts
+        const userCountStat = document.getElementById('usersCount');
+        if (userCountStat) userCountStat.textContent = users.length;
+
         if (users.length === 0) {
             tbody.innerHTML = '<tr><td colspan="7" class="no-data">No users found</td></tr>';
             return;
@@ -287,14 +356,27 @@ async function renderUsersTable() {
         tbody.innerHTML = users.map(user => `
             <tr>
                 <td><strong>${user.id}</strong></td>
-                <td>${user.first_name} ${user.last_name}</td>
+                <td>${user.name || 'User'}</td>
                 <td>${user.email}</td>
-                <td>${user.role || 'customer'}</td>
+                <td>
+                    <span class="role-badge ${user.is_admin ? 'admin' : 'customer'}">
+                        ${user.is_admin ? 'Admin' : 'Customer'}
+                    </span>
+                </td>
                 <td>${new Date(user.created_at).toLocaleDateString()}</td>
-                <td><span class="badge" style="background: #e1f5fe; color: #01579b;">Active</span></td>
+                <td>
+                    <div style="display: flex; gap: 5px; align-items: center;">
+                        <button class="btn-sm ${user.is_admin ? 'btn-outline' : 'btn-primary'}" 
+                                onclick="updateUserRole(${user.id}, ${!user.is_admin})"
+                                title="${user.is_admin ? 'Demote to Customer' : 'Promote to Admin'}">
+                            <i class="fas ${user.is_admin ? 'fa-user-minus' : 'fa-user-shield'}"></i>
+                            ${user.is_admin ? 'Demote' : 'Promote'}
+                        </button>
+                    </div>
+                </td>
                 <td>
                     <div class="action-icons">
-                        <button class="icon-btn delete" onclick="deleteUserAPI(${user.id})" title="Delete User">
+                        <button class="icon-btn delete" onclick="deleteUser(${user.id})" title="Delete User">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -302,18 +384,42 @@ async function renderUsersTable() {
             </tr>
         `).join('');
     } catch (error) {
-        tbody.innerHTML = `<tr><td colspan="7" class="no-data">Error loading users: ${error.message}</td></tr>`;
+        if (error.message.includes('Access denied')) {
+            tbody.innerHTML = `<tr><td colspan="7" class="no-data" style="color: #e74c3c; padding: 30px;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-bottom: 10px;"></i><br>
+                <strong>Admin Privileges Required</strong><br>
+                Your current session does not have permission to view users.<br>
+                <button onclick="handleLogout()" class="btn-primary" style="margin-top: 15px; padding: 8px 20px;">Log Out & Sign In Again</button>
+            </td></tr>`;
+        } else {
+            tbody.innerHTML = `<tr><td colspan="7" class="no-data">Error loading users: ${error.message}</td></tr>`;
+        }
     }
 }
 
-async function deleteUserAPI(userId) {
+async function deleteUser(userId) {
     if (!confirm('Are you sure you want to delete this user?')) return;
     try {
         await API.Users.delete(userId);
         alert('User deleted successfully!');
         renderUsersTable();
+        loadDashboardData();
     } catch (error) {
         alert('Error: ' + error.message);
+    }
+}
+
+async function updateUserRole(userId, isAdmin) {
+    const action = isAdmin ? 'promote this user to Admin' : 'demote this user to Customer';
+    if (!confirm(`Are you sure you want to ${action}?`)) return;
+
+    try {
+        await API.Users.updateRole(userId, isAdmin);
+        alert('User role updated successfully!');
+        renderUsersTable();
+        logActivity(`Updated user role for ID ${userId} to ${isAdmin ? 'Admin' : 'Customer'}`);
+    } catch (error) {
+        alert('Error updating role: ' + error.message);
     }
 }
 
@@ -325,13 +431,19 @@ function renderPagesTable() {
 }
 
 // ===== RENDER ORDERS TABLE (Existing Logic Preserved) =====
+// ===== RENDER ORDERS TABLE =====
 async function renderOrdersTable() {
     const tbody = document.getElementById('ordersTableBody');
-    tbody.innerHTML = '<tr><td colspan="7" class="no-data"><i class="fas fa-spinner fa-spin"></i> Loading orders from database...</td></tr>';
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="7" class="no-data"><i class="fas fa-spinner fa-spin"></i> Loading orders...</td></tr>';
 
     try {
         const data = await API.Orders.getAll();
         const orders = data.orders || [];
+
+        // Update counts
+        const orderCountStat = document.getElementById('ordersCount');
+        if (orderCountStat) orderCountStat.textContent = orders.length;
 
         if (!orders || orders.length === 0) {
             tbody.innerHTML = '<tr><td colspan="7" class="no-data">No orders yet</td></tr>';
@@ -361,45 +473,65 @@ async function renderOrdersTable() {
                     <td style="font-weight: 600; color: #27ae60;">₹${order.total || 0}</td>
                     <td>${date}</td>
                     <td>
-                        <select class="status-select status-${status.toLowerCase()}" onchange="updateOrderStatusAPI(${order.id}, this.value)">
-                            <option value="confirmed" ${status === 'confirmed' ? 'selected' : ''}>Confirmed</option>
-                            <option value="processing" ${status === 'processing' ? 'selected' : ''}>Processing</option>
-                            <option value="shipped" ${status === 'shipped' ? 'selected' : ''}>Shipped</option>
-                            <option value="delivered" ${status === 'delivered' ? 'selected' : ''}>Delivered</option>
-                            <option value="cancelled" ${status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
-                        </select>
+                        <span class="status-badge status-${status.toLowerCase().replace(/ /g, '_')}">
+                            ${status.charAt(0).toUpperCase() + status.slice(1)}
+                        </span>
                     </td>
                     <td>
                         <div class="action-icons">
-                            <button class="icon-btn edit" onclick="viewOrderDetailsAPI(${order.id})" title="View Details"><i class="fas fa-eye"></i></button>
-                            <button class="icon-btn delete" onclick="deleteOrderAPI(${order.id})" title="Delete Order"><i class="fas fa-trash"></i></button>
+                            <button class="icon-btn edit" onclick="viewOrderDetails('${order.id}')" title="View Details"><i class="fas fa-eye"></i></button>
+                            <button class="icon-btn delete" onclick="deleteOrder('${order.id}')" title="Delete Order"><i class="fas fa-trash"></i></button>
                         </div>
                     </td>
                 </tr>
             `;
         }).join('');
     } catch (error) {
-        tbody.innerHTML = `<tr><td colspan="7" class="no-data">Error loading orders: ${error.message}</td></tr>`;
+        if (error.message.includes('Access denied')) {
+            tbody.innerHTML = `<tr><td colspan="7" class="no-data" style="color: #e74c3c; padding: 30px;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-bottom: 10px;"></i><br>
+                <strong>Admin Privileges Required</strong><br>
+                Your current session does not have permission to view orders.<br>
+                <button onclick="handleLogout()" class="btn-primary" style="margin-top: 15px; padding: 8px 20px;">Log Out & Sign In Again</button>
+            </td></tr>`;
+        } else {
+            tbody.innerHTML = `<tr><td colspan="7" class="no-data">Error loading orders: ${error.message}</td></tr>`;
+        }
     }
 }
 
-async function updateOrderStatusAPI(orderId, newStatus) {
+async function deleteOrder(orderId) {
+    if (!confirm('Are you sure you want to delete this order?')) return;
     try {
-        await API.Orders.updateStatus(orderId, newStatus);
-        logActivity(`Updated order status to ${newStatus}`);
-        console.log('✅ Order status updated');
+        await API.Orders.delete(orderId);
+        alert('Order deleted successfully!');
+        renderOrdersTable();
+        loadDashboardData();
     } catch (error) {
-        alert('Error updating status: ' + error.message);
+        alert('Error: ' + error.message);
     }
 }
 
-async function viewOrderDetailsAPI(orderId) {
+async function viewOrderDetails(orderId) {
     try {
-        const data = await API.Orders.getById(orderId);
-        const order = data.order;
+        const response = await API.Orders.getById(orderId);
+        const order = response.order;
         if (!order) { alert('Order not found'); return; }
 
-        let itemsList = (order.items || []).map(item => `
+        const modal = document.getElementById('orderModal');
+        const body = document.getElementById('orderModalBody');
+
+        // Populate Management Form (if exists)
+        if (document.getElementById('mgmtOrderId')) {
+            document.getElementById('mgmtOrderId').value = order.id;
+            document.getElementById('mgmtStatus').value = order.status || 'confirmed';
+            document.getElementById('mgmtCourier').value = order.courier_name || '';
+            document.getElementById('mgmtTracking').value = order.tracking_id || '';
+            document.getElementById('mgmtDeliveryDate').value = order.estimated_delivery_date ? order.estimated_delivery_date.split('T')[0] : '';
+        }
+
+        // Format Items HTML
+        const itemsList = (order.items || []).map(item => `
             <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee;">
                 <div>
                     <strong>${item.title || item.book_title}</strong><br>
@@ -412,10 +544,19 @@ async function viewOrderDetailsAPI(orderId) {
             </div>
         `).join('');
 
-        const modalBody = document.getElementById('orderModalBody');
+        // Format History HTML
+        const historyHtml = (order.history || []).map(h => `
+            <div class="history-step" style="position: relative; padding-left: 20px; border-left: 2px solid #667eea; margin-bottom: 15px;">
+                <div style="position: absolute; left: -7px; top: 0; width: 12px; height: 12px; border-radius: 50%; background: #667eea; border: 2px solid white;"></div>
+                <div style="font-weight: 600; font-size: 13px; text-transform: capitalize;">${h.status.replace(/_/g, ' ')}</div>
+                <div style="font-size: 11px; color: #888;">${new Date(h.created_at).toLocaleString()}</div>
+                <div style="font-size: 13px; color: #555; margin-top: 2px;">${h.notes || ''}</div>
+            </div>
+        `).join('');
+
         const modalDate = new Date(order.created_at).toLocaleString('en-IN', { dateStyle: 'long', timeStyle: 'short' });
 
-        modalBody.innerHTML = `
+        body.innerHTML = `
             <div style="margin-bottom: 20px;">
                 <h3 style="margin: 0; color: #2c3e50; font-size: 24px;">ORDER #${order.order_id}</h3>
                 <span style="display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; background-color: #f1f5f9; color: #64748b; margin-top: 5px;">Status: ${order.status.toUpperCase()}</span>
@@ -440,102 +581,82 @@ async function viewOrderDetailsAPI(orderId) {
             <div style="margin-bottom: 20px;">
                 <h4 style="margin: 0 0 10px 0; color: #34495e; font-size: 18px; border-bottom: 2px solid #eee; padding-bottom: 5px;">Order Items</h4>
                 ${itemsList}
-            </div>
-
-            <div style="text-align: right; background: #fffaf0; padding: 15px; border-radius: 8px; border: 1px solid #fbd38d;">
-                <div style="display: flex; justify-content: flex-end; gap: 20px;">
-                    <div style="text-align: left;">
-                        <p style="margin: 0 0 5px 0;">Subtotal:</p>
-                        <p style="margin: 0 0 5px 0;">Discount:</p>
-                        <h3 style="margin: 5px 0 0 0; color: #2c3e50;">Total:</h3>
-                    </div>
-                    <div style="text-align: right;">
-                        <p style="margin: 0 0 5px 0;">₹${order.subtotal || order.total}</p>
-                        <p style="margin: 0 0 5px 0; color: #e74c3c;">-₹${order.discount || 0}</p>
-                        <h3 style="margin: 5px 0 0 0; color: #27ae60;">₹${order.total}</h3>
+                <div style="text-align: right; margin-top: 15px; background: #fffaf0; padding: 15px; border-radius: 8px; border: 1px solid #fbd38d;">
+                    <div style="display: flex; justify-content: flex-end; gap: 20px;">
+                        <div style="text-align: left;">
+                            <p style="margin: 0 0 5px 0;">Subtotal:</p>
+                            <h3 style="margin: 5px 0 0 0; color: #2c3e50;">Total:</h3>
+                        </div>
+                        <div style="text-align: right;">
+                            <p style="margin: 0 0 5px 0;">₹${order.subtotal || order.total}</p>
+                            <h3 style="margin: 5px 0 0 0; color: #27ae60;">₹${order.total}</h3>
+                        </div>
                     </div>
                 </div>
-                <p style="margin: 10px 0 0 0; font-size: 13px; color: #718096;">Payment Method: ${order.payment_method || 'N/A'}</p>
+            </div>
+
+            <div style="margin-top: 25px;">
+                <h4 style="margin-bottom: 15px; color: #333; border-bottom: 2px solid #eee; padding-bottom: 5px;">Order Timeline</h4>
+                <div class="timeline" style="margin-top: 10px;">
+                    ${historyHtml || '<p style="color: #999;">No history records found</p>'}
+                </div>
             </div>
         `;
 
-        document.getElementById('orderModal').classList.add('active');
+        modal.classList.add('active');
         document.body.style.overflow = 'hidden';
     } catch (error) {
         alert('Error: ' + error.message);
     }
 }
 
-async function deleteOrderAPI(orderId) {
-    if (!confirm('Are you sure you want to delete this order?')) return;
-    try {
-        await API.Orders.delete(orderId);
-        alert('Order deleted successfully!');
-        renderOrdersTable();
-    } catch (error) {
-        alert('Error: ' + error.message);
-    }
-}
-
 function closeOrderModal() {
-    document.getElementById('orderModal').classList.remove('active');
+    const modal = document.getElementById('orderModal');
+    if (modal) modal.classList.remove('active');
     document.body.style.overflow = 'auto';
 }
 
-async function deleteOrderAPI(orderId) {
-    if (!confirm('Are you sure?')) return;
-    try {
-        await fetch(`${API_BASE_URL || '/api'}/orders/${orderId}`, { method: 'DELETE' });
-        alert('Order deleted');
-        renderOrdersTable();
-    } catch (error) {
-        alert('Error: ' + error.message);
-    }
-}
+async function updateOrderStatusFromAdmin() {
+    const orderId = document.getElementById('mgmtOrderId')?.value;
+    const status = document.getElementById('mgmtStatus')?.value;
+    const courier_name = document.getElementById('mgmtCourier')?.value;
+    const tracking_id = document.getElementById('mgmtTracking')?.value;
+    const estimated_delivery_date = document.getElementById('mgmtDeliveryDate')?.value;
+    const notes = document.getElementById('mgmtNotes')?.value;
 
-// ===== RENDER USERS TABLE (Existing Logic) =====
-async function renderUsersTable() {
-    const tbody = document.getElementById('usersTableBody');
-    tbody.innerHTML = '<tr><td colspan="7" class="no-data"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>';
+    if (!orderId) return;
 
     try {
-        const data = await API.Users.getAll();
-        const users = data.users || [];
-        document.getElementById('userCount').textContent = users.length; // Assuming element exists
+        const response = await fetch(`${API_BASE_URL}/orders/${orderId}/status`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${API.Token.get()}`
+            },
+            body: JSON.stringify({
+                status,
+                courier_name,
+                tracking_id,
+                estimated_delivery_date,
+                notes
+            })
+        });
 
-        if (users.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="no-data">No users yet</td></tr>';
-            return;
+        if (response.ok) {
+            alert('Order updated successfully!');
+            logActivity(`Updated order status: ${orderId} to ${status}`);
+            viewOrderDetails(orderId);
+            renderOrdersTable();
+        } else {
+            const result = await response.json();
+            throw new Error(result.error || 'Update failed');
         }
-
-        tbody.innerHTML = users.map((user, index) => `
-            <tr>
-                <td>${user.id}</td>
-                <td><strong>${user.name}</strong></td>
-                <td>${user.email}</td>
-                <td>Customer</td>
-                <td>${new Date(user.created_at).toLocaleDateString()}</td>
-                <td><span class="status-badge active">Active</span></td>
-                <td>
-                    <button class="icon-btn delete" onclick="deleteUserFromAPI(${user.id})"><i class="fas fa-trash"></i></button>
-                </td>
-            </tr>
-        `).join('');
-    } catch (error) {
-        tbody.innerHTML = `<tr><td colspan="7" class="no-data">Error: ${error.message}</td></tr>`;
-    }
-}
-
-async function deleteUserFromAPI(userId) {
-    if (!confirm('Are you sure?')) return;
-    try {
-        await API.Users.delete(userId);
-        alert('User deleted');
-        renderUsersTable();
     } catch (error) {
         alert('Error: ' + error.message);
     }
 }
+
+// Consolidated Users/Orders logic above. Deleting duplicates below.
 
 
 // ===== RENDER BOOKS TABLE =====
@@ -928,65 +1049,29 @@ function showChangePasswordModal() {
 
 // ===== RESPONSIVE SIDEBAR =====
 function toggleAdminSidebar() {
-    document.querySelector('.admin-sidebar').classList.toggle('active');
-    document.querySelector('.sidebar-overlay').classList.toggle('active');
+    const sidebar = document.querySelector('.admin-sidebar');
+    const overlay = document.querySelector('.sidebar-overlay');
+    if (sidebar) sidebar.classList.toggle('active');
+    if (overlay) overlay.classList.toggle('active');
 }
 
-// Close sidebar when clicking a nav item (mobile)
 function closeSidebarOnMobile() {
     if (window.innerWidth <= 768) {
-        document.querySelector('.admin-sidebar').classList.remove('active');
-        document.querySelector('.sidebar-overlay').classList.remove('active');
+        const sidebar = document.querySelector('.admin-sidebar');
+        const overlay = document.querySelector('.sidebar-overlay');
+        if (sidebar) sidebar.classList.remove('active');
+        if (overlay) overlay.classList.remove('active');
     }
 }
 
-// Initialize everything when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-    // Check authentication first
-    if (!checkAdminAuth()) return;
-
-    // Capitalize input for Title and Author
-    const capitalizeInput = (e) => {
-        let value = e.target.value;
-        if (value.length > 0) {
-            // Capitalize first letter of each word (Title Case)
-            e.target.value = value.replace(/\w\S*/g, (txt) => {
-                return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
-            });
-        }
-    };
-
-    const bookTitleInput = document.getElementById('bookTitle');
-    const bookAuthorInput = document.getElementById('bookAuthor');
-
-    if (bookTitleInput) {
-        bookTitleInput.addEventListener('input', capitalizeInput);
+// Helper to update the date on dashboard
+function updateDate() {
+    const dateEl = document.getElementById('currentDate');
+    if (dateEl) {
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        dateEl.textContent = new Date().toLocaleDateString('en-US', options);
     }
-    if (bookAuthorInput) {
-        bookAuthorInput.addEventListener('input', capitalizeInput);
-    }
-
-    // Set initial active state based on hash or default
-    const hash = window.location.hash.slice(1) || 'overview';
-    navigateToSection(hash);
-
-    // Load initial data
-    loadDashboardData();
-    updateDate();
-
-    // Set up other event listeners
-    document.getElementById('logoutBtn').addEventListener('click', adminLogout);
-
-    // Setup modal closing
-    window.onclick = function (event) {
-        const modals = document.getElementsByClassName('modal');
-        for (let i = 0; i < modals.length; i++) {
-            if (event.target == modals[i]) {
-                modals[i].classList.remove('active');
-            }
-        }
-    }
-});
+}
 
 // ===== DYNAMIC CATEGORIES SYSTEM =====
 // Different subcategories for each language (Fallback for when DB is empty)
@@ -1137,243 +1222,5 @@ async function populateBookFormForEdit(book) {
         checkbox.checked = bookSections.includes(checkbox.value);
     });
 }
-// ===== ORDER MANAGEMENT FUNCTIONS (IMPLEMENTED) =====
-async function renderOrdersTable() {
-    const tbody = document.getElementById('ordersTableBody');
-    if (!tbody) return;
-
-    try {
-        const data = await API.Orders.getAll();
-        const orders = data.orders || [];
-
-        // Update dashboard count if exists
-        const countEl = document.getElementById('ordersCount');
-        if (countEl) countEl.textContent = orders.length;
-
-        if (orders.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="no-data">No orders found</td></tr>';
-            return;
-        }
-
-        tbody.innerHTML = orders.map(order => `
-            <tr>
-                <td><strong>${order.order_id}</strong></td>
-                <td>
-                    <div class="customer-info" style="font-size: 13px;">
-                        <div>${order.customer_name || 'Guest'}</div>
-                        <small style="color: #888;">${order.shipping_email || ''}</small>
-                    </div>
-                </td>
-                <td>${order.items?.length || 0} items</td>
-                <td>₹${order.total}</td>
-                <td>${new Date(order.created_at).toLocaleDateString()}</td>
-                <td>
-                    <span class="status-badge status-${(order.status || 'pending').toLowerCase().replace(/ /g, '_')}">
-                        ${order.status || 'Pending'}
-                    </span>
-                </td>
-                <td>
-                    <div class="action-icons">
-                        <button class="icon-btn view" onclick="viewOrderDetails('${order.id}')" title="View Details">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="icon-btn delete" onclick="deleteOrder('${order.id}')" title="Delete">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `).join('');
-
-    } catch (error) {
-        console.error('Error loading orders:', error);
-        tbody.innerHTML = `<tr><td colspan="7" class="no-data">Error: ${error.message}</td></tr>`;
-    }
-}
-
-async function viewOrderDetails(orderId) {
-    try {
-        const response = await API.Orders.getById(orderId);
-        const order = response.order;
-        if (!order) return;
-
-        const modal = document.getElementById('orderModal');
-        const body = document.getElementById('orderModalBody');
-
-        // Populate Management Form
-        document.getElementById('mgmtOrderId').value = order.id;
-        document.getElementById('mgmtStatus').value = order.status || 'pending';
-        document.getElementById('mgmtCourier').value = order.courier_name || '';
-        document.getElementById('mgmtTracking').value = order.tracking_id || '';
-        document.getElementById('mgmtDeliveryDate').value = order.estimated_delivery_date ? order.estimated_delivery_date.split('T')[0] : '';
-        document.getElementById('mgmtNotes').value = '';
-
-        // Format Items HTML
-        const itemsHtml = order.items.map(item => `
-            <div class="order-item-detail" style="display: flex; align-items: center; gap: 15px; padding: 10px 0; border-bottom: 1px solid #eee;">
-                <img src="${item.image}" alt="${item.title}" style="width: 40px; height: 60px; object-fit: cover; border-radius: 4px;">
-                <div style="flex: 1;">
-                    <div style="font-weight: 600; font-size: 14px;">${item.title}</div>
-                    <small style="color: #666;">Qty: ${item.quantity} x ₹${item.price}</small>
-                </div>
-                <div style="font-weight: 600;">₹${item.quantity * item.price}</div>
-            </div>
-        `).join('');
-
-        // Format History HTML
-        const historyHtml = (order.history || []).map(h => `
-            <div class="history-step" style="position: relative; padding-left: 20px; border-left: 2px solid #667eea; margin-bottom: 15px;">
-                <div style="position: absolute; left: -7px; top: 0; width: 12px; height: 12px; border-radius: 50%; background: #667eea; border: 2px solid white;"></div>
-                <div style="font-weight: 600; font-size: 13px; text-transform: capitalize;">${h.status.replace(/_/g, ' ')}</div>
-                <div style="font-size: 11px; color: #888;">${new Date(h.created_at).toLocaleString()}</div>
-                <div style="font-size: 13px; color: #555; margin-top: 2px;">${h.notes || ''}</div>
-            </div>
-        `).join('');
-
-        body.innerHTML = `
-            <div class="order-details-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                <div class="order-info-col">
-                    <h4 style="margin-bottom: 10px; color: #333; border-bottom: 2px solid #eee; padding-bottom: 5px;">Customer & Shipping</h4>
-                    <div style="margin-bottom: 15px;">
-                        <strong>${order.shipping_first_name} ${order.shipping_last_name}</strong><br>
-                        ${order.shipping_email}<br>
-                        ${order.shipping_phone}
-                    </div>
-                    <strong>Address:</strong><br>
-                    ${order.shipping_address1}<br>
-                    ${order.shipping_address2 ? order.shipping_address2 + '<br>' : ''}
-                    ${order.shipping_city}, ${order.shipping_state} - ${order.shipping_pincode}
-                </div>
-                <div class="order-status-col">
-                    <h4 style="margin-bottom: 10px; color: #333; border-bottom: 2px solid #eee; padding-bottom: 5px;">Payment & Status</h4>
-                    <div><strong>Order ID:</strong> ${order.order_id}</div>
-                    <div><strong>Method:</strong> ${order.payment_method.toUpperCase()}</div>
-                    <div style="margin-top: 10px;">
-                        <strong>Current Status:</strong> <span class="status-badge status-${order.status}">${order.status}</span>
-                    </div>
-                    ${order.tracking_id ? `
-                        <div style="margin-top: 10px; padding: 10px; background: #eef2ff; border-radius: 8px;">
-                            <strong>Tracking Info:</strong><br>
-                            Courier: ${order.courier_name || 'N/A'}<br>
-                            ID: ${order.tracking_id}
-                        </div>
-                    ` : ''}
-                </div>
-            </div>
-
-            <div class="order-items-section" style="margin-top: 25px;">
-                <h4 style="margin-bottom: 10px; color: #333; border-bottom: 2px solid #eee; padding-bottom: 5px;">Order Items</h4>
-                ${itemsHtml}
-                <div style="text-align: right; margin-top: 15px; font-size: 18px;">
-                    <span style="color: #666;">Total Amount:</span> <strong>₹${order.total}</strong>
-                </div>
-            </div>
-
-            <div class="order-history-section" style="margin-top: 25px;">
-                <h4 style="margin-bottom: 15px; color: #333; border-bottom: 2px solid #eee; padding-bottom: 5px;">Order Timeline</h4>
-                <div class="timeline" style="margin-top: 10px;">
-                    ${historyHtml || '<p style="color: #999;">No history records found</p>'}
-                </div>
-            </div>
-        `;
-
-        modal.classList.add('active');
-    } catch (error) {
-        console.error('Error opening order details:', error);
-        alert('Failed to load order details');
-    }
-}
-
-function closeOrderModal() {
-    document.getElementById('orderModal').classList.remove('active');
-}
-
-async function updateOrderStatusFromAdmin() {
-    const orderId = document.getElementById('mgmtOrderId').value;
-    const status = document.getElementById('mgmtStatus').value;
-    const courier_name = document.getElementById('mgmtCourier').value;
-    const tracking_id = document.getElementById('mgmtTracking').value;
-    const estimated_delivery_date = document.getElementById('mgmtDeliveryDate').value;
-    const notes = document.getElementById('mgmtNotes').value;
-
-    if (!orderId) return;
-
-    try {
-        // We need to call the PATCH /api/orders/:id/status endpoint
-        // Our API service needs a wrapper for this or we can use fetch
-        const token = API.Token.get();
-        // Detect environment
-        const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
-        const baseUrl = isProduction ? '/api' : 'http://localhost:3001/api';
-
-        const response = await fetch(`${baseUrl}/orders/${orderId}/status`, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-                status,
-                courier_name,
-                tracking_id,
-                estimated_delivery_date,
-                notes
-            })
-        });
-
-        const result = await response.json();
-
-        if (response.ok) {
-            alert('Order updated successfully!');
-            logActivity(`Updated order status: ${orderId} to ${status}`);
-
-            // Refresh view
-            viewOrderDetails(orderId);
-            renderOrdersTable();
-        } else {
-            throw new Error(result.error || 'Update failed');
-        }
-    } catch (error) {
-        console.error('Error updating order:', error);
-        alert('Error: ' + error.message);
-    }
-}
-
-async function deleteOrder(orderId) {
-    if (!confirm('Are you sure you want to delete this order? This action cannot be undone.')) return;
-
-    try {
-        await API.Orders.delete(orderId);
-        alert('Order deleted successfully');
-        logActivity(`Deleted order: ${orderId}`);
-        renderOrdersTable();
-    } catch (error) {
-        alert('Error deleting order: ' + error.message);
-    }
-}
-
-// Ensure orders are loaded when navigating to orders section
-const originalNavigateToSection = window.navigateToSection;
-window.navigateToSection = function (sectionId) {
-    if (sectionId === 'orders') {
-        renderOrdersTable();
-    }
-    // Call original if it exists or handle manually
-    document.querySelectorAll('.content-section').forEach(section => {
-        section.classList.remove('active');
-    });
-    const target = document.getElementById(sectionId + 'Section');
-    if (target) target.classList.add('active');
-
-    // Update active nav item
-    document.querySelectorAll('.nav-item').forEach(item => {
-        item.classList.remove('active');
-        if (item.getAttribute('data-section') === sectionId) {
-            item.classList.add('active');
-        }
-    });
-
-    // Close mobile menu if open
-    const sidebar = document.querySelector('.admin-sidebar');
-    if (sidebar) sidebar.classList.remove('active');
-};
+// Cleanup secondary duplicate definitions that were at the end of the file
+// Note: All relevant logic from the bottom has been merged into the main sections above.

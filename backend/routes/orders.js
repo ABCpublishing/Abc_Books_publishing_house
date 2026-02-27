@@ -273,9 +273,9 @@ router.patch('/:id/status', authenticateAdmin, async (req, res) => {
         const updateResult = await sql`
             UPDATE orders SET 
                 status = ${status || order.status}, 
-                tracking_id = ${tracking_id !== undefined ? tracking_id : null},
-                courier_name = ${courier_name !== undefined ? courier_name : null},
-                estimated_delivery_date = ${estimated_delivery_date !== undefined ? estimated_delivery_date : null},
+                tracking_id = ${tracking_id || null},
+                courier_name = ${courier_name || null},
+                estimated_delivery_date = ${estimated_delivery_date || null},
                 updated_at = NOW()
             WHERE id = ${order.id}
             RETURNING *
