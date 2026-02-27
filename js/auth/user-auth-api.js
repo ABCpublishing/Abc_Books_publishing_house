@@ -962,55 +962,52 @@ async function updateUserUI() {
 }
 
 async function updateWishlistCount() {
-    const user = await getCurrentUser();
     const countElement = document.getElementById('wishlistCount');
-
-    if (!countElement) return; // Element doesn't exist on this page
-
-    if (!user) {
-        countElement.textContent = '0';
-        return;
-    }
+    if (!countElement) return;
 
     try {
+        const user = await getCurrentUser();
+        if (!user) {
+            countElement.textContent = '0';
+            return;
+        }
+
         const response = await API.Wishlist.get(user.id);
-        // API might return {wishlist: [...]} or just [...]
         const wishlist = response.wishlist || response || [];
-        countElement.textContent = Array.isArray(wishlist) ? wishlist.length : 0;
+        const finalCount = Array.isArray(wishlist) ? wishlist.length : 0;
+
+        countElement.textContent = isNaN(finalCount) ? '0' : String(finalCount);
     } catch (error) {
-        console.error('Error updating wishlist count:', error);
+        console.warn('Wishlist badge update failed:', error);
         countElement.textContent = '0';
     }
 }
 
 async function updateCartCount() {
-    const user = await getCurrentUser();
     const countElement = document.getElementById('cartCount');
-
-    if (!countElement) return; // Element doesn't exist on this page
-
-    if (!user) {
-        countElement.textContent = '0';
-        return;
-    }
+    if (!countElement) return;
 
     try {
+        const user = await getCurrentUser();
+        if (!user) {
+            countElement.textContent = '0';
+            return;
+        }
+
         const response = await API.Cart.get(user.id);
-        // API returns {cart: [...], itemCount: ..., total: ...}
         const cart = response.cart || response || [];
 
-        // Calculate total items - ensure quantity is a number, default to 1 if missing
         let totalItems = 0;
         if (Array.isArray(cart)) {
             totalItems = cart.reduce((total, item) => {
-                const qty = parseInt(item.quantity);
-                return total + (isNaN(qty) ? 1 : qty);
+                const q = parseInt(item.quantity);
+                return total + (isNaN(q) ? 1 : q);
             }, 0);
         }
 
-        countElement.textContent = isNaN(totalItems) ? 0 : totalItems;
+        countElement.textContent = isNaN(totalItems) ? '0' : String(totalItems);
     } catch (error) {
-        console.error('Error updating cart count:', error);
+        console.warn('Cart badge update failed:', error);
         countElement.textContent = '0';
     }
 }

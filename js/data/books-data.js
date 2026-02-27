@@ -460,19 +460,23 @@ async function buyNow(bookId, bookData) {
 function updateCartBadge() {
     try {
         const cart = JSON.parse(localStorage.getItem('abc_books_cart') || '[]');
+        const badge = document.getElementById('cartCount');
+        if (!badge) return;
+
         if (!Array.isArray(cart)) {
-            const badge = document.getElementById('cartCount');
-            if (badge) badge.textContent = '0';
+            badge.textContent = '0';
             return;
         }
+
         const count = cart.reduce((sum, item) => {
-            const qty = parseInt(item.quantity) || 1;
-            return sum + qty;
+            const q = parseInt(item.quantity);
+            return sum + (isNaN(q) ? 1 : q);
         }, 0);
-        const badge = document.getElementById('cartCount');
-        if (badge) badge.textContent = isNaN(count) ? 0 : count;
+
+        badge.textContent = isNaN(count) ? '0' : String(count);
     } catch (e) {
-        console.error('Error updating cart badge:', e);
+        const badge = document.getElementById('cartCount');
+        if (badge) badge.textContent = '0';
     }
 }
 
@@ -480,9 +484,13 @@ function updateWishlistBadge() {
     try {
         const wishlist = JSON.parse(localStorage.getItem('abc_books_wishlist') || '[]');
         const badge = document.getElementById('wishlistCount');
-        if (badge) badge.textContent = Array.isArray(wishlist) ? wishlist.length : 0;
+        if (!badge) return;
+
+        const count = Array.isArray(wishlist) ? wishlist.length : 0;
+        badge.textContent = isNaN(count) ? '0' : String(count);
     } catch (e) {
-        console.error('Error updating wishlist badge:', e);
+        const badge = document.getElementById('wishlistCount');
+        if (badge) badge.textContent = '0';
     }
 }
 
