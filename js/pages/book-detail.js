@@ -96,8 +96,10 @@ function populateBookDetails() {
     };
 
     // Calculate discount
-    const discount = currentBook.originalPrice && currentBook.price
-        ? Math.floor(((currentBook.originalPrice - currentBook.price) / currentBook.originalPrice) * 100)
+    const price = parseFloat(currentBook.price) || 0;
+    const originalPrice = parseFloat(currentBook.originalPrice || currentBook.original_price) || price;
+    const discount = originalPrice > price
+        ? Math.floor(((originalPrice - price) / originalPrice) * 100)
         : 0;
 
     // Discount badge

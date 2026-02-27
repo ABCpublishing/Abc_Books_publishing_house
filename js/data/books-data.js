@@ -263,8 +263,10 @@ function generateStars(rating) {
 
 // Render book card for carousel
 function createBookCard(book) {
-    const discount = book.originalPrice && book.price
-        ? Math.floor(((book.originalPrice - book.price) / book.originalPrice) * 100)
+    const price = parseFloat(book.price) || 0;
+    const originalPrice = parseFloat(book.originalPrice || book.original_price) || price;
+    const discount = originalPrice > price
+        ? Math.floor(((originalPrice - price) / originalPrice) * 100)
         : 0;
 
     // Truncate description for overlay

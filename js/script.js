@@ -607,19 +607,22 @@ function initializeInteractions() {
     });
 }
 
-function updateCartBadge(change) {
-    const badge = document.querySelector('.cart-btn .badge');
+// Update badge count (relative change)
+function updateCartBadge(change = 0) {
+    const badge = document.getElementById('cartCount');
     if (badge) {
         const current = parseInt(badge.textContent) || 0;
-        badge.textContent = current + change;
+        const finalCount = current + (parseInt(change) || 0);
+        badge.textContent = Math.max(0, finalCount);
     }
 }
 
-function updateWishlistBadge(change) {
-    const badge = document.querySelector('.action-btn .badge');
+function updateWishlistBadge(change = 0) {
+    const badge = document.getElementById('wishlistCount');
     if (badge) {
         const current = parseInt(badge.textContent) || 0;
-        badge.textContent = Math.max(0, current + change);
+        const finalCount = current + (parseInt(change) || 0);
+        badge.textContent = Math.max(0, finalCount);
     }
 }
 

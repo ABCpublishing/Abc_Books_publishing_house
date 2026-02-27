@@ -39,8 +39,10 @@ function renderWishlist() {
 
 // Create wishlist item HTML
 function createWishlistItemHTML(item) {
-    const discount = item.originalPrice && item.price
-        ? Math.floor(((item.originalPrice - item.price) / item.originalPrice) * 100)
+    const price = parseFloat(item.price) || 0;
+    const originalPrice = parseFloat(item.originalPrice || item.original_price) || price;
+    const discount = originalPrice > price
+        ? Math.floor(((originalPrice - price) / originalPrice) * 100)
         : 0;
 
     return `

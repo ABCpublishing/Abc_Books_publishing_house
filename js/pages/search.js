@@ -279,8 +279,10 @@ function renderResults() {
 
 // Create grid card HTML
 function createGridCard(book) {
-    const discount = book.original_price && book.price
-        ? Math.floor(((book.original_price - book.price) / book.original_price) * 100)
+    const price = parseFloat(book.price) || 0;
+    const originalPrice = parseFloat(book.originalPrice || book.original_price) || price;
+    const discount = originalPrice > price
+        ? Math.floor(((originalPrice - price) / originalPrice) * 100)
         : 0;
 
     const imageSrc = book.image || 'https://via.placeholder.com/200x300?text=No+Image';
