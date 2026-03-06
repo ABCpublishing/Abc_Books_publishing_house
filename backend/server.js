@@ -130,8 +130,14 @@ app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/categories', categoriesRoutes);
 
-// Serve frontend: static files + index.html at root (Vercel only receives /api/* so this runs locally)
+// Serve frontend: static files + index.html at root
 const rootDir = path.join(__dirname, '..');
+
+// Serve favicon.ico from favicon.svg (prevents 404)
+app.get('/favicon.ico', (req, res) => {
+    res.sendFile(path.join(rootDir, 'favicon.svg'));
+});
+
 app.use(express.static(rootDir));
 app.get('/', (req, res) => res.sendFile(path.join(rootDir, 'index.html')));
 

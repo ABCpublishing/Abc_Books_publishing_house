@@ -1,6 +1,40 @@
 const express = require('express');
-const { authenticateAdmin } = require('../middleware/security');
+const { authenticate, authenticateAdmin } = require('../middleware/security');
 const router = express.Router();
+
+// Get current logged-in user's profile
+router.get('/me', authenticate, async (req, res) => {
+    try {
+        const sql = req.sql;
+        const userId = req.userId;
+
+        const users = await sql`
+            SELECT id, name, email, phone, is_admin, created_at
+            FROM users WHERE id = ${userId}
+        `;
+
+        if (users.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const user = users[0];
+
+        // Get user's order stats
+        const orderStats = await sql`
+            SELECT COUNT(*) as count, COALESCE(SUM(total), 0) as total_spent
+            FROM orders WHERE user_id = ${userId}
+        `;
+        user.stats = {
+            total_orders: parseInt(orderStats[0].count),
+            total_spent: parseFloat(orderStats[0].total_spent) || 0
+        };
+
+        res.json({ user });
+    } catch (error) {
+        console.error('Get current user error:', error);
+        res.status(500).json({ error: 'Failed to get user profile' });
+    }
+});
 
 // Get all users (admin)
 router.get('/', authenticateAdmin, async (req, res) => {
@@ -35,6 +69,11 @@ router.get('/:id', async (req, res) => {
     try {
         const sql = req.sql;
         const { id } = req.params;
+
+        // Validate ID is a number
+        if (isNaN(parseInt(id))) {
+            return res.status(400).json({ error: 'Invalid user ID' });
+        }
 
         const users = await sql`
             SELECT id, name, email, phone, created_at

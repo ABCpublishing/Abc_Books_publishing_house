@@ -125,14 +125,17 @@ async function getBooksForSection(section) {
     switch (section) {
         case 'featured':
             autoBooks = sortedByNewest;
+            limit = 15;
             break;
 
         case 'trending':
             autoBooks = sortedByRating;
+            limit = 20;
             break;
 
         case 'newReleases':
             autoBooks = sortedByNewest;
+            limit = 15;
             break;
 
         case 'indianAuthors': {
@@ -144,6 +147,7 @@ async function getBooksForSection(section) {
                 autoBooks = sortedByNewest;
                 sliceStart = 6; // Offset if falling back
             }
+            limit = 12;
             break;
         }
 
@@ -164,6 +168,7 @@ async function getBooksForSection(section) {
                 autoBooks = sortedByNewest;
                 sliceStart = 18;
             }
+            limit = 12;
             break;
         }
 
@@ -175,6 +180,7 @@ async function getBooksForSection(section) {
                 autoBooks = sortedByNewest;
                 sliceStart = 24;
             }
+            limit = 12;
             break;
         }
 
@@ -277,10 +283,19 @@ function createBookCard(book) {
     // Escape quotes properly for JSON in onclick
     const bookJSON = JSON.stringify(book).replace(/'/g, "\\'").replace(/"/g, '&quot;');
 
+    // Branded placeholder SVG with book title initial
+    const titleInitial = (book.title || 'B').charAt(0).toUpperCase();
+    const placeholderSVG = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 300'%3E%3Cdefs%3E%3ClinearGradient id='bg' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23f5f0eb'/%3E%3Cstop offset='100%25' stop-color='%23e8ddd4'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='url(%23bg)' width='200' height='300' rx='4'/%3E%3Crect x='55' y='80' width='90' height='120' rx='4' fill='%238B0000' opacity='0.12'/%3E%3Ctext x='100' y='155' text-anchor='middle' font-family='Georgia,serif' font-size='48' font-weight='bold' fill='%238B0000' opacity='0.5'%3E${titleInitial}%3C/text%3E%3Ctext x='100' y='235' text-anchor='middle' font-family='Arial,sans-serif' font-size='11' fill='%23999'%3EABC Books%3C/text%3E%3C/svg%3E`;
+
+    // Use placeholder if image is missing/null/empty
+    const bookImage = (book.image && book.image.trim() && book.image !== 'null' && book.image !== 'undefined')
+        ? book.image
+        : placeholderSVG;
+
     return `
         <div class="book-card" data-book-id="${book.id}">
             <div class="book-cover" onclick="viewBookDetail('${book.id}')" style="cursor: pointer;">
-                <img src="${book.image}" alt="${book.title}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 200 300%22%3E%3Crect fill=%22%23e8e8e8%22 width=%22200%22 height=%22300%22/%3E%3Cpath d=%22M80 110h40v80H80z%22 fill=%22%23ccc%22/%3E%3Cpath d=%22M85 115h30v70H85z%22 fill=%22%23fff%22/%3E%3Cpath d=%22M90 125h20v2H90zm0 8h20v2H90zm0 8h15v2H90z%22 fill=%22%23ddd%22/%3E%3C/svg%3E'">
+                <img src="${bookImage}" alt="${book.title}" loading="lazy" onerror="this.onerror=null;this.src='${placeholderSVG}'">
                 ${discount > 0 ? `<div class="discount-badge">-${discount}%</div>` : ''}
                 
                 <!-- Quick Action Buttons -->
