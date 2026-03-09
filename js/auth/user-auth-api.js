@@ -61,9 +61,9 @@ if (typeof showNotification === 'undefined') {
 // ===== HELPER FUNCTIONS =====
 async function getCurrentUser() {
     // 1. Definitively check physical token presence FIRST
-    const directToken = localStorage.getItem('accessToken') || localStorage.getItem('token') || localStorage.getItem('jwt_token');
+    const directToken = (typeof API !== 'undefined' && API.Token) ? API.Token.get() : (localStorage.getItem('accessToken') || localStorage.getItem('token') || localStorage.getItem('jwt_token'));
 
-    if (!directToken || !API.Token.isValid()) {
+    if (!directToken || (typeof API !== 'undefined' && API.Token && !API.Token.isValid())) {
         currentUserCache = null;
         return null;
     }

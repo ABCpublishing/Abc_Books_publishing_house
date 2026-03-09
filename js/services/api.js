@@ -11,17 +11,32 @@ window.API_BASE_URL = API_BASE_URL; // Make globally accessible
 console.log(`🔗 API Base URL: ${API_BASE_URL} (${isProduction ? 'Production' : 'Development'})`);
 
 // Token management
+const isAdminPath = typeof window !== 'undefined' && window.location.pathname.includes('/admin');
+
 const TokenManager = {
-    get: () => localStorage.getItem('accessToken') || localStorage.getItem('token') || localStorage.getItem('jwt_token'),
+    get: () => {
+        if (isAdminPath) {
+            return localStorage.getItem('adminToken');
+        }
+        return localStorage.getItem('accessToken') || localStorage.getItem('token') || localStorage.getItem('jwt_token');
+    },
     set: (token) => {
-        localStorage.setItem('accessToken', token);
-        localStorage.setItem('token', token);
-        localStorage.setItem('jwt_token', token); // KEEP FOR BACKWARD COMPATIBILITY
+        if (isAdminPath) {
+            localStorage.setItem('adminToken', token);
+        } else {
+            localStorage.setItem('accessToken', token);
+            localStorage.setItem('token', token);
+            localStorage.setItem('jwt_token', token); // KEEP FOR BACKWARD COMPATIBILITY
+        }
     },
     remove: () => {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('token');
-        localStorage.removeItem('jwt_token');
+        if (isAdminPath) {
+            localStorage.removeItem('adminToken');
+        } else {
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('token');
+            localStorage.removeItem('jwt_token');
+        }
     },
     isValid: () => {
         const token = TokenManager.get();

@@ -368,7 +368,7 @@ function viewBookDetail(bookId) {
 async function isUserLoggedIn() {
     // 1. Check API token fully if API is configured
     if (typeof API !== 'undefined' && API.Token) {
-        if (!API.Token.isValid()) return false;
+        if (!API.Token.isValid() || !API.Token.get()) return false;
     }
 
     // 2. More thorough check with getCurrentUser
@@ -377,8 +377,8 @@ async function isUserLoggedIn() {
         return !!(user && user.id);
     }
 
-    // 3. Last fallback to token presence
-    return !!(localStorage.getItem('accessToken') || localStorage.getItem('token') || localStorage.getItem('jwt_token'));
+    // 3. Last fallback to token presence safely
+    return !!((typeof API !== 'undefined' && API.Token) ? API.Token.get() : (localStorage.getItem('accessToken') || localStorage.getItem('token') || localStorage.getItem('jwt_token')));
 }
 
 // Show login required notification and modal
