@@ -119,7 +119,7 @@ function clearSessionData() {
 function handleLogin(event) {
     event.preventDefault();
 
-    const phone = document.getElementById('loginPhone').value;
+    const phone = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
 
     const users = getUsers();

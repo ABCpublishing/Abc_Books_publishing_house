@@ -368,7 +368,7 @@ async function handleLogin(event) {
     event.preventDefault();
 
     const formId = 'loginForm';
-    const phoneInput = document.getElementById('loginPhone');
+    const emailInput = document.getElementById('loginEmail');
     const passwordInput = document.getElementById('loginPassword');
     const submitBtn = event.target.querySelector('button[type="submit"]');
 
@@ -376,11 +376,11 @@ async function handleLogin(event) {
 
     // Validation
     let isValid = true;
-    if (!phoneInput.value.trim()) {
-        showInputError('loginPhone', 'Phone number is required');
+    if (!emailInput.value.trim()) {
+        showInputError('loginEmail', 'Email address is required');
         isValid = false;
-    } else if (!/^\d{10}$/.test(phoneInput.value.replace(/[- ]/g, ''))) {
-        showInputError('loginPhone', 'Please enter a valid 10-digit phone number');
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput.value.trim())) {
+        showInputError('loginEmail', 'Please enter a valid email address');
         isValid = false;
     }
 
@@ -396,7 +396,7 @@ async function handleLogin(event) {
 
     try {
         const response = await API.Auth.login({
-            phone: phoneInput.value,
+            email: emailInput.value,
             password: passwordInput.value
         });
 
@@ -436,8 +436,8 @@ async function handleLogin(event) {
 
         if (error.message.toLowerCase().includes('password')) {
             showInputError('loginPassword', 'Incorrect password');
-        } else if (error.message.toLowerCase().includes('found') || error.message.toLowerCase().includes('phone')) {
-            showInputError('loginPhone', 'No account found with this phone number');
+        } else if (error.message.toLowerCase().includes('phone') || error.message.toLowerCase().includes('email') || error.message.toLowerCase().includes('found')) {
+            showInputError('loginEmail', 'No account found with this email');
         } else {
             showFormBannerError(formId, error.message || 'Login failed. Please try again.');
         }
