@@ -117,7 +117,7 @@ function initializeEventListeners() {
     const previewBtn = document.getElementById('previewSiteBtn');
     if (previewBtn) {
         previewBtn.addEventListener('click', function () {
-            window.open('../index.html', '_blank');
+            window.open('/index.html', '_blank');
         });
     }
 
@@ -300,7 +300,10 @@ async function loadSectionData(section) {
         case 'editors':
         case 'featured':
         case 'trending':
+        case 'newReleases':
+        case 'children':
         case 'bestseller':
+        case 'indianAuthors':
             try {
                 const response = await API.Books.getBySection(section);
                 renderSectionBooks(section, response.books || []);
@@ -316,6 +319,7 @@ async function loadSectionData(section) {
                 console.error('loadCategoriesTable not found. Make sure category-manager.js is loaded.');
             }
             break;
+        case 'urdu':
         case 'english':
         case 'arabic':
         case 'kashmiri':
@@ -884,6 +888,21 @@ async function editBook(bookId) {
         document.getElementById('bookCategory').value = book.category || '';
         document.getElementById('bookImage').value = book.image;
 
+        // Populate language and subcategory dropdowns
+        const languageSelect = document.getElementById('bookLanguage');
+        if (languageSelect) {
+            const langValue = (book.language || book.category || '').toLowerCase();
+            languageSelect.value = langValue;
+
+            // Trigger subcategory load and wait for it
+            await loadSubcategories();
+
+            const subcategorySelect = document.getElementById('bookSubcategory');
+            if (subcategorySelect) {
+                subcategorySelect.value = book.subcategory || '';
+            }
+        }
+
         // Populate sections
         // Note: The API GET /:id response now includes 'sections' array thanks to our backend update
         const bookSections = book.sections || [];
@@ -911,9 +930,9 @@ async function handleBookFormSubmit(e) {
         price: parseInt(document.getElementById('bookPrice').value),
         original_price: parseInt(document.getElementById('bookOriginalPrice').value) || null,
         image: document.getElementById('bookImage').value,
-        language: document.getElementById('bookLanguage')?.value || 'Urdu',
+        language: document.getElementById('bookLanguage')?.value || 'urdu',
         subcategory: document.getElementById('bookSubcategory')?.value || '',
-        category: document.getElementById('bookCategory')?.value || document.getElementById('bookLanguage')?.value || 'General',
+        category: document.getElementById('bookLanguage')?.value || document.getElementById('bookCategory')?.value || 'general',
         rating: 4.5, // Default rating
         sections: Array.from(document.querySelectorAll('input[name="sections"]:checked')).map(cb => cb.value)
     };
@@ -1134,25 +1153,25 @@ function updateDate() {
 // ===== DYNAMIC CATEGORIES SYSTEM =====
 // Different subcategories for each language (Fallback for when DB is empty)
 const SUBCATEGORIES_BY_LANGUAGE = {
-    'Urdu': [
+    'urdu': [
         { value: 'Quran & Tafsir', label: '📖 Quran & Tafsir' },
         { value: 'Hadith', label: '📜 Hadith' },
         { value: 'Biography', label: '👤 Biography' },
         { value: 'Creed & Fiqh', label: '⚖️ Creed & Fiqh' },
         { value: 'Literature & Fiction', label: '📕 Literature & Fiction' }
     ],
-    'English': [
+    'english': [
         { value: 'Quran & Tafsir', label: '📖 Quran & Tafsir' },
         { value: 'Hadith', label: '📜 Hadith' },
         { value: 'Academic', label: '🎓 Academic' },
         { value: 'Literature & Fiction', label: '📕 Literature & Fiction' }
     ],
-    'Arabic': [
+    'arabic': [
         { value: 'Quran & Tafsir', label: '📖 Quran & Tafsir' },
         { value: 'Hadith', label: '📜 Hadith' },
         { value: 'Arabic Grammar', label: '📝 Arabic Grammar' }
     ],
-    'Kashmiri': [
+    'kashmiri': [
         { value: 'Kashmiri Poetry', label: '🎭 Kashmiri Poetry' },
         { value: 'Kashmiri Literature', label: '📕 Kashmiri Literature' }
     ]
@@ -1169,16 +1188,16 @@ async function initializeCategoriesForBooks() {
 
         // Save some default options if API fails or returns empty
         const displayLanguages = languages.length > 0 ? languages : [
-            { name: 'Urdu', slug: 'Urdu' },
-            { name: 'English', slug: 'English' },
-            { name: 'Arabic', slug: 'Arabic' },
-            { name: 'Kashmiri', slug: 'Kashmiri' }
+            { name: 'Urdu', slug: 'urdu' },
+            { name: 'English', slug: 'english' },
+            { name: 'Arabic', slug: 'arabic' },
+            { name: 'Kashmiri', slug: 'kashmiri' }
         ];
 
         languageSelect.innerHTML = '<option value="">-- Select Category --</option>';
         displayLanguages.forEach(lang => {
             const option = document.createElement('option');
-            option.value = lang.name;
+            option.value = lang.slug || lang.name;
             option.textContent = lang.name;
             languageSelect.appendChild(option);
         });
@@ -1216,13 +1235,7 @@ async function loadSubcategories() {
 
         if (subcategories.length === 0) {
             // Fallback to legacy categories if none found in DB for this language
-            const legacySub = SUBCATEGORIES_BY_LANGUAGE[language] || [];
-            legacySub.forEach(sub => {
-                const option = document.createElement('option');
-                option.value = sub.value;
-                option.textContent = sub.label;
-                subcategorySelect.appendChild(option);
-            });
+            loadFallbackSubcategories(language, subcategorySelect);
         } else {
             subcategories.forEach(sub => {
                 const option = document.createElement('option');
@@ -1232,12 +1245,26 @@ async function loadSubcategories() {
             });
         }
     } catch (error) {
-        console.error('Error loading subcategories:', error);
-        subcategorySelect.innerHTML = '<option value="">Error loading</option>';
+        console.warn('DB categories not found, using fallback. Error:', error.message);
+        subcategorySelect.innerHTML = '<option value="">-- Select Subcategory --</option>';
+        loadFallbackSubcategories(language, subcategorySelect);
     }
 
     // Update the hidden category field for backward compatibility
     document.getElementById('bookCategory').value = language;
+}
+
+// Helper for fallback loading
+function loadFallbackSubcategories(language, selectElement) {
+    const legacySub = SUBCATEGORIES_BY_LANGUAGE[language] || [
+        { value: 'General', label: 'General' }
+    ];
+    legacySub.forEach(sub => {
+        const option = document.createElement('option');
+        option.value = sub.value;
+        option.textContent = sub.label;
+        selectElement.appendChild(option);
+    });
 }
 
 // Updated function to populate form when editing

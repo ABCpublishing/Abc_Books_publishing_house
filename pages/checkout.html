@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <title>Checkout | ABC Books</title>
     <meta name="description" content="Complete your order at ABC Books - India's trusted online bookstore.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,17 +13,18 @@
         href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="../css/styles.css">
-    <link rel="stylesheet" href="../css/styles-responsive.css">
-    <link rel="stylesheet" href="../css/components/checkout.css">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/styles-responsive.css">
+    <link rel="stylesheet" href="/css/components/checkout.css">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 
 <body>
     <!-- Header -->
     <header class="checkout-header">
         <div class="container">
-            <a href="../index.html" class="logo">
-                <img src="../images/logo.png" alt="ABC Books" class="logo-img">
+            <a href="/index.html" class="logo">
+                <img src="/images/logo.png" alt="ABC Books" class="logo-img">
                 <div class="logo-text">
                     <span class="logo-sub">BOOKS</span>
                 </div>
@@ -283,9 +284,174 @@
                 <p><strong>Estimated Delivery:</strong> <span id="deliveryDate">5-7 business days</span></p>
             </div>
             <div class="modal-actions">
-                <a href="../index.html" class="btn-continue">
+                <a href="/index.html" class="btn-continue">
                     <i class="fas fa-shopping-bag"></i> Continue Shopping
                 </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Auth Modals (Added for seamless checkout) -->
+    <!-- Login Modal -->
+    <div class="auth-modal" id="loginModal">
+        <div class="auth-modal-content">
+            <button class="close-auth" onclick="closeLoginModal()"><i class="fas fa-times"></i></button>
+            <div class="auth-header">
+                <i class="fas fa-sign-in-alt"></i>
+                <h2>Welcome Back!</h2>
+                <p>Login to your ABC Books account</p>
+            </div>
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="google-auth-container" style="margin-bottom: 25px;">
+                    <p style="text-align: center; color: #666; font-size: 13px; margin-bottom: 12px; font-weight: 500;">
+                        <i class="fas fa-magic"></i> Recommended for quick access:
+                    </p>
+                    <div id="googleSignInBtnLogin" style="display: flex; justify-content: center;">
+                        <button type="button" class="btn-google"
+                            onclick="if(typeof google!=='undefined' && google.accounts) { google.accounts.id.prompt(); } else { alert('Google Sign-In is initializing...'); }"
+                            style="margin-bottom: 0;">
+                            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+                            <span>Continue with Google</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="google-auth-separator"
+                    style="text-align: center; margin-bottom: 25px; position: relative; height: 1px; background: #eee; margin-top: 25px;">
+                    <span
+                        style="background: white; padding: 0 15px; color: #888; font-size: 13px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: 500;">
+                        or continue with phone number
+                    </span>
+                </div>
+                <div class="form-error-banner" id="loginFormError" style="display: none;">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span></span>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-phone"></i> Phone Number</label>
+                    <input type="tel" id="loginPhone" placeholder="Enter your phone number" required autocomplete="tel">
+                    <span class="error-message" id="loginPhoneError"></span>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-lock"></i> Password</label>
+                    <input type="password" id="loginPassword" placeholder="Enter your password" required
+                        autocomplete="current-password">
+                    <span class="error-message" id="loginPasswordError"></span>
+                </div>
+                <div class="form-options">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="rememberMe">
+                        <span>Remember me</span>
+                    </label>
+                    <a href="#" class="forgot-link" onclick="showForgotModal(event)">Forgot Password?</a>
+                </div>
+                <button type="submit" class="btn-auth">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </button>
+            </form>
+            <div class="auth-footer">
+                <p>Don't have an account? <a href="#" onclick="switchToSignup()">Sign Up</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sign Up Modal -->
+    <div class="auth-modal" id="signupModal">
+        <div class="auth-modal-content">
+            <button class="close-auth" onclick="closeSignupModal()"><i class="fas fa-times"></i></button>
+            <div class="auth-header">
+                <i class="fas fa-user-plus"></i>
+                <h2>Create Account</h2>
+                <p>Join ABC Books today</p>
+            </div>
+            <form id="signupForm" onsubmit="handleSignup(event)">
+                <div class="google-auth-container" style="margin-bottom: 25px;">
+                    <p style="text-align: center; color: #666; font-size: 13px; margin-bottom: 12px; font-weight: 500;">
+                        <i class="fas fa-bolt"></i> One-click signup:
+                    </p>
+                    <div id="googleSignInBtnSignup" style="display: flex; justify-content: center;">
+                        <button type="button" class="btn-google"
+                            onclick="if(typeof google!=='undefined' && google.accounts) { google.accounts.id.prompt(); } else { alert('Google Sign-In is initializing...'); }"
+                            style="margin-bottom: 0;">
+                            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+                            <span>Sign up with Google</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="google-auth-separator"
+                    style="text-align: center; margin-bottom: 25px; position: relative; height: 1px; background: #eee; margin-top: 25px;">
+                    <span
+                        style="background: white; padding: 0 15px; color: #888; font-size: 13px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: 500;">
+                        or create email account
+                    </span>
+                </div>
+                <div class="form-error-banner" id="signupFormError" style="display: none;">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span></span>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-user"></i> Full Name</label>
+                    <input type="text" id="signupName" placeholder="Enter your full name" required autocomplete="name">
+                    <span class="error-message" id="signupNameError"></span>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-envelope"></i> Email</label>
+                    <input type="email" id="signupEmail" placeholder="Enter your email" required autocomplete="email">
+                    <span class="error-message" id="signupEmailError"></span>
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fas fa-lock"></i> Password</label>
+                    <input type="password" id="signupPassword" placeholder="Create a password" required minlength="6"
+                        autocomplete="new-password">
+                    <span class="error-message" id="signupPasswordError"></span>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-lock"></i> Confirm Password</label>
+                    <input type="password" id="signupConfirmPassword" placeholder="Confirm your password" required
+                        autocomplete="new-password">
+                    <span class="error-message" id="signupConfirmPasswordError"></span>
+                </div>
+                <button type="submit" class="btn-auth">
+                    <i class="fas fa-user-plus"></i> Create Account
+                </button>
+            </form>
+            <div class="auth-footer">
+                <p>Already have an account? <a href="#" onclick="switchToLogin()">Login</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div class="auth-modal" id="forgotModal">
+        <div class="auth-modal-content">
+            <button class="close-auth" onclick="closeForgotModal()"><i class="fas fa-times"></i></button>
+            <div class="auth-header">
+                <i class="fas fa-key"></i>
+                <h2>Reset Password</h2>
+                <p>Enter your email to receive reset instructions</p>
+            </div>
+            <form id="forgotForm" onsubmit="handleForgotPassword(event)">
+                <div class="form-error-banner" id="forgotFormError" style="display: none;">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span></span>
+                </div>
+                <div class="form-success-banner" id="forgotFormSuccess" style="display: none;">
+                    <i class="fas fa-check-circle"></i>
+                    <span></span>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-envelope"></i> Email</label>
+                    <input type="email" id="forgotEmail" placeholder="Enter your registered email" required>
+                    <span class="error-message" id="forgotEmailError"></span>
+                </div>
+                <button type="submit" class="btn-auth">
+                    <i class="fas fa-paper-plane"></i> Send Reset Link
+                </button>
+            </form>
+            <div class="auth-footer">
+                <p>Back to <a href="#" onclick="switchToLogin()">Login</a></p>
             </div>
         </div>
     </div>
@@ -293,7 +459,7 @@
     <!-- Footer -->
     <footer class="checkout-footer">
         <div class="container">
-            <p>&copy; 2025 ABC Books. All rights reserved.</p>
+            <p>&copy; 2026 ABC Books. All rights reserved.</p>
             <div class="footer-links">
                 <a href="#">Privacy Policy</a>
                 <a href="#">Terms of Service</a>
@@ -305,11 +471,11 @@
     <!-- Razorpay SDK -->
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <!-- Core Scripts -->
-    <script src="../js/services/api.js?v=2.0"></script>
-    <script src="../js/auth/user-auth-api.js?v=2.0"></script>
-    <script src="../js/data/books-data.js?v=2.0"></script>
-    <script src="../js/pages/checkout.js?v=2.0"></script>
-    <script src="../js/mobile-menu.js?v=2.0"></script>
+    <script src="/js/services/api.js?v=2.3"></script>
+    <script src="/js/auth/user-auth-api.js?v=2.3"></script>
+    <script src="/js/data/books-data.js?v=2.3"></script>
+    <script src="/js/pages/checkout.js?v=2.3"></script>
+    <script src="/js/mobile-menu.js?v=2.3"></script>
 </body>
 
 </html>

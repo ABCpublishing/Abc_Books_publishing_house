@@ -270,10 +270,7 @@ div {
     .children-books-track {
         display: flex;
         gap: 10px;
-        overflow-x: auto;
-        scroll-snap-type: x mandatory;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
+        overflow: hidden;
         padding: 10px 0;
     }
 

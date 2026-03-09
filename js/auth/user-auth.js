@@ -46,6 +46,7 @@ function saveCart(cart) {
 function showLoginModal() {
     document.getElementById('loginModal').classList.add('active');
     document.body.style.overflow = 'hidden';
+    if (typeof renderGoogleButtons === 'function') setTimeout(renderGoogleButtons, 50);
 }
 
 function closeLoginModal() {
@@ -56,6 +57,7 @@ function closeLoginModal() {
 function showSignupModal() {
     document.getElementById('signupModal').classList.add('active');
     document.body.style.overflow = 'hidden';
+    if (typeof renderGoogleButtons === 'function') setTimeout(renderGoogleButtons, 50);
 }
 
 function closeSignupModal() {
@@ -117,11 +119,11 @@ function clearSessionData() {
 function handleLogin(event) {
     event.preventDefault();
 
-    const email = document.getElementById('loginEmail').value;
+    const phone = document.getElementById('loginPhone').value;
     const password = document.getElementById('loginPassword').value;
 
     const users = getUsers();
-    const user = users.find(u => u.email === email && u.password === password);
+    const user = users.find(u => u.phone === phone && u.password === password);
 
     if (user) {
         // Get previous user (if any) and save their data
@@ -183,7 +185,6 @@ function handleSignup(event) {
 
     const name = document.getElementById('signupName').value;
     const email = document.getElementById('signupEmail').value;
-    const phone = document.getElementById('signupPhone').value;
     const password = document.getElementById('signupPassword').value;
     const confirmPassword = document.getElementById('signupConfirmPassword').value;
 
@@ -212,7 +213,6 @@ function handleSignup(event) {
         id: Date.now().toString(),
         name,
         email,
-        phone,
         password,
         createdAt: new Date().toISOString()
     };
@@ -496,7 +496,7 @@ function proceedToCheckout() {
     }
 
     // Redirect to checkout page
-    window.location.href = 'pages/checkout.html';
+    window.location.href = '/pages/checkout.html';
 }
 
 
@@ -535,8 +535,7 @@ function updateCartCount() {
 
 // ===== USER MENU FUNCTIONS =====
 function viewOrders() {
-    const isInsidePages = window.location.pathname.includes('/pages/');
-    window.location.href = isInsidePages ? 'my-orders.html' : 'pages/my-orders.html';
+    window.location.href = '/pages/my-orders.html';
 }
 
 function viewWishlist() {
@@ -545,7 +544,7 @@ function viewWishlist() {
 }
 
 function viewProfile() {
-    alert('Profile editing feature coming soon!');
+    window.location.href = '/pages/my-account.html';
 }
 
 // ===== PENDING ACTION EXECUTION HELPERS =====
@@ -555,15 +554,7 @@ function viewProfile() {
  * @returns {string} Correct path to checkout.html
  */
 function getCheckoutPath() {
-    const currentPath = window.location.pathname;
-
-    // If we're already in /pages/ directory
-    if (currentPath.includes('/pages/')) {
-        return 'checkout.html';
-    }
-
-    // If we're in root directory
-    return 'pages/checkout.html';
+    return '/pages/checkout.html';
 }
 
 /**

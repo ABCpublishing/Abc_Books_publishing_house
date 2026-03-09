@@ -119,6 +119,20 @@ const AuthAPI = {
         return data;
     },
 
+    async googleLogin(credential) {
+        const data = await apiRequest('/auth/google', {
+            method: 'POST',
+            body: JSON.stringify({ credential })
+        });
+
+        const tokenToSet = data.accessToken || data.token;
+        if (tokenToSet) {
+            TokenManager.set(tokenToSet);
+        }
+
+        return data;
+    },
+
     async getCurrentUser() {
         return await apiRequest('/auth/me');
     },

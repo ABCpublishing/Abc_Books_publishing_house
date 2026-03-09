@@ -60,11 +60,10 @@ if (typeof showNotification === 'undefined') {
 
 // ===== HELPER FUNCTIONS =====
 async function getCurrentUser() {
-    // 1. Definitively check physical token presence FIRST to avoid any async/cache race conditions
+    // 1. Definitively check physical token presence FIRST
     const directToken = localStorage.getItem('accessToken') || localStorage.getItem('token') || localStorage.getItem('jwt_token');
 
-    if (!directToken) {
-        // If no token physically exists, absolutely force unauthenticated state immediately
+    if (!directToken || !API.Token.isValid()) {
         currentUserCache = null;
         return null;
     }
@@ -86,16 +85,18 @@ async function getCurrentUser() {
             }
         }
     } catch (error) {
-        console.warn('⚠️ Could not fetch user from API, trying localStorage fallback...', error);
+        console.warn('⚠️ API user fetch failed, trying localStorage...', error);
     }
 
-    // 4. API failed, but we DO have a literal token. Fallback to local storage user object.
+    // 4. Fallback to localStorage
     const savedUser = localStorage.getItem('abc_books_current_user');
     if (savedUser) {
         try {
             const user = JSON.parse(savedUser);
-            currentUserCache = user;
-            return user;
+            if (user && user.id) {
+                currentUserCache = user;
+                return user;
+            }
         } catch (e) {
             console.error('Error parsing saved user:', e);
         }
@@ -111,8 +112,22 @@ function clearUserCache() {
 // ===== MODAL FUNCTIONS =====
 function showLoginModal() {
     if (typeof resetFormErrors === 'function') resetFormErrors('loginForm');
-    document.getElementById('loginModal').classList.add('active');
-    document.body.style.overflow = 'hidden';
+    const modal = document.getElementById('loginModal');
+    if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+
+        // Force Google render whenever modal opens
+        if (typeof renderGoogleButtons === 'function') {
+            setTimeout(() => {
+                console.log('🔄 Rendering Google buttons for login modal...');
+                renderGoogleButtons();
+            }, 100);
+
+            // Second pass for safety
+            setTimeout(renderGoogleButtons, 500);
+        }
+    }
 }
 
 function closeLoginModal() {
@@ -122,8 +137,17 @@ function closeLoginModal() {
 
 function showSignupModal() {
     if (typeof resetFormErrors === 'function') resetFormErrors('signupForm');
-    document.getElementById('signupModal').classList.add('active');
-    document.body.style.overflow = 'hidden';
+    const modal = document.getElementById('signupModal');
+    if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+
+        // Force Google render for signup
+        if (typeof renderGoogleButtons === 'function') {
+            setTimeout(renderGoogleButtons, 100);
+            setTimeout(renderGoogleButtons, 500);
+        }
+    }
 }
 
 function closeSignupModal() {
@@ -212,12 +236,139 @@ function setLoadingState(btn, isLoading) {
     }
 }
 
+// ===== GOOGLE SIGN IN =====
+const GOOGLE_CLIENT_ID = '610549250942-ahs2hiqdbdanl8shps8r7c1mgb9odv90.apps.googleusercontent.com';
+let googleInitialized = false;
+
+function initGoogleSignIn() {
+    if (typeof google === 'undefined' || !google.accounts) {
+        setTimeout(initGoogleSignIn, 500);
+        return;
+    }
+
+    if (!googleInitialized) {
+        try {
+            google.accounts.id.initialize({
+                client_id: GOOGLE_CLIENT_ID,
+                callback: handleGoogleSignIn,
+                auto_select: false,
+                cancel_on_tap_outside: true,
+                itp_support: true
+            });
+            googleInitialized = true;
+
+            // Display Google One Tap prompt automatically on landing
+            google.accounts.id.prompt((notification) => {
+                if (notification.isNotDisplayed()) {
+                    console.log('One Tap not displayed:', notification.getNotDisplayedReason());
+                }
+            });
+        } catch (error) {
+            console.error('Error initializing Google Sign-In:', error);
+            setTimeout(initGoogleSignIn, 1000);
+            return;
+        }
+    }
+
+    renderGoogleButtons();
+}
+
+function renderGoogleButtons() {
+    if (typeof google === 'undefined' || !google.accounts || !googleInitialized) return;
+
+    const render = () => {
+        try {
+            const loginBtn = document.getElementById("googleSignInBtnLogin");
+            if (loginBtn) {
+                google.accounts.id.renderButton(loginBtn, {
+                    theme: "outline",
+                    size: "large",
+                    width: 320,
+                    text: "continue_with",
+                    shape: "pill"
+                });
+            }
+
+            const signupBtn = document.getElementById("googleSignInBtnSignup");
+            if (signupBtn) {
+                google.accounts.id.renderButton(signupBtn, {
+                    theme: "outline",
+                    size: "large",
+                    width: 320,
+                    text: "signup_with",
+                    shape: "pill"
+                });
+            }
+        } catch (err) {
+            console.warn('Google button rendering failed, retrying...', err);
+        }
+    };
+
+    // Immediate attempt
+    render();
+
+    // Fallback retries if modal animation is slow
+    let retries = 0;
+    const interval = setInterval(() => {
+        render();
+        if (++retries >= 5) clearInterval(interval);
+    }, 400);
+}
+
+// Multi-method initialization to ensure it runs
+if (document.readyState === 'complete') {
+    initGoogleSignIn();
+} else {
+    window.addEventListener('load', initGoogleSignIn);
+    document.addEventListener('DOMContentLoaded', initGoogleSignIn);
+}
+
+
+async function handleGoogleSignIn(response) {
+    if (!response.credential) return;
+
+    try {
+        const result = await API.Auth.googleLogin(response.credential);
+
+        if (result.user) {
+            currentUserCache = result.user;
+
+            if (result.token || result.accessToken) {
+                const finalToken = result.accessToken || result.token;
+                localStorage.setItem('accessToken', finalToken);
+                localStorage.setItem('token', finalToken);
+                localStorage.setItem('jwt_token', finalToken);
+            }
+
+            localStorage.setItem('abc_books_current_user', JSON.stringify(result.user));
+
+            closeLoginModal();
+            closeSignupModal();
+            if (typeof updateUserUI === 'function') await updateUserUI();
+            if (typeof loadUserData === 'function') await loadUserData();
+
+            if (typeof showNotification === 'function') {
+                showNotification(`Welcome, ${result.user.name}!`, 'success');
+            }
+
+            await processPendingAction();
+        }
+    } catch (error) {
+        console.error('Google login error:', error);
+        if (typeof showNotification === 'function') {
+            showNotification('Google Sign-In failed: ' + error.message, 'error');
+        } else {
+            alert('Google Sign-In failed: ' + error.message);
+        }
+    }
+}
+
 // ===== AUTHENTICATION FUNCTIONS =====
 async function handleLogin(event) {
     event.preventDefault();
 
     const formId = 'loginForm';
-    const emailInput = document.getElementById('loginEmail');
+    const phoneInput = document.getElementById('loginPhone');
     const passwordInput = document.getElementById('loginPassword');
     const submitBtn = event.target.querySelector('button[type="submit"]');
 
@@ -225,11 +376,11 @@ async function handleLogin(event) {
 
     // Validation
     let isValid = true;
-    if (!emailInput.value.trim()) {
-        showInputError('loginEmail', 'Email is required');
+    if (!phoneInput.value.trim()) {
+        showInputError('loginPhone', 'Phone number is required');
         isValid = false;
-    } else if (!/\S+@\S+\.\S+/.test(emailInput.value)) {
-        showInputError('loginEmail', 'Please enter a valid email address');
+    } else if (!/^\d{10}$/.test(phoneInput.value.replace(/[- ]/g, ''))) {
+        showInputError('loginPhone', 'Please enter a valid 10-digit phone number');
         isValid = false;
     }
 
@@ -245,7 +396,7 @@ async function handleLogin(event) {
 
     try {
         const response = await API.Auth.login({
-            email: emailInput.value,
+            phone: phoneInput.value,
             password: passwordInput.value
         });
 
@@ -285,8 +436,8 @@ async function handleLogin(event) {
 
         if (error.message.toLowerCase().includes('password')) {
             showInputError('loginPassword', 'Incorrect password');
-        } else if (error.message.toLowerCase().includes('found')) {
-            showInputError('loginEmail', 'No account found with this email');
+        } else if (error.message.toLowerCase().includes('found') || error.message.toLowerCase().includes('phone')) {
+            showInputError('loginPhone', 'No account found with this phone number');
         } else {
             showFormBannerError(formId, error.message || 'Login failed. Please try again.');
         }
@@ -301,7 +452,6 @@ async function handleSignup(event) {
     const formId = 'signupForm';
     const nameInput = document.getElementById('signupName');
     const emailInput = document.getElementById('signupEmail');
-    const phoneInput = document.getElementById('signupPhone');
     const passwordInput = document.getElementById('signupPassword');
     const confirmInput = document.getElementById('signupConfirmPassword');
     const submitBtn = event.target.querySelector('button[type="submit"]');
@@ -323,14 +473,6 @@ async function handleSignup(event) {
         isValid = false;
     }
 
-    if (!phoneInput.value.trim()) {
-        showInputError('signupPhone', 'Phone number is required');
-        isValid = false;
-    } else if (!/^\d{10}$/.test(phoneInput.value.replace(/[- ]/g, ''))) {
-        showInputError('signupPhone', 'Please enter a valid 10-digit phone number');
-        isValid = false;
-    }
-
     if (passwordInput.value.length < 6) {
         showInputError('signupPassword', 'Password must be at least 6 characters');
         isValid = false;
@@ -349,7 +491,6 @@ async function handleSignup(event) {
         const response = await API.Auth.register({
             name: nameInput.value,
             email: emailInput.value,
-            phone: phoneInput.value,
             password: passwordInput.value
         });
 
@@ -432,11 +573,7 @@ async function handleForgotPassword(event) {
  * Get correct path to checkout based on current location
  */
 function getCheckoutPath() {
-    const currentPath = window.location.pathname;
-    if (currentPath.includes('/pages/')) {
-        return 'checkout.html';
-    }
-    return 'pages/checkout.html';
+    return '/pages/checkout.html';
 }
 
 /**
@@ -574,6 +711,13 @@ async function processPendingAction() {
             } catch (error) {
                 console.error('Error in pending add to wishlist:', error);
             }
+        } else if (pendingAction === 'checkout') {
+            // Re-sync and refresh checkout page
+            if (window.location.pathname.includes('checkout')) {
+                window.location.reload();
+            } else {
+                window.location.href = getCheckoutPath();
+            }
         }
 
     } catch (error) {
@@ -662,7 +806,8 @@ async function loadWishlistItems() {
 
 async function addToWishlist(bookId, bookData) {
     const user = await getCurrentUser();
-    if (!user) {
+
+    if (!user || user.id === -1) {
         // ✅ SAVE PENDING ACTION for auto-continue after login
         localStorage.setItem('abc_books_pending_action', 'add_to_wishlist');
         localStorage.setItem('abc_books_pending_book', JSON.stringify({
@@ -673,17 +818,17 @@ async function addToWishlist(bookId, bookData) {
         }));
 
         if (typeof showNotification === 'function') {
-            showNotification('Please login to add items to wishlist', 'info');
-        } else {
-            alert('Please login to add items to wishlist');
+            showNotification('🔐 Login with Google to save to wishlist!', 'info');
         }
         showLoginModal();
         return;
     }
 
+    const userObj = user || { id: -1 };
+
     try {
         await API.Wishlist.add({
-            user_id: user.id,
+            user_id: userObj.id,
             book_id: bookId
         });
 
@@ -810,8 +955,10 @@ async function loadCartItems() {
 
 async function addToCart(bookId, bookData) {
     const user = await getCurrentUser();
-    if (!user) {
-        // ✅ SAVE PENDING ACTION for auto-continue after login
+
+    // Strict validation: Must have a valid session and user object
+    if (!user || user.id === -1) {
+        // ✅ SAVE PENDING ACTION
         localStorage.setItem('abc_books_pending_action', 'add_to_cart');
         localStorage.setItem('abc_books_pending_book', JSON.stringify({
             bookId: bookId,
@@ -821,13 +968,14 @@ async function addToCart(bookId, bookData) {
         }));
 
         if (typeof showNotification === 'function') {
-            showNotification('Please login to add items to cart', 'info');
-        } else {
-            alert('Please login to add items to cart');
+            showNotification('🔐 Login with Google to start shopping!', 'info');
         }
+
         showLoginModal();
         return;
     }
+
+    const userObj = user || { id: -1 };
 
     try {
         // ✅ ALWAYS save to localStorage first (as backup)
@@ -852,7 +1000,7 @@ async function addToCart(bookId, bookData) {
         // Try to save to API as well
         try {
             const response = await API.Cart.add({
-                user_id: user.id,
+                user_id: userObj.id,
                 book_id: bookId,
                 quantity: 1
             });
@@ -928,8 +1076,8 @@ async function proceedToCheckout() {
             return;
         }
 
-        // Redirect to checkout page
-        window.location.href = 'pages/checkout.html';
+        // Redirect to checkout - always use root-relative path to prevent double "pages/"
+        window.location.href = '/pages/checkout.html';
     } catch (error) {
         console.error('Error checking cart:', error);
         alert('Error loading cart. Please try again.');
@@ -1019,17 +1167,21 @@ async function loadUserData() {
 }
 
 // ===== USER MENU FUNCTIONS =====
+function getPagePath(pageName) {
+    if (pageName.includes('index.html')) return '/index.html';
+    return `/pages/${pageName}`;
+}
+
 function viewOrders() {
-    alert('Order history feature coming soon!');
+    window.location.href = getPagePath('my-orders.html');
 }
 
 function viewWishlist() {
-    toggleUserMenu();
-    toggleWishlist();
+    window.location.href = getPagePath('wishlist.html');
 }
 
 function viewProfile() {
-    alert('Profile editing feature coming soon!');
+    window.location.href = getPagePath('my-account.html');
 }
 
 // ===== INITIALIZE ON PAGE LOAD =====

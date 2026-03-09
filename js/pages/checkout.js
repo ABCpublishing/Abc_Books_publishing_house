@@ -19,13 +19,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     const hasValidToken = typeof API !== 'undefined' && API.Token && API.Token.isValid();
 
     if (!currentUser && !hasValidToken) {
-        console.log('❌ User not logged in, redirecting...');
+        console.log('❌ User not logged in, prompting...');
+
+        // Save current page state
+        localStorage.setItem('abc_books_pending_action', 'checkout');
+
         if (typeof showNotification === 'function') {
-            showNotification('Please login to proceed with checkout', 'error');
-        } else {
-            alert('Please login to proceed with checkout');
+            showNotification('🔐 Please sign in with Google to complete your order', 'info');
         }
-        window.location.href = '../index.html';
+
+        // Show login modal
+        if (typeof showLoginModal === 'function') {
+            showLoginModal();
+        } else {
+            console.error('showLoginModal not found, falling back to redirect');
+            window.location.href = '/index.html';
+        }
         return;
     }
 
@@ -57,7 +66,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             <i class="fas fa-exclamation-triangle"></i>
             <span>
                 <strong>Note:</strong> You are in offline mode. Orders will be saved locally but not synced to the server. 
-                <a href="#" onclick="if(window.API) API.Auth.logout(); window.location.href='../index.html'; return false;" style="text-decoration: underline; color: inherit; font-weight: bold; margin-left: 5px;">Click here to re-login</a> to sync.
+                <a href="#" onclick="if(window.API) API.Auth.logout(); window.location.href='/index.html'; return false;" style="text-decoration: underline; color: inherit; font-weight: bold; margin-left: 5px;">Click here to re-login</a> to sync.
             </span>
         `;
 
@@ -122,7 +131,7 @@ async function loadCartItems() {
             <div class="empty-cart">
                 <i class="fas fa-shopping-cart"></i>
                 <p>Your cart is empty</p>
-                <a href="../index.html" style="display: inline-block; margin-top: 15px; color: #8B4513;">Continue Shopping</a>
+                <a href="/index.html" style="display: inline-block; margin-top: 15px; color: #8B4513;">Continue Shopping</a>
             </div>
         `;
         return;

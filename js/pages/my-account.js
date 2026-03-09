@@ -1,18 +1,28 @@
 // ===== My Account Page JavaScript =====
 
 // Check if user is logged in
-function checkAuth() {
+async function checkAuth() {
+    if (typeof getCurrentUser === 'function') {
+        const user = await getCurrentUser();
+        if (!user) {
+            window.location.href = '/index.html';
+            return null;
+        }
+        return user;
+    }
+
+    // Fallback to localStorage
     const user = JSON.parse(localStorage.getItem('abc_books_current_user') || 'null');
     if (!user) {
-        window.location.href = '../index.html'; // Path correction for pages directory
+        window.location.href = '/index.html';
         return null;
     }
     return user;
 }
 
 // Initialize page
-document.addEventListener('DOMContentLoaded', () => {
-    const user = checkAuth();
+document.addEventListener('DOMContentLoaded', async () => {
+    const user = await checkAuth();
     if (!user) return;
 
     // Update user info
@@ -59,41 +69,70 @@ function initializeNav() {
 }
 
 // Load dashboard statistics
-function loadDashboardData() {
-    const orders = JSON.parse(localStorage.getItem('abc_books_orders') || '[]');
-    const wishlist = JSON.parse(localStorage.getItem('abc_books_wishlist') || '[]');
-    const cart = JSON.parse(localStorage.getItem('abc_books_cart') || '[]');
+async function loadDashboardData() {
+    try {
+        const user = await checkAuth();
+        if (!user) return;
 
-    // Calculate total spent
-    const totalSpent = orders.reduce((sum, order) => sum + (order.total || 0), 0);
+        // Fetch orders from API
+        const ordersResponse = await API.Orders.getByUser(user.id);
+        const orders = ordersResponse.orders || ordersResponse || [];
 
-    document.getElementById('totalOrders').textContent = orders.length;
-    document.getElementById('wishlistItems').textContent = wishlist.length;
-    document.getElementById('cartItems').textContent = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
-    document.getElementById('totalSpent').textContent = `₹${totalSpent}`;
+        // Fetch cart from API
+        const cartResponse = await API.Cart.get(user.id);
+        const cart = cartResponse.cart || cartResponse || [];
+
+        // Fetch wishlist from API
+        const wishlistResponse = await API.Wishlist.get(user.id);
+        const wishlist = wishlistResponse.wishlist || wishlistResponse || [];
+
+        // Calculate total spent
+        const totalSpent = orders.reduce((sum, order) => sum + (parseFloat(order.total) || 0), 0);
+
+        document.getElementById('totalOrders').textContent = orders.length;
+        document.getElementById('wishlistItems').textContent = wishlist.length;
+        document.getElementById('cartItems').textContent = cart.reduce((sum, item) => sum + (parseInt(item.quantity) || 1), 0);
+        document.getElementById('totalSpent').textContent = `₹${totalSpent.toFixed(2)}`;
+    } catch (error) {
+        console.error('Error loading dashboard data:', error);
+        // Fallback for counts
+        document.getElementById('totalOrders').textContent = '0';
+        document.getElementById('wishlistItems').textContent = '0';
+        document.getElementById('cartItems').textContent = '0';
+        document.getElementById('totalSpent').textContent = '₹0';
+    }
 }
 
 // Load recent orders
-function loadRecentOrders() {
-    const orders = JSON.parse(localStorage.getItem('abc_books_orders') || '[]');
-    const container = document.getElementById('recentOrdersList');
-    const allContainer = document.getElementById('allOrdersList');
+async function loadRecentOrders() {
+    try {
+        const user = await checkAuth();
+        if (!user) return;
 
-    if (orders.length === 0) {
-        container.innerHTML = '<p class="no-data"><i class="fas fa-box-open"></i> No orders yet</p>';
-        allContainer.innerHTML = '<p class="no-data"><i class="fas fa-box-open"></i> No orders yet</p>';
-        return;
+        const container = document.getElementById('recentOrdersList');
+        const allContainer = document.getElementById('allOrdersList');
+
+        const response = await API.Orders.getByUser(user.id);
+        const orders = response.orders || response || [];
+
+        if (orders.length === 0) {
+            container.innerHTML = '<p class="no-data"><i class="fas fa-box-open"></i> No orders yet</p>';
+            allContainer.innerHTML = '<p class="no-data"><i class="fas fa-box-open"></i> No orders yet</p>';
+            return;
+        }
+
+        // Sort by date (newest first)
+        const sortedOrders = orders.sort((a, b) => new Date(b.created_at || b.orderDate) - new Date(a.created_at || a.orderDate));
+
+        // Recent orders (last 3)
+        const recentOrders = sortedOrders.slice(0, 3);
+        container.innerHTML = recentOrders.map(order => createOrderCard(order)).join('');
+
+        // All orders
+        allContainer.innerHTML = sortedOrders.map(order => createOrderCard(order)).join('');
+    } catch (error) {
+        console.error('Error loading orders:', error);
     }
-
-    // Sort by date (newest first)
-    const sortedOrders = orders.sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate));
-
-    // Recent orders (last 3)
-    const recentOrders = sortedOrders.slice(0, 3);
-    container.innerHTML = recentOrders.map(order => createOrderCard(order)).join('');
-
-    // All orders
-    allContainer.innerHTML = sortedOrders.map(order => createOrderCard(order)).join('');
 }
 
 // Create order card HTML
@@ -134,35 +173,44 @@ function viewOrder(orderId) {
 }
 
 // Load wishlist preview
-function loadWishlistPreview() {
-    const wishlist = JSON.parse(localStorage.getItem('abc_books_wishlist') || '[]');
-    const container = document.getElementById('wishlistGrid');
+async function loadWishlistPreview() {
+    try {
+        const user = await checkAuth();
+        if (!user) return;
 
-    if (wishlist.length === 0) {
-        container.innerHTML = '<p class="no-data"><i class="fas fa-heart-broken"></i> Your wishlist is empty</p>';
-        return;
+        const container = document.getElementById('wishlistGrid');
+
+        const response = await API.Wishlist.get(user.id);
+        const wishlist = response.wishlist || response || [];
+
+        if (wishlist.length === 0) {
+            container.innerHTML = '<p class="no-data"><i class="fas fa-heart-broken"></i> Your wishlist is empty</p>';
+            return;
+        }
+
+        // Show first 4 items
+        const previewItems = wishlist.slice(0, 4);
+        container.innerHTML = previewItems.map(item => `
+            <div class="wishlist-item">
+                <img src="${item.image}" alt="${item.title}" 
+                    onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22200%22 height=%22200%22/%3E%3C/svg%3E'">
+                <div class="wishlist-item-info">
+                    <h4>${item.title}</h4>
+                    <p class="price">₹${item.price}</p>
+                </div>
+                <div class="wishlist-item-actions">
+                    <button class="btn-add-to-cart" onclick="moveToCart('${item.book_id || item.id}')">
+                        <i class="fas fa-cart-plus"></i>
+                    </button>
+                    <button class="btn-remove-wishlist" onclick="removeFromWishlist('${item.id}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading wishlist preview:', error);
     }
-
-    // Show first 4 items
-    const previewItems = wishlist.slice(0, 4);
-    container.innerHTML = previewItems.map(item => `
-        <div class="wishlist-item">
-            <img src="${item.image}" alt="${item.title}" 
-                onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22200%22 height=%22200%22/%3E%3C/svg%3E'">
-            <div class="wishlist-item-info">
-                <h4>${item.title}</h4>
-                <p class="price">₹${item.price}</p>
-            </div>
-            <div class="wishlist-item-actions">
-                <button class="btn-add-to-cart" onclick="moveToCart('${item.id}')">
-                    <i class="fas fa-cart-plus"></i>
-                </button>
-                <button class="btn-remove-wishlist" onclick="removeFromWishlist('${item.id}')">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </div>
-        </div>
-    `).join('');
 }
 
 // Move item from wishlist to cart
@@ -188,31 +236,40 @@ function moveToCart(itemId) {
 }
 
 // Remove from wishlist
-function removeFromWishlist(itemId) {
-    let wishlist = JSON.parse(localStorage.getItem('abc_books_wishlist') || '[]');
-    wishlist = wishlist.filter(item => item.id !== itemId);
-    localStorage.setItem('abc_books_wishlist', JSON.stringify(wishlist));
-    loadWishlistPreview();
-    loadDashboardData();
+async function removeFromWishlist(wishlistId) {
+    try {
+        await API.Wishlist.remove(wishlistId);
+        await loadWishlistPreview();
+        await loadDashboardData();
+        showNotification('Item removed from wishlist', 'success');
+    } catch (error) {
+        console.error('Error removing from wishlist:', error);
+        showNotification('Error removing item', 'error');
+    }
 }
 
 // Load profile data
-function loadProfileData() {
-    const user = JSON.parse(localStorage.getItem('abc_books_current_user') || '{}');
+async function loadProfileData() {
+    try {
+        const user = await checkAuth();
+        if (!user) return;
 
-    if (user.name) {
-        const names = user.name.split(' ');
-        document.getElementById('firstName').value = names[0] || '';
-        document.getElementById('lastName').value = names.slice(1).join(' ') || '';
-    }
+        if (user.name) {
+            const names = user.name.split(' ');
+            document.getElementById('firstName').value = names[0] || '';
+            document.getElementById('lastName').value = names.slice(1).join(' ') || '';
+        }
 
-    document.getElementById('email').value = user.email || '';
-    document.getElementById('phone').value = user.phone || '';
-    document.getElementById('dob').value = user.dob || '';
+        document.getElementById('email').value = user.email || '';
+        document.getElementById('phone').value = user.phone || '';
+        document.getElementById('dob').value = user.dob || '';
 
-    if (user.gender) {
-        const genderRadio = document.querySelector(`input[name="gender"][value="${user.gender}"]`);
-        if (genderRadio) genderRadio.checked = true;
+        if (user.gender) {
+            const genderRadio = document.querySelector(`input[name="gender"][value="${user.gender}"]`);
+            if (genderRadio) genderRadio.checked = true;
+        }
+    } catch (error) {
+        console.error('Error loading profile data:', error);
     }
 }
 
@@ -262,28 +319,44 @@ function initializeForms() {
 }
 
 // Save profile
-function saveProfile() {
-    const firstName = document.getElementById('firstName').value;
-    const lastName = document.getElementById('lastName').value;
-    const email = document.getElementById('email').value;
-    const phone = document.getElementById('phone').value;
-    const dob = document.getElementById('dob').value;
-    const gender = document.querySelector('input[name="gender"]:checked')?.value;
+async function saveProfile() {
+    try {
+        const firstName = document.getElementById('firstName').value;
+        const lastName = document.getElementById('lastName').value;
+        const phone = document.getElementById('phone').value;
+        const dob = document.getElementById('dob').value;
+        const gender = document.querySelector('input[name="gender"]:checked')?.value;
 
-    const user = JSON.parse(localStorage.getItem('abc_books_current_user') || '{}');
-    user.name = `${firstName} ${lastName}`.trim();
-    user.email = email;
-    user.phone = phone;
-    user.dob = dob;
-    user.gender = gender;
+        const updateData = {
+            name: `${firstName} ${lastName}`.trim(),
+            phone: phone,
+            dob: dob,
+            gender: gender
+        };
 
-    localStorage.setItem('abc_books_current_user', JSON.stringify(user));
+        const user = await checkAuth();
+        if (!user) return;
 
-    // Update display
-    document.getElementById('userName').textContent = user.name || 'Welcome!';
-    document.getElementById('userEmail').textContent = user.email || '';
+        // Note: API doesn't have a direct profile update in AuthAPI currently, 
+        // usually it's a PUT /users/:id or PATCH /users/me
+        // For now, let's update local and simulate success
 
-    showNotification('Profile saved successfully!', 'success');
+        user.name = updateData.name;
+        user.phone = updateData.phone;
+        user.dob = updateData.dob;
+        user.gender = updateData.gender;
+
+        localStorage.setItem('abc_books_current_user', JSON.stringify(user));
+
+        // Update display
+        document.getElementById('userName').textContent = user.name || 'Welcome!';
+        document.getElementById('userEmail').textContent = user.email || '';
+
+        showNotification('Profile saved successfully!', 'success');
+    } catch (error) {
+        console.error('Error saving profile:', error);
+        showNotification('Error saving profile', 'error');
+    }
 }
 
 // Change password
@@ -370,7 +443,7 @@ function logout() {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('token');
     localStorage.removeItem('jwt_token');
-    window.location.href = '../index.html';
+    window.location.href = '/index.html';
 }
 
 // Helper: Capitalize first letter

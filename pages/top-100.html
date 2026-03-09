@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <title>Top 100 Islamic & Arabic Books | ABC Books</title>
     <meta name="description" content="Discover the Top 100 Islamic and Arabic books curated by ABC Books.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,9 +13,9 @@
         href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="../css/styles.css">
-    <link rel="stylesheet" href="../css/styles-responsive.css">
-    <link rel="stylesheet" href="../css/user-ui.css">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/styles-responsive.css">
+    <link rel="stylesheet" href="/css/user-ui.css">
     <style>
         :root {
             --warm-bg: #fff9f0;
@@ -231,6 +231,7 @@
             }
         }
     </style>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 
 <body>
@@ -242,8 +243,8 @@
                     <i class="fas fa-bars"></i>
                 </button>
 
-                <a href="../index.html" class="logo">
-                    <img src="../images/logo.png" alt="ABC Books" class="logo-img">
+                <a href="/index.html" class="logo">
+                    <img src="/images/logo.png" alt="ABC Books" class="logo-img">
                     <div class="logo-text">
                         <span class="logo-sub">BOOKS</span>
                     </div>
@@ -254,17 +255,17 @@
                     <!-- Note: Main styles.css usually handles desktop-nav display. 
                          If responsive css hides it, we rely on mobile menu. 
                          Let's keep it simple and consistent with index.html -->
-                    <a href="../index.html" class="nav-link">Home</a>
+                    <a href="/index.html" class="nav-link">Home</a>
                     <a href="#" class="nav-link active">Top 100</a>
                     <a href="about.html" class="nav-link">About</a>
                 </nav>
 
                 <div class="header-actions">
-                    <a href="wishlist.html" class="action-btn" title="Wishlist">
+                    <a href="/pages/wishlist.html" class="action-btn" title="Wishlist">
                         <i class="fas fa-heart"></i>
                         <span>Wishlist</span>
                     </a>
-                    <a href="../index.html" class="action-btn" title="Home">
+                    <a href="/index.html" class="action-btn" title="Home">
                         <i class="fas fa-home"></i>
                         <span>Home</span>
                     </a>
@@ -278,7 +279,7 @@
     <div class="mobile-nav-sidebar" id="mobileNavSidebar">
         <div class="mobile-nav-header">
             <div class="logo">
-                <img src="../images/logo.png" alt="ABC Books" class="logo-img">
+                <img src="/images/logo.png" alt="ABC Books" class="logo-img">
                 <div class="logo-text">
                     <span class="logo-sub">BOOKS</span>
                 </div>
@@ -287,7 +288,7 @@
         </div>
         <div class="mobile-nav-content">
             <ul class="mobile-nav-list">
-                <li><a href="../index.html" class="mobile-nav-link"><i class="fas fa-home"></i> Home</a></li>
+                <li><a href="/index.html" class="mobile-nav-link"><i class="fas fa-home"></i> Home</a></li>
                 <li><a href="top-100.html" class="mobile-nav-link active"><i class="fas fa-crown"></i> Top 100 Books</a>
                 </li>
                 <li><a href="search.html?q=islamic" class="mobile-nav-link">Islamic Books</a></li>
@@ -329,15 +330,15 @@
     <footer class="footer">
         <div class="footer-bottom">
             <div class="container">
-                <p>&copy; 2025 ABC Books. All rights reserved.</p>
+                <p>&copy; 2026 ABC Books. All rights reserved.</p>
             </div>
         </div>
     </footer>
 
     <!-- Scripts -->
-    <script src="../js/services/api.js?v=2.0"></script>
-    <script src="../js/data/books-data.js?v=2.0"></script>
-    <script src="../js/mobile-menu.js?v=2.0"></script>
+    <script src="/js/services/api.js?v=2.3"></script>
+    <script src="/js/data/books-data.js?v=2.3"></script>
+    <script src="/js/mobile-menu.js?v=2.3"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             initializeTop100Page();
@@ -391,7 +392,7 @@
                 const isTop3 = rank <= 3;
 
                 return `
-                <div class="book-card" onclick="window.location.href='book-detail.html?id=${book.id}'" style="cursor: pointer;">
+                <div class="book-card" onclick="window.location.href='/pages/book-detail.html?id=${book.id}'" style="cursor: pointer;">
                     <div class="rank-badge ${isTop3 ? 'top-3' : ''}">#${rank}</div>
                     <div class="book-cover">
                         <img src="${book.image}" alt="${book.title}" loading="lazy" onerror="this.src='https://via.placeholder.com/220x320?text=${encodeURIComponent(book.title)}'">

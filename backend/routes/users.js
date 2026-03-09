@@ -64,8 +64,8 @@ router.get('/', authenticateAdmin, async (req, res) => {
     }
 });
 
-// Get user by ID with order history
-router.get('/:id', async (req, res) => {
+// Get user by ID with order history (requires authentication)
+router.get('/:id', authenticate, async (req, res) => {
     try {
         const sql = req.sql;
         const { id } = req.params;
@@ -117,8 +117,8 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// Delete user (admin)
-router.delete('/:id', async (req, res) => {
+// Delete user (admin only - requires admin authentication)
+router.delete('/:id', authenticateAdmin, async (req, res) => {
     try {
         const sql = req.sql;
         const { id } = req.params;

@@ -5,10 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ABC Books - Admin Panel</title>
-    <link rel="stylesheet" href="admin.css?v=2.2">
-    <link rel="stylesheet" href="../css/components/terabox-upload.css">
-    <link rel="stylesheet" href="../css/components/local-upload.css">
+    <link rel="stylesheet" href="admin.css?v=2.3">
+    <link rel="stylesheet" href="/css/components/terabox-upload.css">
+    <link rel="stylesheet" href="/css/components/local-upload.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 
 <body>
@@ -45,6 +46,17 @@
                     <i class="fas fa-sign-in-alt"></i>
                     Sign In
                 </button>
+
+                <div class="google-auth-separator" style="text-align: center; margin: 20px 0; position: relative;">
+                    <hr
+                        style="position: absolute; top: 50%; left: 0; right: 0; margin: 0; border: none; border-top: 1px solid #ddd; z-index: 0;">
+                    <span
+                        style="background: white; padding: 0 10px; color: #666; font-size: 14px; position: relative; z-index: 1;">or
+                        continue with</span>
+                </div>
+                <!-- Google Sign-In Button Container -->
+                <div id="googleSignInBtnLogin" style="display: flex; justify-content: center; margin-bottom: 20px;">
+                </div>
             </form>
         </div>
     </div>
@@ -104,9 +116,21 @@
                     <i class="fas fa-trending-up"></i>
                     <span>Trending Now</span>
                 </a>
+                <a href="#" class="nav-item" data-section="newReleases">
+                    <i class="fas fa-calendar-plus"></i>
+                    <span>New Releases</span>
+                </a>
+                <a href="#" class="nav-item" data-section="children">
+                    <i class="fas fa-child"></i>
+                    <span>Children's Books</span>
+                </a>
                 <a href="#" class="nav-item" data-section="bestseller">
                     <i class="fas fa-crown"></i>
                     <span>Bestsellers</span>
+                </a>
+                <a href="#" class="nav-item" data-section="urdu">
+                    <i class="fas fa-language"></i>
+                    <span>Urdu Books</span>
                 </a>
                 <a href="#" class="nav-item" data-section="english">
                     <i class="fas fa-language"></i>
@@ -475,6 +499,30 @@
                     <div id="trendingBooks" class="books-grid"></div>
                 </section>
 
+                <!-- New Releases Books Management -->
+                <section id="newReleasesSection" class="content-section">
+                    <div class="section-header">
+                        <h2>New Releases</h2>
+                        <button class="btn-primary" onclick="showAddToSectionModal('newReleases')">
+                            <i class="fas fa-plus"></i>
+                            Add to New Releases
+                        </button>
+                    </div>
+                    <div id="newReleasesBooks" class="books-grid"></div>
+                </section>
+
+                <!-- Children's Books Management -->
+                <section id="childrenSection" class="content-section">
+                    <div class="section-header">
+                        <h2>Children's Corner</h2>
+                        <button class="btn-primary" onclick="showAddToSectionModal('children')">
+                            <i class="fas fa-plus"></i>
+                            Add to Children
+                        </button>
+                    </div>
+                    <div id="childrenBooks" class="books-grid"></div>
+                </section>
+
                 <!-- Bestsellers Management -->
                 <section id="bestsellerSection" class="content-section">
                     <div class="section-header">
@@ -485,6 +533,30 @@
                         </button>
                     </div>
                     <div id="bestsellerBooks" class="books-grid"></div>
+                </section>
+
+                <!-- Urdu Books Management -->
+                <section id="urduSection" class="content-section">
+                    <div class="section-header">
+                        <h2>Urdu Books</h2>
+                        <button class="btn-primary" onclick="showAddBookModalWithCategory('Urdu')">
+                            <i class="fas fa-plus"></i>
+                            Add Urdu Book
+                        </button>
+                    </div>
+                    <div id="urduBooks" class="books-grid"></div>
+                </section>
+
+                <!-- Popular Urdu Books (Indian Authors Section) -->
+                <section id="indianAuthorsSection" class="content-section">
+                    <div class="section-header">
+                        <h2>Popular Urdu Books (Section)</h2>
+                        <button class="btn-primary" onclick="showAddToSectionModal('indianAuthors')">
+                            <i class="fas fa-plus"></i>
+                            Add to Popular Urdu
+                        </button>
+                    </div>
+                    <div id="indianAuthorsBooks" class="books-grid"></div>
                 </section>
 
                 <!-- English Books Management -->
@@ -694,10 +766,10 @@
                             style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;"
                             onchange="loadSubcategories()">
                             <option value="">-- Select Category --</option>
-                            <option value="Urdu">📘 Urdu</option>
-                            <option value="English">📗 English</option>
-                            <option value="Arabic">📙 Arabic</option>
-                            <option value="Kashmiri">🏔️ Kashmiri</option>
+                            <option value="urdu">📘 Urdu</option>
+                            <option value="english">📗 English</option>
+                            <option value="arabic">📙 Arabic</option>
+                            <option value="kashmiri">🏔️ Kashmiri</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -865,12 +937,24 @@
                             <span>Featured Books</span>
                         </label>
                         <label class="checkbox-label">
+                            <input type="checkbox" name="sections" value="indianAuthors">
+                            <span>Popular Urdu Books</span>
+                        </label>
+                        <label class="checkbox-label">
                             <input type="checkbox" name="sections" value="trending">
                             <span>Trending Now</span>
                         </label>
                         <label class="checkbox-label">
+                            <input type="checkbox" name="sections" value="newReleases">
+                            <span>New Releases</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="sections" value="children">
+                            <span>Children's Corner</span>
+                        </label>
+                        <label class="checkbox-label">
                             <input type="checkbox" name="sections" value="bestseller">
-                            <span>⭐ Bestseller</span>
+                            <span>Bestsellers</span>
                         </label>
                     </div>
                 </div>
@@ -984,12 +1068,12 @@
         </div>
     </div>
 
-    <script src="../js/services/api.js?v=2.2"></script>
-    <script src="admin.js?v=2.2"></script>
-    <script src="../js/utilities/category-manager.js?v=2.0"></script>
-    <script src="../js/utilities/terabox-handler.js?v=2.0"></script>
-    <script src="../js/utilities/local-upload.js?v=2.0"></script>
-    <script src="../js/utilities/simple-image-upload.js?v=2.0"></script>
+    <script src="/js/services/api.js?v=2.3"></script>
+    <script src="admin.js?v=2.3"></script>
+    <script src="/js/utilities/category-manager.js?v=2.3"></script>
+    <script src="/js/utilities/terabox-handler.js?v=2.3"></script>
+    <script src="/js/utilities/local-upload.js?v=2.3"></script>
+    <script src="/js/utilities/simple-image-upload.js?v=2.3"></script>
 </body>
 
 </html>

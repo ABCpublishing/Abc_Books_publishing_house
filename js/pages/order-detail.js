@@ -13,7 +13,7 @@ async function loadOrderDetails() {
     const orderId = urlParams.get('id');
 
     if (!orderId) {
-        window.location.href = 'my-orders.html';
+        window.location.href = '/pages/my-orders.html';
         return;
     }
 
@@ -55,7 +55,7 @@ async function loadOrderDetails() {
 
         if (!currentOrder) {
             alert('Order not found!');
-            window.location.href = 'my-orders.html';
+            window.location.href = '/pages/my-orders.html';
             return;
         }
 
@@ -68,7 +68,7 @@ async function loadOrderDetails() {
 
         if (!currentOrder) {
             alert('Order not found!');
-            window.location.href = 'my-orders.html';
+            window.location.href = '/pages/my-orders.html';
             return;
         }
 

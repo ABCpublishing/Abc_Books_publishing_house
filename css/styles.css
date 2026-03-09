@@ -1546,11 +1546,8 @@ textarea {
 .trending-books-track {
     display: flex;
     gap: 15px;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
+    overflow: hidden;
     padding: 20px 5px;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
 }
 
 .trending-books-track::-webkit-scrollbar {
@@ -3302,9 +3299,7 @@ textarea {
 .children-books-track {
     display: flex;
     gap: 15px;
-    overflow-x: auto;
-    scroll-behavior: smooth;
-    scrollbar-width: none;
+    overflow: hidden;
     padding: 15px 5px;
     flex: 1;
 }

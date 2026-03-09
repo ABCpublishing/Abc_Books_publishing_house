@@ -1,64 +1,8 @@
 // ===== Hero Books Carousel =====
 // ===== Hero Books Section (Dynamic) =====
 async function renderHeroBooks() {
-    const heroBooks = await getBooksForSection('hero');
-    const heroVisual = document.querySelector('.hero-visual');
-
-    // Only activate if we have explicit hero books assigned by Admin
-    if (heroVisual && heroBooks.length > 0) {
-        const book = heroBooks[0]; // Show the most recent hero book
-
-        // Replace static image with dynamic book showcase
-        heroVisual.innerHTML = `
-            <div class="hero-book-showcase fade-in-up" style="text-align: center; animation: fadeInUp 0.8s ease forwards;">
-                <a href="pages/book-detail.html?id=${book.id}" class="hero-book-link" style="display: inline-block; position: relative; transition: transform 0.3s ease;">
-                    <img src="${book.image}" alt="${book.title}" class="hero-book-cover" style="
-                        max-height: 400px; 
-                        width: auto;
-                        box-shadow: 0 20px 40px rgba(0,0,0,0.3); 
-                        border-radius: 8px;
-                        border: 4px solid #fff;
-                    " onerror="this.src='https://via.placeholder.com/300x450?text=No+Cover'">
-                    
-                    <div class="hero-book-badge" style="
-                        position: absolute; 
-                        top: -15px; 
-                        right: -15px; 
-                        background: #ffd700; 
-                        color: #000; 
-                        padding: 8px 15px; 
-                        border-radius: 20px; 
-                        font-weight: bold; 
-                        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-                        z-index: 2;
-                    ">
-                        Top Pick
-                    </div>
-                </a>
-                
-                <div class="hero-book-info" style="
-                    margin-top: 25px; 
-                    background: rgba(255, 255, 255, 0.9); 
-                    padding: 15px 25px; 
-                    border-radius: 12px; 
-                    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-                    display: inline-block;
-                    backdrop-filter: blur(10px);
-                ">
-                    <h3 style="font-size: 1.2rem; margin: 0 0 5px 0; color: #2c3e50;">${book.title}</h3>
-                    <p style="font-size: 0.95rem; color: #7f8c8d; margin: 0 0 10px 0;">by ${book.author}</p>
-                    <div style="color: #f1c40f;">
-                        ${generateStars(book.rating)}
-                    </div>
-                </div>
-            </div>
-        `;
-
-        console.log(`✅ Hero section updated with book: ${book.title}`);
-    } else {
-        // Fallback to static content (defined in HTML) if no hero books
-        console.log('ℹ️ No explicit hero books found, keeping static design');
-    }
+    console.log('ℹ️ Hero section dynamic replacement is disabled to keep static design.');
+    // Function kept for compatibility but logic removed to prioritize static illustration
 }
 
 // ===== Islamic Books Section =====
@@ -455,17 +399,51 @@ function setupSlider(trackSelector, prevSelector, nextSelector) {
     const cards = track.querySelectorAll('.book-card');
     if (cards.length === 0) return;
 
-    const cardWidth = cards[0].offsetWidth + 20;
-    const visibleCards = Math.floor(track.offsetWidth / cardWidth);
-    const maxScroll = Math.max(0, cards.length - visibleCards);
+    // Force overflow hidden on parent so translateX works properly
+    track.style.overflow = 'hidden';
+    track.style.scrollSnapType = 'none';
+
+    // Create inner wrapper for transform
+    const wrapper = document.createElement('div');
+    wrapper.style.display = 'flex';
+    wrapper.style.gap = '15px';
+    wrapper.style.transition = 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
+    wrapper.style.willChange = 'transform';
+
+    // Move cards into wrapper
+    while (track.firstChild) {
+        wrapper.appendChild(track.firstChild);
+    }
+    track.appendChild(wrapper);
+
     let currentIndex = 0;
 
+    function getMetrics() {
+        const cardEl = wrapper.querySelector('.book-card');
+        if (!cardEl) return { cardWidth: 235, visibleCards: 3, maxIndex: 0 };
+        const style = window.getComputedStyle(cardEl);
+        const cardWidth = cardEl.offsetWidth + 15; // card + gap
+        const visibleCards = Math.floor(track.offsetWidth / cardWidth) || 1;
+        const maxIndex = Math.max(0, cards.length - visibleCards);
+        return { cardWidth, visibleCards, maxIndex };
+    }
+
     function updateSlider() {
-        track.style.transform = `translateX(-${currentIndex * cardWidth}px)`;
+        const { cardWidth, maxIndex } = getMetrics();
+        currentIndex = Math.min(currentIndex, maxIndex);
+        currentIndex = Math.max(currentIndex, 0);
+        wrapper.style.transform = `translateX(-${currentIndex * cardWidth}px)`;
+
+        // Update button states
+        prevBtn.style.opacity = currentIndex === 0 ? '0.3' : '1';
+        prevBtn.style.pointerEvents = currentIndex === 0 ? 'none' : 'auto';
+        nextBtn.style.opacity = currentIndex >= maxIndex ? '0.3' : '1';
+        nextBtn.style.pointerEvents = currentIndex >= maxIndex ? 'none' : 'auto';
     }
 
     nextBtn.addEventListener('click', () => {
-        if (currentIndex < maxScroll) {
+        const { maxIndex } = getMetrics();
+        if (currentIndex < maxIndex) {
             currentIndex++;
             updateSlider();
         }
@@ -477,6 +455,15 @@ function setupSlider(trackSelector, prevSelector, nextSelector) {
             updateSlider();
         }
     });
+
+    // Handle resize
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(updateSlider, 200);
+    });
+
+    updateSlider();
 }
 
 // ===== Category Strip Scroll =====
@@ -534,12 +521,8 @@ function initializeSearch() {
         const query = searchInput.value.trim();
         if (query.length === 0) return;
 
-        // Determine correct path to search page
-        // If we are in 'pages' subdirectory, it's just 'search.html'
-        // If we are in root, it's 'pages/search.html'
-        const isPagesDir = window.location.pathname.includes('/pages/');
-        const searchPath = isPagesDir ? 'search.html' : 'pages/search.html';
-
+        // ALWAYS use absolute path from root for search
+        const searchPath = '/pages/search.html';
         window.location.href = `${searchPath}?q=${encodeURIComponent(query)}`;
     }
 
@@ -627,9 +610,8 @@ function updateWishlistBadge(change = 0) {
 }
 
 // ===== Proceed to Checkout =====
-function proceedToCheckout() {
-    window.location.href = 'pages/checkout.html';
-}
+// Function removed to allow user-auth-api.js version to handle validation.
+
 
 // ===== Newsletter Form =====
 function initializeNewsletter() {
@@ -721,6 +703,7 @@ async function initializeWebsite() {
         // 1. Load CRITICAL sections first (Hero/Featured)
         // These will likely trigger the fetchAllBooks() call
         const criticalLoad = Promise.allSettled([
+            safeRender(renderHeroBooks, 'Hero Books'),
             safeRender(renderFeaturedBooks, 'Featured Books'),
             safeRender(renderIslamicBooks, 'Islamic Books')
         ]);
@@ -740,7 +723,6 @@ async function initializeWebsite() {
         Promise.allSettled([
             safeRender(renderTrendingBooks, 'Trending Books'),
             safeRender(renderNewReleases, 'New Releases'),
-            safeRender(renderIndianAuthors, 'Indian Authors'),
             safeRender(renderBoxSets, 'Box Sets'),
             safeRender(renderChildrenBooks, 'Children Books'),
             safeRender(renderFictionBooks, 'Fiction Books'),

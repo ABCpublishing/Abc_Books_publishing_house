@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <title>Search Results | ABC Books</title>
     <meta name="description" content="Search results at ABC Books - India's premier online bookstore.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,10 +13,11 @@
         href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="../css/styles.css">
-    <link rel="stylesheet" href="../css/styles-responsive.css">
-    <link rel="stylesheet" href="../css/user-ui.css">
-    <link rel="stylesheet" href="../css/components/search.css">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/styles-responsive.css">
+    <link rel="stylesheet" href="/css/user-ui.css">
+    <link rel="stylesheet" href="/css/components/search.css">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 
 <body>
@@ -28,8 +29,8 @@
                     <i class="fas fa-bars"></i>
                 </button>
 
-                <a href="../index.html" class="logo">
-                    <img src="../images/logo.png" alt="ABC Books" class="logo-img">
+                <a href="/index.html" class="logo">
+                    <img src="/images/logo.png" alt="ABC Books" class="logo-img">
                     <div class="logo-text">
                         <span class="logo-sub">BOOKS</span>
                     </div>
@@ -42,11 +43,11 @@
                     </div>
                 </div>
                 <div class="header-actions">
-                    <a href="wishlist.html" class="action-btn" title="Wishlist">
+                    <a href="/pages/wishlist.html" class="action-btn" title="Wishlist">
                         <i class="fas fa-heart"></i>
                         <span>Wishlist</span>
                     </a>
-                    <a href="../index.html" class="action-btn" title="Home">
+                    <a href="/index.html" class="action-btn" title="Home">
                         <i class="fas fa-home"></i>
                         <span>Home</span>
                     </a>
@@ -60,7 +61,7 @@
     <div class="mobile-nav-sidebar" id="mobileNavSidebar">
         <div class="mobile-nav-header">
             <div class="logo">
-                <img src="../images/logo.png" alt="ABC Books" class="logo-img">
+                <img src="/images/logo.png" alt="ABC Books" class="logo-img">
                 <div class="logo-text">
                     <span class="logo-sub">BOOKS</span>
                 </div>
@@ -69,24 +70,29 @@
         </div>
         <div class="mobile-nav-content">
             <ul class="mobile-nav-list">
-                <li><a href="../index.html" class="mobile-nav-link"><i class="fas fa-home"></i> Home</a></li>
+                <li><a href="/index.html" class="mobile-nav-link"><i class="fas fa-home"></i> Home</a></li>
                 <li class="mobile-has-submenu">
                     <a href="#" class="mobile-nav-link" onclick="toggleMobileSubmenu(this)">Categories <i
                             class="fas fa-chevron-down"></i></a>
                     <ul class="mobile-submenu">
-                        <li><a href="search.html?q=quran"><i class="fas fa-mosque"></i> Islamic Books</a></li>
-                        <li><a href="search.html?q=fiction"><i class="fas fa-book"></i> English Fiction</a></li>
-                        <li><a href="search.html?q=arabic"><i class="fas fa-language"></i> Arabic Books</a></li>
-                        <li><a href="search.html?q=children"><i class="fas fa-child"></i> Children's Books</a></li>
-                        <li><a href="search.html?q=academic"><i class="fas fa-graduation-cap"></i> Academic</a></li>
+                        <li><a href="/pages/search.html?q=quran"><i class="fas fa-mosque"></i> Islamic Books</a></li>
+                        <li><a href="/pages/search.html?q=fiction"><i class="fas fa-book"></i> English Fiction</a></li>
+                        <li><a href="/pages/search.html?q=arabic"><i class="fas fa-language"></i> Arabic Books</a></li>
+                        <li><a href="/pages/search.html?q=children"><i class="fas fa-child"></i> Children's Books</a>
+                        </li>
+                        <li><a href="/pages/search.html?q=academic"><i class="fas fa-graduation-cap"></i> Academic</a>
+                        </li>
                     </ul>
                 </li>
-                <li><a href="search.html?section=bestseller" class="mobile-nav-link"><i class="fas fa-star"></i>
+                <li><a href="/pages/search.html?section=bestseller" class="mobile-nav-link"><i class="fas fa-star"></i>
                         Bestsellers</a></li>
-                <li><a href="search.html?q=new" class="mobile-nav-link"><i class="fas fa-bolt"></i> New Arrivals</a>
+                <li><a href="/pages/search.html?q=new" class="mobile-nav-link"><i class="fas fa-bolt"></i> New
+                        Arrivals</a>
                 </li>
-                <li><a href="about.html" class="mobile-nav-link"><i class="fas fa-info-circle"></i> About Us</a></li>
-                <li><a href="contact.html" class="mobile-nav-link"><i class="fas fa-envelope"></i> Contact</a></li>
+                <li><a href="/pages/about.html" class="mobile-nav-link"><i class="fas fa-info-circle"></i> About Us</a>
+                </li>
+                <li><a href="/pages/contact.html" class="mobile-nav-link"><i class="fas fa-envelope"></i> Contact</a>
+                </li>
             </ul>
             <div class="mobile-nav-footer">
                 <a href="#" class="btn-primary btn-block">Download App</a>
@@ -98,7 +104,7 @@
     <section class="page-header">
         <div class="container">
             <nav class="breadcrumb">
-                <a href="../index.html">Home</a>
+                <a href="/index.html">Home</a>
                 <i class="fas fa-chevron-right"></i>
                 <span>Search Results</span>
             </nav>
@@ -216,7 +222,7 @@
                                 <li>Try different keywords</li>
                             </ul>
                         </div>
-                        <a href="../index.html" class="btn-browse">
+                        <a href="/index.html" class="btn-browse">
                             <i class="fas fa-shopping-bag"></i> Browse All Books
                         </a>
                     </div>
@@ -229,7 +235,7 @@
     <footer class="footer">
         <div class="footer-bottom">
             <div class="container">
-                <p>&copy; 2025 ABC Books. All rights reserved.</p>
+                <p>&copy; 2026 ABC Books. All rights reserved.</p>
             </div>
         </div>
     </footer>
@@ -249,9 +255,9 @@
                     <span></span>
                 </div>
                 <div class="form-group">
-                    <label><i class="fas fa-envelope"></i> Email</label>
-                    <input type="email" id="loginEmail" placeholder="Enter your email" required autocomplete="email">
-                    <span class="error-message" id="loginEmailError"></span>
+                    <label><i class="fas fa-phone"></i> Phone Number</label>
+                    <input type="tel" id="loginPhone" placeholder="Enter your phone number" required autocomplete="tel">
+                    <span class="error-message" id="loginPhoneError"></span>
                 </div>
                 <div class="form-group">
                     <label><i class="fas fa-lock"></i> Password</label>
@@ -269,6 +275,23 @@
                 <button type="submit" class="btn-auth">
                     <i class="fas fa-sign-in-alt"></i> Login
                 </button>
+
+                <div class="google-auth-separator" style="text-align: center; margin: 20px 0; position: relative;">
+                    <hr
+                        style="position: absolute; top: 50%; left: 0; right: 0; margin: 0; border: none; border-top: 1px solid #ddd; z-index: 0;">
+                    <span
+                        style="background: white; padding: 0 10px; color: #666; font-size: 14px; position: relative; z-index: 1;">or
+                        continue with</span>
+                </div>
+                <!-- Google Sign-In Button Container -->
+                <div id="googleSignInBtnLogin" style="display: flex; justify-content: center; margin-bottom: 20px;">
+                    <button type="button" class="btn-google"
+                        onclick="if(typeof google!=='undefined' && google.accounts) { google.accounts.id.prompt(); } else { alert('Google Sign-In is initializing...'); }"
+                        style="margin-bottom: 0;">
+                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+                        <span>Continue with Google</span>
+                    </button>
+                </div>
             </form>
             <div class="auth-footer">
                 <p>Don't have an account? <a href="#" onclick="switchToSignup()">Sign Up</a></p>
@@ -334,12 +357,7 @@
                     <input type="email" id="signupEmail" placeholder="Enter your email" required autocomplete="email">
                     <span class="error-message" id="signupEmailError"></span>
                 </div>
-                <div class="form-group">
-                    <label><i class="fas fa-phone"></i> Phone Number</label>
-                    <input type="tel" id="signupPhone" placeholder="Enter your phone number" required
-                        autocomplete="tel">
-                    <span class="error-message" id="signupPhoneError"></span>
-                </div>
+
                 <div class="form-group">
                     <label><i class="fas fa-lock"></i> Password</label>
                     <input type="password" id="signupPassword" placeholder="Create a password" required minlength="6"
@@ -361,6 +379,23 @@
                 <button type="submit" class="btn-auth">
                     <i class="fas fa-user-plus"></i> Create Account
                 </button>
+
+                <div class="google-auth-separator" style="text-align: center; margin: 20px 0; position: relative;">
+                    <hr
+                        style="position: absolute; top: 50%; left: 0; right: 0; margin: 0; border: none; border-top: 1px solid #ddd; z-index: 0;">
+                    <span
+                        style="background: white; padding: 0 10px; color: #666; font-size: 14px; position: relative; z-index: 1;">or
+                        sign up with</span>
+                </div>
+                <!-- Google Sign-Up Button Container -->
+                <div id="googleSignInBtnSignup" style="display: flex; justify-content: center; margin-bottom: 20px;">
+                    <button type="button" class="btn-google"
+                        onclick="if(typeof google!=='undefined' && google.accounts) { google.accounts.id.prompt(); } else { alert('Google Sign-In is initializing...'); }"
+                        style="margin-bottom: 0;">
+                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+                        <span>Sign up with Google</span>
+                    </button>
+                </div>
             </form>
             <div class="auth-footer">
                 <p>Already have an account? <a href="#" onclick="switchToLogin()">Login</a></p>
@@ -368,11 +403,11 @@
         </div>
     </div>
 
-    <script src="../js/services/api.js?v=2.0"></script>
-    <script src="../js/auth/user-auth-api.js?v=2.0"></script>
-    <script src="../js/data/books-data.js?v=2.0"></script>
-    <script src="../js/pages/search.js?v=2.0"></script>
-    <script src="../js/mobile-menu.js?v=2.0"></script>
+    <script src="/js/services/api.js?v=2.3"></script>
+    <script src="/js/auth/user-auth-api.js?v=2.3"></script>
+    <script src="/js/data/books-data.js?v=2.3"></script>
+    <script src="/js/pages/search.js?v=2.3"></script>
+    <script src="/js/mobile-menu.js?v=2.3"></script>
 </body>
 
 </html>

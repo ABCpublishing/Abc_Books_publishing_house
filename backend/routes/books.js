@@ -1,5 +1,6 @@
 // ===== Books Routes =====
 const express = require('express');
+const { authenticateAdmin } = require('../middleware/security');
 const router = express.Router();
 
 // Get all books with sections
@@ -32,7 +33,7 @@ router.get('/', async (req, res) => {
                        COALESCE(array_agg(bs.section_name) FILTER (WHERE bs.section_name IS NOT NULL), '{}') as sections
                 FROM books b
                 LEFT JOIN book_sections bs ON b.id = bs.book_id
-                WHERE b.category = ${category}
+                WHERE LOWER(b.category) = LOWER(${category})
                 GROUP BY b.id
                 ORDER BY b.created_at DESC
                 LIMIT ${parsedLimit}
@@ -106,8 +107,8 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// Add new book (admin only)
-router.post('/', async (req, res) => {
+// Add new book (admin only - requires admin authentication)
+router.post('/', authenticateAdmin, async (req, res) => {
     try {
         const sql = req.sql;
         const { title, author, publisher, price, original_price, image, description, category, language, subcategory, rating, sections } = req.body;
@@ -137,8 +138,8 @@ router.post('/', async (req, res) => {
     }
 });
 
-// Update book (admin only)
-router.put('/:id', async (req, res) => {
+// Update book (admin only - requires admin authentication)
+router.put('/:id', authenticateAdmin, async (req, res) => {
     try {
         const sql = req.sql;
         const { id } = req.params;
@@ -189,8 +190,8 @@ router.put('/:id', async (req, res) => {
     }
 });
 
-// Delete book (admin only)
-router.delete('/:id', async (req, res) => {
+// Delete book (admin only - requires admin authentication)
+router.delete('/:id', authenticateAdmin, async (req, res) => {
     try {
         const sql = req.sql;
         const { id } = req.params;

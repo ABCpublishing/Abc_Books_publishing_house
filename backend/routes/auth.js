@@ -2,12 +2,16 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { OAuth2Client } = require('google-auth-library');
+const emailService = require('../services/email');
+
 const router = express.Router();
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Register new user
 router.post('/register', async (req, res) => {
     try {
-        const { name, email, phone, password } = req.body;
+        const { name, email, password, phone = null } = req.body;
         const sql = req.sql;
 
         // Check if email already exists
@@ -34,15 +38,6 @@ router.post('/register', async (req, res) => {
         `;
 
         const user = result[0];
-
-        // Send verification email
-        const { sendVerificationEmail } = require('../services/email');
-        try {
-            await sendVerificationEmail(email, name, verificationToken);
-        } catch (emailError) {
-            console.error('Failed to send verification email:', emailError);
-            // We still registered the user, but inform them email failed or just log it
-        }
 
         // Generate JWT token for auto-login
         const token = jwt.sign(
@@ -102,24 +97,26 @@ router.get('/verify', async (req, res) => {
 // Login user
 router.post('/login', async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { phone, password, email } = req.body;
         const sql = req.sql;
 
-        // Find user by email
+        const identifier = phone || email;
+
+        // Find user by phone or email
         const users = await sql`
             SELECT id, name, email, phone, password_hash, created_at, is_verified
-            FROM users WHERE email = ${email}
+            FROM users WHERE phone = ${identifier} OR email = ${identifier}
         `;
 
         if (users.length === 0) {
-            return res.status(401).json({ error: 'Invalid email or password' });
+            return res.status(401).json({ error: 'Invalid phone number or password' });
         }
 
         const user = users[0];
 
         // Check verification (Warning only for now to not block users)
         if (user.is_verified === false) {
-            console.log(`⚠️ Unverified user logging in: ${email}`);
+            console.log(`⚠️ Unverified user logging in: ${identifier}`);
             // Optionally auto-verify on first successful login if we want to be very lenient
             /*
             await sql`UPDATE users SET is_verified = TRUE WHERE id = ${user.id}`;
@@ -129,7 +126,7 @@ router.post('/login', async (req, res) => {
         // Verify password
         const isValid = await bcrypt.compare(password, user.password_hash);
         if (!isValid) {
-            return res.status(401).json({ error: 'Invalid email or password' });
+            return res.status(401).json({ error: 'Invalid phone number or password' });
         }
 
         // Generate JWT token
@@ -222,22 +219,18 @@ router.post('/forgot-password', async (req, res) => {
             WHERE id = ${user.id}
         `;
 
-        // Send reset email
-        const { sendPasswordResetEmail } = require('../services/email');
-        try {
-            await sendPasswordResetEmail(email, user.name, resetToken);
-        } catch (emailError) {
-            console.error('Failed to send reset email:', emailError);
-            // In dev, we might want to return the token for testing
-            if (process.env.NODE_ENV !== 'production') {
-                return res.json({
-                    message: 'Reset email failed to send, but here is your token (dev only)',
-                    token: resetToken
-                });
-            }
-        }
+        // Build reset link for direct use
+        const frontendUrl = process.env.FRONTEND_URL || 'https://abcbooks.store';
+        const resetLink = `${frontendUrl}/reset-password.html?token=${resetToken}`;
 
-        res.json({ message: 'Password reset link sent to your email.' });
+        // Attempt to send via Resend if configured
+        const emailSent = await emailService.sendPasswordResetEmail(email, resetLink);
+
+        res.json({
+            message: 'Password reset link generated successfully.',
+            resetLink,
+            emailSent
+        });
     } catch (error) {
         console.error('Forgot password error:', error);
         res.status(500).json({ error: 'Failed to process request' });
@@ -284,6 +277,73 @@ router.post('/reset-password', async (req, res) => {
     } catch (error) {
         console.error('Reset password error:', error);
         res.status(500).json({ error: 'Failed to reset password' });
+    }
+});
+
+// Google Sign-In / Sign-Up
+router.post('/google', async (req, res) => {
+    try {
+        const { credential } = req.body;
+        const sql = req.sql;
+
+        if (!credential) {
+            return res.status(400).json({ error: 'Missing Google credential' });
+        }
+
+        // Verify Google token
+        const ticket = await googleClient.verifyIdToken({
+            idToken: credential,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+        const payload = ticket.getPayload();
+        const { email, name, picture, sub: googleId } = payload;
+
+        // Check if user exists by email
+        let users = await sql`SELECT id, name, email, phone, created_at FROM users WHERE email = ${email}`;
+        let user;
+
+        if (users.length === 0) {
+            // New user, create them (with a generic random password since they use Google)
+            const crypto = require('crypto');
+            const randomPassword = crypto.randomBytes(16).toString('hex');
+            const hashedPassword = await bcrypt.hash(randomPassword, 10);
+
+            const result = await sql`
+                INSERT INTO users (name, email, password_hash, is_verified)
+                VALUES (${name}, ${email}, ${hashedPassword}, TRUE)
+                RETURNING id, name, email, phone, created_at
+            `;
+            user = result[0];
+            console.log(`[Google Auth] New user registered: ${email}`);
+        } else {
+            // Existing user
+            user = users[0];
+            console.log(`[Google Auth] Existing user logged in: ${email}`);
+        }
+
+        // Generate JWT token
+        const token = jwt.sign(
+            { userId: user.id, email: user.email },
+            process.env.JWT_SECRET,
+            { expiresIn: '7d' }
+        );
+
+        res.json({
+            message: 'Google login successful',
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                phone: user.phone,
+                createdAt: user.created_at,
+                picture: picture
+            },
+            token,
+            accessToken: token
+        });
+    } catch (error) {
+        console.error('Google Auth error:', error);
+        res.status(401).json({ error: 'Invalid Google token or account issue' });
     }
 });
 

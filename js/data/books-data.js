@@ -125,29 +125,29 @@ async function getBooksForSection(section) {
     switch (section) {
         case 'featured':
             autoBooks = sortedByNewest;
-            limit = 15;
+            limit = 50;
             break;
 
         case 'trending':
             autoBooks = sortedByRating;
-            limit = 20;
+            limit = 50;
             break;
 
         case 'newReleases':
             autoBooks = sortedByNewest;
-            limit = 15;
+            limit = 50;
             break;
 
         case 'indianAuthors': {
             // Priority: Urdu/Hindi
-            const urduBooks = allBooks.filter(b => b.language === 'Urdu' || b.language === 'Hindi');
+            const urduBooks = allBooks.filter(b => (b.language || '').toLowerCase() === 'urdu' || (b.language || '').toLowerCase() === 'hindi');
             if (urduBooks.length > 0) {
                 autoBooks = urduBooks;
             } else {
                 autoBooks = sortedByNewest;
                 sliceStart = 6; // Offset if falling back
             }
-            limit = 12;
+            limit = 50;
             break;
         }
 
@@ -159,7 +159,7 @@ async function getBooksForSection(section) {
 
         case 'children': {
             const childBooks = allBooks.filter(b =>
-                b.category === 'General' ||
+                (b.category && b.category.toLowerCase().includes('children')) ||
                 (b.subcategory && b.subcategory.toLowerCase().includes('children'))
             );
             if (childBooks.length > 0) {
@@ -168,19 +168,27 @@ async function getBooksForSection(section) {
                 autoBooks = sortedByNewest;
                 sliceStart = 18;
             }
-            limit = 12;
+            limit = 50;
             break;
         }
 
         case 'fiction': {
-            const engBooks = allBooks.filter(b => b.language === 'English');
-            if (engBooks.length > 0) {
-                autoBooks = engBooks;
+            const fiction = allBooks.filter(b =>
+                (b.subcategory && b.subcategory.toLowerCase().includes('fiction')) ||
+                (b.title && b.title.toLowerCase().includes('novel'))
+            );
+            if (fiction.length > 0) {
+                autoBooks = fiction;
             } else {
-                autoBooks = sortedByNewest;
-                sliceStart = 24;
+                const engBooks = allBooks.filter(b => (b.language || '').toLowerCase() === 'english');
+                if (engBooks.length > 0) {
+                    autoBooks = engBooks;
+                } else {
+                    autoBooks = sortedByNewest;
+                    sliceStart = 24;
+                }
             }
-            limit = 12;
+            limit = 50;
             break;
         }
 
@@ -338,23 +346,39 @@ function createBookCard(book) {
 
 // Navigate to book detail page
 function viewBookDetail(bookId) {
-    window.location.href = `pages/book-detail.html?id=${bookId}`;
+    if (!bookId) {
+        console.error('Cannot view book detail: ID is missing');
+        return;
+    }
+
+    // Determine the path based on where we are
+    const pathParts = window.location.pathname.split('/');
+    const isInsidePages = pathParts.some(part => part.toLowerCase() === 'pages');
+
+    // ALWAYS use absolute path from root for detail viewing
+    const targetUrl = `/pages/book-detail.html?id=${bookId}`;
+
+    console.log(`🚀 Navigating to ${targetUrl} (isInsidePages: ${isInsidePages})`);
+    window.location.href = targetUrl;
 }
 
 // ===== Card-Specific Action Functions =====
 
 // Check if user is logged in using accurate token presence
-function isUserLoggedIn() {
-    // Check if any recognized token exists
-    const hasToken = localStorage.getItem('accessToken') || localStorage.getItem('token') || localStorage.getItem('jwt_token');
-
-    // Method 1: Check API token fully if API is configured
+async function isUserLoggedIn() {
+    // 1. Check API token fully if API is configured
     if (typeof API !== 'undefined' && API.Token) {
-        return API.Token.isValid();
+        if (!API.Token.isValid()) return false;
     }
 
-    // Method 2: Fallback to token presence
-    return !!hasToken;
+    // 2. More thorough check with getCurrentUser
+    if (typeof getCurrentUser === 'function') {
+        const user = await getCurrentUser();
+        return !!(user && user.id);
+    }
+
+    // 3. Last fallback to token presence
+    return !!(localStorage.getItem('accessToken') || localStorage.getItem('token') || localStorage.getItem('jwt_token'));
 }
 
 // Show login required notification and modal
@@ -403,7 +427,8 @@ async function addToWishlistCard(btn, bookId, bookData) {
 // Add to cart from card with animation
 async function addToCartCard(bookId, bookData) {
     // Check if user is logged in
-    if (!isUserLoggedIn()) {
+    const isLoggedIn = await isUserLoggedIn();
+    if (!isLoggedIn) {
         // ✅ SAVE PENDING ACTION for auto-continue after login
         localStorage.setItem('abc_books_pending_action', 'add_to_cart');
         localStorage.setItem('abc_books_pending_book', JSON.stringify({
@@ -436,7 +461,8 @@ async function addToCartCard(bookId, bookData) {
 // Buy Now - Add to cart and go to checkout
 async function buyNow(bookId, bookData) {
     // Check if user is logged in
-    if (!isUserLoggedIn()) {
+    const isLoggedIn = await isUserLoggedIn();
+    if (!isLoggedIn) {
         // ✅ SAVE PENDING ACTION for auto-continue after login
         localStorage.setItem('abc_books_pending_action', 'buy_now');
         localStorage.setItem('abc_books_pending_book', JSON.stringify({
@@ -461,9 +487,9 @@ async function buyNow(bookId, bookData) {
             // Show success message before redirect
             showNotification('Redirecting to checkout...', 'success');
 
-            // Redirect to checkout after adding to cart
+            // Redirect to checkout after adding to cart - always use root-relative path
             setTimeout(() => {
-                window.location.href = 'pages/checkout.html';
+                window.location.href = '/pages/checkout.html';
             }, 1000);
         } else {
             throw new Error('addToCart function not available');

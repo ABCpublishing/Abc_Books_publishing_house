@@ -1,5 +1,6 @@
 // Quick test to verify Neon database connection
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 const { neon } = require('@neondatabase/serverless');
 
 async function testConnection() {

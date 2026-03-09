@@ -60,7 +60,7 @@ router.get('/language/:languageSlug', async (req, res) => {
         // Get language category
         const languages = await sql`
             SELECT * FROM categories 
-            WHERE slug = ${languageSlug} AND is_language = true
+            WHERE LOWER(slug) = LOWER(${languageSlug}) AND is_language = true
         `;
 
         if (languages.length === 0) {

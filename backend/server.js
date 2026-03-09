@@ -23,7 +23,8 @@ const {
     securityHeaders,
     sanitizeInput,
     rateLimit,
-    requestLogger
+    requestLogger,
+    authenticateAdmin
 } = require('./middleware/security');
 
 const app = express();
@@ -77,7 +78,7 @@ app.use(cors({
         if (origin.endsWith('.vercel.app') || allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
-            callback(null, true); // Allow all for now - can be restricted later
+            callback(new Error('Not allowed by CORS'));
         }
     },
     credentials: true,
@@ -105,8 +106,8 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'ABC Books API v2.0 (Verified) is running!' });
 });
 
-// Maintenance Route - Verify All Users
-app.get('/api/verify-all-users', async (req, res) => {
+// Maintenance Route - Verify All Users (admin only)
+app.get('/api/verify-all-users', authenticateAdmin, async (req, res) => {
     try {
         const result = await req.sql`UPDATE users SET is_verified = TRUE WHERE is_verified = FALSE RETURNING id, email`;
         res.json({

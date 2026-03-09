@@ -167,11 +167,12 @@ const securityHeaders = (req, res, next) => {
     // Content Security Policy (adjust as needed)
     res.setHeader('Content-Security-Policy', [
         "default-src 'self'",
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com",
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://accounts.google.com https://apis.google.com",
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://accounts.google.com",
         "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com",
-        "img-src 'self' data: https: blob:",
-        "connect-src 'self' https://api.razorpay.com https://*.vercel.app https://*.neon.tech"
+        "img-src 'self' data: https: blob: https://www.gstatic.com https://*.googleusercontent.com",
+        "connect-src 'self' https://api.razorpay.com https://*.vercel.app https://*.neon.tech https://accounts.google.com",
+        "frame-src 'self' https://accounts.google.com"
     ].join('; '));
 
     next();

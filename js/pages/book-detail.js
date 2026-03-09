@@ -19,7 +19,10 @@ async function loadBookDetails() {
     const bookId = getBookIdFromUrl();
 
     if (!bookId) {
-        showError('Book not found');
+        showError('Book not found. Redirecting to home...');
+        setTimeout(() => {
+            window.location.href = '/index.html';
+        }, 3000);
         return;
     }
 
@@ -85,62 +88,89 @@ function populateBookDetails() {
     document.title = `${currentBook.title} | ABC Books`;
 
     // Breadcrumb
-    document.getElementById('breadcrumbTitle').textContent = currentBook.title;
+    // Breadcrumb
+    const breadcrumbTitle = document.getElementById('breadcrumbTitle');
+    if (breadcrumbTitle) breadcrumbTitle.textContent = currentBook.title;
 
     // Book image
     const bookImage = document.getElementById('bookImage');
-    bookImage.src = currentBook.image;
-    bookImage.alt = currentBook.title;
-    bookImage.onerror = function () {
-        this.src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 200 300%22%3E%3Crect fill=%22%23e8e8e8%22 width=%22200%22 height=%22300%22/%3E%3Cpath d=%22M80 110h40v80H80z%22 fill=%22%23ccc%22/%3E%3Cpath d=%22M85 115h30v70H85z%22 fill=%22%23fff%22/%3E%3Cpath d=%22M90 125h20v2H90zm0 8h20v2H90zm0 8h15v2H90z%22 fill=%22%23ddd%22/%3E%3C/svg%3E';
-    };
+    if (bookImage) {
+        bookImage.src = currentBook.image;
+        bookImage.alt = currentBook.title;
+        bookImage.onerror = function () {
+            this.src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 200 300%22%3E%3Crect fill=%22%23e8e8e8%22 width=%22200%22 height=%22300%22/%3E%3Cpath d=%22M80 110h40v80H80z%22 fill=%22%23ccc%22/%3E%3Cpath d=%22M85 115h30v70H85z%22 fill=%22%23fff%22/%3E%3Cpath d=%22M90 125h20v2H90zm0 8h20v2H90zm0 8h15v2H90z%22 fill=%22%23ddd%22/%3E%3C/svg%3E';
+        };
+    }
 
     // Calculate discount
     const price = parseFloat(currentBook.price) || 0;
-    const originalPrice = parseFloat(currentBook.originalPrice || currentBook.original_price) || price;
+    const ogPrice = currentBook.originalPrice || currentBook.original_price;
+    const originalPrice = parseFloat(ogPrice) || price;
     const discount = originalPrice > price
         ? Math.floor(((originalPrice - price) / originalPrice) * 100)
         : 0;
 
     // Discount badge
-    const discountBadge = document.getElementById('discountBadge');
-    if (discount > 0) {
-        discountBadge.textContent = `-${discount}%`;
-        discountBadge.style.display = 'block';
-    } else {
-        discountBadge.style.display = 'none';
+    const discountBadge = document.getElementById('discountBadge') || document.getElementById('discountPercent');
+    if (discountBadge) {
+        if (discount > 0) {
+            discountBadge.textContent = discountBadge.id === 'discountPercent' ? `${discount}% OFF` : `-${discount}%`;
+            discountBadge.style.display = 'inline-block';
+        } else {
+            discountBadge.style.display = 'none';
+        }
     }
 
     // Book title
-    document.getElementById('bookTitle').textContent = currentBook.title;
+    const bookTitleElem = document.getElementById('bookTitle');
+    if (bookTitleElem) bookTitleElem.textContent = currentBook.title;
 
     // Author
-    document.getElementById('bookAuthor').innerHTML = `by <span>${currentBook.author}</span>`;
+    const bookAuthorElem = document.getElementById('bookAuthor');
+    if (bookAuthorElem) bookAuthorElem.innerHTML = `by <span>${currentBook.author}</span>`;
 
     // Rating
     const rating = currentBook.rating || 4.5;
-    document.getElementById('bookStars').innerHTML = generateStars(rating);
-    document.getElementById('ratingText').textContent = `${rating} (${Math.floor(Math.random() * 200 + 50)} reviews)`;
+    const starsElem = document.getElementById('bookStars');
+    if (starsElem) starsElem.innerHTML = generateStars(rating);
+
+    const ratingTextElem = document.getElementById('ratingText');
+    if (ratingTextElem) ratingTextElem.textContent = `${rating} (${Math.floor(Math.random() * 200 + 50)} reviews)`;
 
     // Price
-    document.getElementById('currentPrice').textContent = `₹${currentBook.price}`;
-    if (currentBook.originalPrice && currentBook.originalPrice > currentBook.price) {
-        document.getElementById('originalPrice').textContent = `₹${currentBook.originalPrice}`;
-        document.getElementById('originalPrice').style.display = 'inline';
-        document.getElementById('discountPercent').textContent = `${discount}% OFF`;
-        document.getElementById('discountPercent').style.display = 'inline';
+    const currentPriceElem = document.getElementById('currentPrice');
+    if (currentPriceElem) currentPriceElem.textContent = `₹${currentBook.price}`;
+
+    const originalPriceElem = document.getElementById('originalPrice');
+    const discountPercentElem = document.getElementById('discountPercent');
+
+    if (originalPrice > price) {
+        if (originalPriceElem) {
+            originalPriceElem.textContent = `₹${originalPrice}`;
+            originalPriceElem.style.display = 'inline';
+        }
+        if (discountPercentElem) {
+            discountPercentElem.textContent = `${discount}% OFF`;
+            discountPercentElem.style.display = 'inline';
+        }
     } else {
-        document.getElementById('originalPrice').style.display = 'none';
-        document.getElementById('discountPercent').style.display = 'none';
+        if (originalPriceElem) originalPriceElem.style.display = 'none';
+        if (discountPercentElem) discountPercentElem.style.display = 'none';
     }
 
     // Details tab
-    document.getElementById('detailTitle').textContent = currentBook.title;
-    document.getElementById('detailAuthor').textContent = currentBook.author;
+    const detailTitle = document.getElementById('detailTitle');
+    if (detailTitle) detailTitle.textContent = currentBook.title;
+
+    const detailAuthor = document.getElementById('detailAuthor');
+    if (detailAuthor) detailAuthor.textContent = currentBook.author;
 
     // Overall rating in reviews
-    document.getElementById('overallRating').textContent = rating;
-    document.getElementById('overallStars').innerHTML = generateStars(rating);
+    const overallRatingElem = document.getElementById('overallRating');
+    if (overallRatingElem) overallRatingElem.textContent = rating;
+
+    const overallStarsElem = document.getElementById('overallStars');
+    if (overallStarsElem) overallStarsElem.innerHTML = generateStars(rating);
 }
 
 // Generate star rating HTML
@@ -224,7 +254,7 @@ async function loadRelatedBooks() {
 
 // View another book
 function viewBook(bookId) {
-    window.location.href = `book-detail.html?id=${bookId}`;
+    window.location.href = `/pages/book-detail.html?id=${bookId}`;
 }
 
 // Quantity controls
@@ -250,10 +280,34 @@ async function addToCartDetail() {
 
     const qty = parseInt(document.getElementById('quantity').value) || 1;
 
-    // Use the central addToCart from user-auth-api.js
-    // It already handles login checks and pending actions!
+    // Check precise physical token presence immediately 
+    const hasToken = localStorage.getItem('accessToken') || localStorage.getItem('token') || localStorage.getItem('jwt_token');
+
+    if (!hasToken) {
+        // Save pending action
+        localStorage.setItem('abc_books_pending_action', 'add_to_cart');
+        localStorage.setItem('abc_books_pending_book', JSON.stringify({
+            bookId: currentBook.id,
+            bookData: currentBook,
+            quantity: qty,
+            source: 'book-detail'
+        }));
+
+        if (typeof showNotification === 'function') {
+            showNotification('🔐 Please sign in with Google to add to cart', 'info');
+        }
+
+        if (typeof showLoginModal === 'function') {
+            showLoginModal();
+            // Force Google button refresh
+            if (typeof renderGoogleButtons === 'function') {
+                setTimeout(renderGoogleButtons, 300);
+            }
+        }
+        return;
+    }
+
     if (typeof addToCart === 'function') {
-        // We pass currentBook as bookData
         for (let i = 0; i < qty; i++) {
             await addToCart(currentBook.id, currentBook);
         }
@@ -269,10 +323,10 @@ async function buyNow() {
 
     const qty = parseInt(document.getElementById('quantity').value) || 1;
 
-    // Check precise physical token presence immediately 
-    const hasToken = localStorage.getItem('accessToken') || localStorage.getItem('token') || localStorage.getItem('jwt_token');
+    // Check for a VALID user and session
+    const user = await getCurrentUser();
 
-    if (!hasToken) {
+    if (!user || user.id === -1) {
         // Save pending action
         localStorage.setItem('abc_books_pending_action', 'buy_now');
         localStorage.setItem('abc_books_pending_book', JSON.stringify({
@@ -282,8 +336,13 @@ async function buyNow() {
             source: 'book-detail'
         }));
 
-        if (typeof showNotification === 'function') showNotification('Please login to continue purchase', 'info');
-        if (typeof showLoginModal === 'function') showLoginModal();
+        if (typeof showNotification === 'function') {
+            showNotification('🔐 Sign in with Google to complete your purchase', 'info');
+        }
+
+        if (typeof showLoginModal === 'function') {
+            showLoginModal();
+        }
         return;
     }
 
@@ -293,9 +352,8 @@ async function buyNow() {
             await addToCart(currentBook.id, currentBook);
         }
 
-        // Redirect to checkout
-        const isInsidePages = window.location.pathname.includes('/pages/');
-        window.location.href = isInsidePages ? 'checkout.html' : 'pages/checkout.html';
+        // Redirect to checkout - always use root-relative path to prevent double directory navigation
+        window.location.href = '/pages/checkout.html';
     }
 }
 
@@ -337,7 +395,7 @@ function showError(message) {
             <i class="fas fa-exclamation-circle" style="font-size: 4rem; color: #e74c3c; margin-bottom: 20px;"></i>
             <h2 style="color: #2c1810; margin-bottom: 15px;">Oops! Book Not Found</h2>
             <p style="color: #666; margin-bottom: 25px;">${message}</p>
-            <a href="../index.html" style="display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #8B4513, #A0522D); color: white; text-decoration: none; border-radius: 10px; font-weight: 600;">
+            <a href="/index.html" style="display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #8B4513, #A0522D); color: white; text-decoration: none; border-radius: 10px; font-weight: 600;">
                 <i class="fas fa-home"></i> Back to Home
             </a>
         </div>
