@@ -249,7 +249,12 @@ function setLoadingState(btn, isLoading) {
 }
 
 // ===== GOOGLE SIGN IN =====
-const GOOGLE_CLIENT_ID = '610549250942-ahs2hiqdbdanl8shps8r7c1mgb9odv90.apps.googleusercontent.com';
+// Google Authentication Configuration - Move Static ID to Config Object
+const GOOGLE_CONFIG = {
+    CLIENT_ID: window.GOOGLE_CLIENT_ID || '610549250942-ahs2hiqdbdanl8shps8r7c1mgb9odv90.apps.googleusercontent.com'
+};
+const GOOGLE_CLIENT_ID = GOOGLE_CONFIG.CLIENT_ID;
+
 let googleInitialized = false;
 
 function initGoogleSignIn() {
