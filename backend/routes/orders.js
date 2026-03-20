@@ -121,8 +121,22 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
     try {
         const db = req.sql;
+        const userId = req.userId;
+
+        // Security check: Ensure user is verified before placing orders
+        if (userId) {
+            const [userStatus] = await db.execute('SELECT is_verified FROM users WHERE id = ?', [userId]);
+            if (userStatus.length > 0 && !userStatus[0].is_verified) {
+                return res.status(403).json({ 
+                    error: 'Account not verified', 
+                    message: 'Please verify your email address to place orders.' 
+                });
+            }
+        }
+
         const {
             user_id,
+
             items,
             subtotal,
             discount,

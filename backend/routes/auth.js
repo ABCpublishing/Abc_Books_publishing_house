@@ -28,12 +28,12 @@ router.post('/register', async (req, res) => {
         const crypto = require('crypto');
         const verificationToken = crypto.randomBytes(32).toString('hex');
 
-        // Hash password
+        // Hash password with a secure salt (cost factor 10 is standard, 12 is extra secure)
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Insert new user - Set is_verified to TRUE by default to avoid onboarding blockers
+        // Insert new user - is_verified starts as FALSE for security
         const [insertResult] = await db.execute(
-            'INSERT INTO users (name, email, phone, password_hash, verification_token, is_verified) VALUES (?, ?, ?, ?, ?, TRUE)',
+            'INSERT INTO users (name, email, phone, password_hash, verification_token, is_verified) VALUES (?, ?, ?, ?, ?, FALSE)',
             [name, email, phone, hashedPassword, verificationToken]
         );
         
@@ -44,7 +44,12 @@ router.post('/register', async (req, res) => {
 
         const user = result[0];
 
-        // Generate JWT token for auto-login
+        // Send actual verification email
+        const frontendUrl = process.env.FRONTEND_URL || 'https://abcbooks.store';
+        const verifyLink = `${frontendUrl}/verify.html?token=${verificationToken}`;
+        await emailService.sendVerificationEmail(email, verifyLink);
+
+        // Generate JWT token (still allow auto-login but marked as unverified)
         const token = jwt.sign(
             { userId: user.id, email: user.email },
             process.env.JWT_SECRET,
@@ -52,18 +57,19 @@ router.post('/register', async (req, res) => {
         );
 
         res.status(201).json({
-            message: 'Registration successful. Your account is ready to use.',
+            message: 'Registration successful! Please check your email to verify your account.',
             user: {
                 id: user.id,
                 name: user.name,
                 email: user.email,
                 phone: user.phone,
                 createdAt: user.created_at,
-                isVerified: true
+                isVerified: false
             },
             token,
             accessToken: token
         });
+
     } catch (error) {
         console.error('Register error:', error);
         res.status(500).json({ error: 'Registration failed', message: error.message });
@@ -206,19 +212,26 @@ router.post('/forgot-password', async (req, res) => {
         );
 
         if (users.length === 0) {
-            return res.status(404).json({ error: 'No account found with this email' });
+            // Security: To prevent account enumeration, we return success even if email doesn't exist
+            console.log(`[Security Audit] Prevented account enumeration for: ${email}`);
+            return res.json({ 
+                message: 'If an account exists with this email, reset instructions have been sent.',
+                emailSent: true 
+            });
         }
+
 
         const user = users[0];
 
-        // Generate reset token
+        // Generate reset token and store its HASH (safer in case of DB leak)
         const crypto = require('crypto');
         const resetToken = crypto.randomBytes(32).toString('hex');
-        const expiry = new Date(Date.now() + 3600000); // 1 hour
+        const tokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+        const expiry = new Date(Date.now() + 3600000); // 1 hour (Strict)
 
         await db.execute(
             'UPDATE users SET reset_password_token = ?, reset_password_expires = ? WHERE id = ?',
-            [resetToken, expiry, user.id]
+            [tokenHash, expiry, user.id]
         );
 
         // Build reset link for direct use
@@ -249,14 +262,18 @@ router.post('/reset-password', async (req, res) => {
             return res.status(400).json({ error: 'Missing token or password' });
         }
 
-        // Find user by token and check expiry
+        // Hash the incoming token to compare with DB hash
+        const crypto = require('crypto');
+        const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+        // Find user by token hash and check expiry
         const [users] = await db.execute(
             'SELECT id FROM users WHERE reset_password_token = ? AND reset_password_expires > NOW()',
-            [token]
+            [tokenHash]
         );
 
         if (users.length === 0) {
-            return res.status(400).json({ error: 'Invalid or expired reset token' });
+            return res.status(400).json({ error: 'Invalid or expired reset token. Please request a new one.' });
         }
 
         const user = users[0];

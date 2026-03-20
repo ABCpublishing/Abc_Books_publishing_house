@@ -133,7 +133,12 @@ app.get('/api/health', (req, res) => {
 
 
 // Contact form endpoint
-app.post('/api/contact', express.json(), async (req, res) => {
+app.post('/api/contact', rateLimit({
+    windowMs: 60 * 60 * 1000,
+    maxRequests: 5,
+    message: 'Too many contact messages sent. Please try again after an hour.'
+}), express.json(), async (req, res) => {
+
     try {
         const EmailService = require('./services/email');
         const contactData = req.body;
