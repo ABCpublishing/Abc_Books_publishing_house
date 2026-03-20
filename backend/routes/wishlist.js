@@ -1,12 +1,16 @@
 // ===== Wishlist Routes =====
 const express = require('express');
 const router = express.Router();
+const { authenticate } = require('../middleware/security');
+
+// Apply authentication to all wishlist routes
+router.use(authenticate);
 
 // Get user's wishlist
-router.get('/:userId', async (req, res) => {
+router.get('/', async (req, res) => {
     try {
         const db = req.sql;
-        const { userId } = req.params;
+        const userId = req.userId; // Securely get from token
 
         const [wishlistItems] = await db.execute(`
             SELECT w.id, w.created_at,
@@ -31,12 +35,13 @@ router.get('/:userId', async (req, res) => {
 router.post('/', async (req, res) => {
     try {
         const db = req.sql;
-        const { user_id, book_id } = req.body;
+        const userId = req.userId; // Securely get from token
+        const { book_id } = req.body;
 
         // Check if already in wishlist
         const [existing] = await db.execute(
             'SELECT id FROM wishlist WHERE user_id = ? AND book_id = ?',
-            [user_id, book_id]
+            [userId, book_id]
         );
 
         if (existing.length > 0) {
@@ -45,7 +50,7 @@ router.post('/', async (req, res) => {
 
         await db.execute(
             'INSERT INTO wishlist (user_id, book_id) VALUES (?, ?)',
-            [user_id, book_id]
+            [userId, book_id]
         );
 
         res.status(201).json({ message: 'Added to wishlist' });
@@ -55,13 +60,20 @@ router.post('/', async (req, res) => {
     }
 });
 
-// Remove from wishlist
+// Remove from wishlist by record ID
 router.delete('/:id', async (req, res) => {
     try {
         const db = req.sql;
+        const userId = req.userId; // Securely get from token
         const { id } = req.params;
 
-        await db.execute('DELETE FROM wishlist WHERE id = ?', [id]);
+        // Security Check: Ensure user owns this record
+        const [result] = await db.execute('DELETE FROM wishlist WHERE id = ? AND user_id = ?', [id, userId]);
+        
+        if (result.affectedRows === 0) {
+            return res.status(403).json({ error: 'Access denied', message: 'Not authorized to remove this item' });
+        }
+        
         res.json({ message: 'Removed from wishlist' });
     } catch (error) {
         console.error('Remove from wishlist error:', error);
@@ -69,11 +81,12 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
-// Remove by user and book ID
-router.delete('/remove/:userId/:bookId', async (req, res) => {
+// Remove by book ID (helper for toggle buttons)
+router.delete('/book/:bookId', async (req, res) => {
     try {
         const db = req.sql;
-        const { userId, bookId } = req.params;
+        const userId = req.userId; // Securely get from token
+        const { bookId } = req.params;
 
         await db.execute('DELETE FROM wishlist WHERE user_id = ? AND book_id = ?', [userId, bookId]);
         res.json({ message: 'Removed from wishlist' });
@@ -84,10 +97,11 @@ router.delete('/remove/:userId/:bookId', async (req, res) => {
 });
 
 // Check if book is in wishlist
-router.get('/check/:userId/:bookId', async (req, res) => {
+router.get('/check/:bookId', async (req, res) => {
     try {
         const db = req.sql;
-        const { userId, bookId } = req.params;
+        const userId = req.userId; // Securely get from token
+        const { bookId } = req.params;
 
         const [result] = await db.execute(
             'SELECT id FROM wishlist WHERE user_id = ? AND book_id = ?',

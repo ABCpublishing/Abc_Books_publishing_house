@@ -1,12 +1,16 @@
 // ===== Cart Routes =====
 const express = require('express');
 const router = express.Router();
+const { authenticate } = require('../middleware/security');
+
+// Apply authentication to all cart routes
+router.use(authenticate);
 
 // Get user's cart
-router.get('/:userId', async (req, res) => {
+router.get('/', async (req, res) => {
     try {
         const db = req.sql;
-        const { userId } = req.params;
+        const userId = req.userId; // Securely get from token
 
         const [cartItems] = await db.execute(`
             SELECT c.id, c.quantity, c.created_at,
@@ -35,12 +39,13 @@ router.get('/:userId', async (req, res) => {
 router.post('/', async (req, res) => {
     try {
         const db = req.sql;
-        const { user_id, book_id, quantity = 1 } = req.body;
+        const userId = req.userId; // Securely get from token
+        const { book_id, quantity = 1 } = req.body;
 
         // Check if item already in cart
         const [existing] = await db.execute(
             'SELECT id, quantity FROM cart WHERE user_id = ? AND book_id = ?',
-            [user_id, book_id]
+            [userId, book_id]
         );
 
         if (existing.length > 0) {
@@ -52,7 +57,7 @@ router.post('/', async (req, res) => {
             // Add new item
             await db.execute(
                 'INSERT INTO cart (user_id, book_id, quantity) VALUES (?, ?, ?)',
-                [user_id, book_id, quantity]
+                [userId, book_id, quantity]
             );
             res.status(201).json({ message: 'Added to cart' });
         }
@@ -66,14 +71,22 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
     try {
         const db = req.sql;
+        const userId = req.userId; // Securely get from token
         const { id } = req.params;
         const { quantity } = req.body;
 
         if (quantity <= 0) {
-            await db.execute('DELETE FROM cart WHERE id = ?', [id]);
+            // Include user_id in WHERE clause to prevent IDOR
+            await db.execute('DELETE FROM cart WHERE id = ? AND user_id = ?', [id, userId]);
             res.json({ message: 'Item removed from cart' });
         } else {
-            await db.execute('UPDATE cart SET quantity = ? WHERE id = ?', [quantity, id]);
+            // Include user_id in WHERE clause to prevent IDOR
+            const [result] = await db.execute('UPDATE cart SET quantity = ? WHERE id = ? AND user_id = ?', [quantity, id, userId]);
+            
+            if (result.affectedRows === 0) {
+                return res.status(403).json({ error: 'Access denied', message: 'Not authorized to modify this item' });
+            }
+            
             res.json({ message: 'Cart updated' });
         }
     } catch (error) {
@@ -86,9 +99,16 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     try {
         const db = req.sql;
+        const userId = req.userId; // Securely get from token
         const { id } = req.params;
 
-        await db.execute('DELETE FROM cart WHERE id = ?', [id]);
+        // Include user_id in WHERE clause to prevent IDOR
+        const [result] = await db.execute('DELETE FROM cart WHERE id = ? AND user_id = ?', [id, userId]);
+        
+        if (result.affectedRows === 0) {
+            return res.status(403).json({ error: 'Access denied', message: 'Not authorized to delete this item' });
+        }
+        
         res.json({ message: 'Removed from cart' });
     } catch (error) {
         console.error('Remove from cart error:', error);
@@ -97,10 +117,10 @@ router.delete('/:id', async (req, res) => {
 });
 
 // Clear entire cart
-router.delete('/clear/:userId', async (req, res) => {
+router.delete('/actions/clear', async (req, res) => {
     try {
         const db = req.sql;
-        const { userId } = req.params;
+        const userId = req.userId; // Securely get from token
 
         await db.execute('DELETE FROM cart WHERE user_id = ?', [userId]);
         res.json({ message: 'Cart cleared' });

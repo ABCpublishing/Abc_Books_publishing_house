@@ -67,6 +67,16 @@ router.get('/:id', authenticate, async (req, res) => {
     try {
         const db = req.sql;
         const { id } = req.params;
+        const userId = req.userId;
+        const isAdmin = req.isAdmin;
+
+        // Security Check: Only the user themselves OR an admin can view the profile
+        if (!isAdmin && parseInt(id) !== userId) {
+            return res.status(403).json({
+                error: 'Access denied',
+                message: 'You are not authorized to view this profile. You can only view your own data.'
+            });
+        }
 
         // Validate ID is a number
         if (isNaN(parseInt(id))) {
