@@ -5,17 +5,17 @@ const router = express.Router();
 // Get user's cart
 router.get('/:userId', async (req, res) => {
     try {
-        const sql = req.sql;
+        const db = req.sql;
         const { userId } = req.params;
 
-        const cartItems = await sql`
+        const [cartItems] = await db.execute(`
             SELECT c.id, c.quantity, c.created_at,
                    b.id as book_id, b.title, b.author, b.price, b.original_price, b.image
             FROM cart c
             INNER JOIN books b ON c.book_id = b.id
-            WHERE c.user_id = ${userId}
+            WHERE c.user_id = ?
             ORDER BY c.created_at DESC
-        `;
+        `, [userId]);
 
         const total = cartItems.reduce((sum, item) =>
             sum + (parseFloat(item.price) * item.quantity), 0);
@@ -34,29 +34,26 @@ router.get('/:userId', async (req, res) => {
 // Add to cart
 router.post('/', async (req, res) => {
     try {
-        const sql = req.sql;
+        const db = req.sql;
         const { user_id, book_id, quantity = 1 } = req.body;
 
         // Check if item already in cart
-        const existing = await sql`
-            SELECT id, quantity FROM cart 
-            WHERE user_id = ${user_id} AND book_id = ${book_id}
-        `;
+        const [existing] = await db.execute(
+            'SELECT id, quantity FROM cart WHERE user_id = ? AND book_id = ?',
+            [user_id, book_id]
+        );
 
         if (existing.length > 0) {
             // Update quantity
             const newQuantity = existing[0].quantity + quantity;
-            await sql`
-                UPDATE cart SET quantity = ${newQuantity}
-                WHERE id = ${existing[0].id}
-            `;
+            await db.execute('UPDATE cart SET quantity = ? WHERE id = ?', [newQuantity, existing[0].id]);
             res.json({ message: 'Cart updated', quantity: newQuantity });
         } else {
             // Add new item
-            await sql`
-                INSERT INTO cart (user_id, book_id, quantity)
-                VALUES (${user_id}, ${book_id}, ${quantity})
-            `;
+            await db.execute(
+                'INSERT INTO cart (user_id, book_id, quantity) VALUES (?, ?, ?)',
+                [user_id, book_id, quantity]
+            );
             res.status(201).json({ message: 'Added to cart' });
         }
     } catch (error) {
@@ -68,15 +65,15 @@ router.post('/', async (req, res) => {
 // Update cart item quantity
 router.put('/:id', async (req, res) => {
     try {
-        const sql = req.sql;
+        const db = req.sql;
         const { id } = req.params;
         const { quantity } = req.body;
 
         if (quantity <= 0) {
-            await sql`DELETE FROM cart WHERE id = ${id}`;
+            await db.execute('DELETE FROM cart WHERE id = ?', [id]);
             res.json({ message: 'Item removed from cart' });
         } else {
-            await sql`UPDATE cart SET quantity = ${quantity} WHERE id = ${id}`;
+            await db.execute('UPDATE cart SET quantity = ? WHERE id = ?', [quantity, id]);
             res.json({ message: 'Cart updated' });
         }
     } catch (error) {
@@ -88,10 +85,10 @@ router.put('/:id', async (req, res) => {
 // Remove from cart
 router.delete('/:id', async (req, res) => {
     try {
-        const sql = req.sql;
+        const db = req.sql;
         const { id } = req.params;
 
-        await sql`DELETE FROM cart WHERE id = ${id}`;
+        await db.execute('DELETE FROM cart WHERE id = ?', [id]);
         res.json({ message: 'Removed from cart' });
     } catch (error) {
         console.error('Remove from cart error:', error);
@@ -102,10 +99,10 @@ router.delete('/:id', async (req, res) => {
 // Clear entire cart
 router.delete('/clear/:userId', async (req, res) => {
     try {
-        const sql = req.sql;
+        const db = req.sql;
         const { userId } = req.params;
 
-        await sql`DELETE FROM cart WHERE user_id = ${userId}`;
+        await db.execute('DELETE FROM cart WHERE user_id = ?', [userId]);
         res.json({ message: 'Cart cleared' });
     } catch (error) {
         console.error('Clear cart error:', error);

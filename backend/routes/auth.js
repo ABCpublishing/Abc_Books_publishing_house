@@ -12,12 +12,13 @@ const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 router.post('/register', async (req, res) => {
     try {
         const { name, email, password, phone = null } = req.body;
-        const sql = req.sql;
+        const db = req.sql;
 
         // Check if email already exists
-        const existingUser = await sql`
-            SELECT id FROM users WHERE email = ${email}
-        `;
+        const [existingUser] = await db.execute(
+            'SELECT id FROM users WHERE email = ?',
+            [email]
+        );
 
         if (existingUser.length > 0) {
             return res.status(400).json({ error: 'Email already registered' });
@@ -31,11 +32,15 @@ router.post('/register', async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Insert new user - Set is_verified to TRUE by default to avoid onboarding blockers
-        const result = await sql`
-            INSERT INTO users (name, email, phone, password_hash, verification_token, is_verified)
-            VALUES (${name}, ${email}, ${phone}, ${hashedPassword}, ${verificationToken}, TRUE)
-            RETURNING id, name, email, phone, created_at
-        `;
+        const [insertResult] = await db.execute(
+            'INSERT INTO users (name, email, phone, password_hash, verification_token, is_verified) VALUES (?, ?, ?, ?, ?, TRUE)',
+            [name, email, phone, hashedPassword, verificationToken]
+        );
+        
+        const [result] = await db.execute(
+            'SELECT id, name, email, phone, created_at FROM users WHERE id = ?',
+            [insertResult.insertId]
+        );
 
         const user = result[0];
 
@@ -69,21 +74,19 @@ router.post('/register', async (req, res) => {
 router.get('/verify', async (req, res) => {
     try {
         const { token } = req.query;
-        const sql = req.sql;
+        const db = req.sql;
 
         if (!token) {
             return res.status(400).json({ error: 'Missing token' });
         }
 
         // Find user by token
-        const result = await sql`
-            UPDATE users 
-            SET is_verified = TRUE, verification_token = NULL
-            WHERE verification_token = ${token}
-            RETURNING id, name, email
-        `;
+        const [result] = await db.execute(
+            'UPDATE users SET is_verified = TRUE, verification_token = NULL WHERE verification_token = ?',
+            [token]
+        );
 
-        if (result.length === 0) {
+        if (result.affectedRows === 0) {
             return res.status(400).json({ error: 'Invalid or expired verification token' });
         }
 
@@ -98,15 +101,15 @@ router.get('/verify', async (req, res) => {
 router.post('/login', async (req, res) => {
     try {
         const { phone, password, email } = req.body;
-        const sql = req.sql;
+        const db = req.sql;
 
         const identifier = phone || email;
 
         // Find user by phone or email
-        const users = await sql`
-            SELECT id, name, email, phone, password_hash, created_at, is_verified
-            FROM users WHERE phone = ${identifier} OR email = ${identifier}
-        `;
+        const [users] = await db.execute(
+            'SELECT id, name, email, phone, password_hash, created_at, is_verified FROM users WHERE phone = ? OR email = ?',
+            [identifier, identifier]
+        );
 
         if (users.length === 0) {
             return res.status(401).json({ error: 'Invalid phone number or password' });
@@ -165,11 +168,11 @@ router.get('/me', async (req, res) => {
         const token = authHeader.split(' ')[1];
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-        const sql = req.sql;
-        const users = await sql`
-            SELECT id, name, email, phone, created_at
-            FROM users WHERE id = ${decoded.userId}
-        `;
+        const db = req.sql;
+        const [users] = await db.execute(
+            'SELECT id, name, email, phone, created_at FROM users WHERE id = ?',
+            [decoded.userId]
+        );
 
         if (users.length === 0) {
             return res.status(404).json({ error: 'User not found' });
@@ -195,11 +198,12 @@ router.get('/me', async (req, res) => {
 router.post('/forgot-password', async (req, res) => {
     try {
         const { email } = req.body;
-        const sql = req.sql;
+        const db = req.sql;
 
-        const users = await sql`
-            SELECT id, name FROM users WHERE email = ${email}
-        `;
+        const [users] = await db.execute(
+            'SELECT id, name FROM users WHERE email = ?',
+            [email]
+        );
 
         if (users.length === 0) {
             return res.status(404).json({ error: 'No account found with this email' });
@@ -212,12 +216,10 @@ router.post('/forgot-password', async (req, res) => {
         const resetToken = crypto.randomBytes(32).toString('hex');
         const expiry = new Date(Date.now() + 3600000); // 1 hour
 
-        await sql`
-            UPDATE users 
-            SET reset_password_token = ${resetToken}, 
-                reset_password_expires = ${expiry}
-            WHERE id = ${user.id}
-        `;
+        await db.execute(
+            'UPDATE users SET reset_password_token = ?, reset_password_expires = ? WHERE id = ?',
+            [resetToken, expiry, user.id]
+        );
 
         // Build reset link for direct use
         const frontendUrl = process.env.FRONTEND_URL || 'https://abcbooks.store';
@@ -241,18 +243,17 @@ router.post('/forgot-password', async (req, res) => {
 router.post('/reset-password', async (req, res) => {
     try {
         const { token, password } = req.body;
-        const sql = req.sql;
+        const db = req.sql;
 
         if (!token || !password) {
             return res.status(400).json({ error: 'Missing token or password' });
         }
 
         // Find user by token and check expiry
-        const users = await sql`
-            SELECT id FROM users 
-            WHERE reset_password_token = ${token} 
-            AND reset_password_expires > NOW()
-        `;
+        const [users] = await db.execute(
+            'SELECT id FROM users WHERE reset_password_token = ? AND reset_password_expires > NOW()',
+            [token]
+        );
 
         if (users.length === 0) {
             return res.status(400).json({ error: 'Invalid or expired reset token' });
@@ -264,14 +265,10 @@ router.post('/reset-password', async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Update user
-        await sql`
-            UPDATE users 
-            SET password_hash = ${hashedPassword},
-                reset_password_token = NULL,
-                reset_password_expires = NULL,
-                is_verified = TRUE
-            WHERE id = ${user.id}
-        `;
+        await db.execute(
+            'UPDATE users SET password_hash = ?, reset_password_token = NULL, reset_password_expires = NULL, is_verified = TRUE WHERE id = ?',
+            [hashedPassword, user.id]
+        );
 
         res.json({ message: 'Password reset successful! You can now login with your new password.' });
     } catch (error) {
@@ -284,7 +281,7 @@ router.post('/reset-password', async (req, res) => {
 router.post('/google', async (req, res) => {
     try {
         const { credential } = req.body;
-        const sql = req.sql;
+        const db = req.sql;
 
         if (!credential) {
             return res.status(400).json({ error: 'Missing Google credential' });
@@ -299,7 +296,7 @@ router.post('/google', async (req, res) => {
         const { email, name, picture, sub: googleId } = payload;
 
         // Check if user exists by email
-        let users = await sql`SELECT id, name, email, phone, created_at FROM users WHERE email = ${email}`;
+        let [users] = await db.execute('SELECT id, name, email, phone, created_at FROM users WHERE email = ?', [email]);
         let user;
 
         if (users.length === 0) {
@@ -308,11 +305,14 @@ router.post('/google', async (req, res) => {
             const randomPassword = crypto.randomBytes(16).toString('hex');
             const hashedPassword = await bcrypt.hash(randomPassword, 10);
 
-            const result = await sql`
-                INSERT INTO users (name, email, password_hash, is_verified)
-                VALUES (${name}, ${email}, ${hashedPassword}, TRUE)
-                RETURNING id, name, email, phone, created_at
-            `;
+            const [insertResult] = await db.execute(
+                'INSERT INTO users (name, email, password_hash, is_verified) VALUES (?, ?, ?, TRUE)',
+                [name, email, hashedPassword]
+            );
+            const [result] = await db.execute(
+                'SELECT id, name, email, phone, created_at FROM users WHERE id = ?',
+                [insertResult.insertId]
+            );
             user = result[0];
             console.log(`[Google Auth] New user registered: ${email}`);
         } else {

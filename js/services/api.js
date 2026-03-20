@@ -18,7 +18,7 @@ const TokenManager = {
         if (isAdminPath) {
             return localStorage.getItem('adminToken');
         }
-        return localStorage.getItem('accessToken') || localStorage.getItem('token') || localStorage.getItem('jwt_token');
+        return localStorage.getItem('accessToken');
     },
     set: (token) => {
         if (isAdminPath) {
@@ -30,13 +30,10 @@ const TokenManager = {
         }
     },
     remove: () => {
-        if (isAdminPath) {
-            localStorage.removeItem('adminToken');
-        } else {
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('token');
-            localStorage.removeItem('jwt_token');
-        }
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('token');
+        localStorage.removeItem('jwt_token');
     },
     isValid: () => {
         const token = TokenManager.get();
@@ -163,6 +160,10 @@ const AuthAPI = {
         TokenManager.remove();
         localStorage.removeItem('currentUser');
         localStorage.removeItem('abc_books_current_user');
+        localStorage.removeItem('abc_books_cart');
+        localStorage.removeItem('abc_books_wishlist');
+        localStorage.removeItem('abc_books_pending_action');
+        localStorage.removeItem('abc_books_pending_book');
     }
 };
 

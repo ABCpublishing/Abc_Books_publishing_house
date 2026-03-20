@@ -5,17 +5,17 @@ const router = express.Router();
 // Get user's wishlist
 router.get('/:userId', async (req, res) => {
     try {
-        const sql = req.sql;
+        const db = req.sql;
         const { userId } = req.params;
 
-        const wishlistItems = await sql`
+        const [wishlistItems] = await db.execute(`
             SELECT w.id, w.created_at,
                    b.id as book_id, b.title, b.author, b.price, b.original_price, b.image, b.rating
             FROM wishlist w
             INNER JOIN books b ON w.book_id = b.id
-            WHERE w.user_id = ${userId}
+            WHERE w.user_id = ?
             ORDER BY w.created_at DESC
-        `;
+        `, [userId]);
 
         res.json({
             wishlist: wishlistItems,
@@ -30,23 +30,23 @@ router.get('/:userId', async (req, res) => {
 // Add to wishlist
 router.post('/', async (req, res) => {
     try {
-        const sql = req.sql;
+        const db = req.sql;
         const { user_id, book_id } = req.body;
 
         // Check if already in wishlist
-        const existing = await sql`
-            SELECT id FROM wishlist 
-            WHERE user_id = ${user_id} AND book_id = ${book_id}
-        `;
+        const [existing] = await db.execute(
+            'SELECT id FROM wishlist WHERE user_id = ? AND book_id = ?',
+            [user_id, book_id]
+        );
 
         if (existing.length > 0) {
             return res.status(400).json({ error: 'Already in wishlist' });
         }
 
-        await sql`
-            INSERT INTO wishlist (user_id, book_id)
-            VALUES (${user_id}, ${book_id})
-        `;
+        await db.execute(
+            'INSERT INTO wishlist (user_id, book_id) VALUES (?, ?)',
+            [user_id, book_id]
+        );
 
         res.status(201).json({ message: 'Added to wishlist' });
     } catch (error) {
@@ -58,10 +58,10 @@ router.post('/', async (req, res) => {
 // Remove from wishlist
 router.delete('/:id', async (req, res) => {
     try {
-        const sql = req.sql;
+        const db = req.sql;
         const { id } = req.params;
 
-        await sql`DELETE FROM wishlist WHERE id = ${id}`;
+        await db.execute('DELETE FROM wishlist WHERE id = ?', [id]);
         res.json({ message: 'Removed from wishlist' });
     } catch (error) {
         console.error('Remove from wishlist error:', error);
@@ -72,10 +72,10 @@ router.delete('/:id', async (req, res) => {
 // Remove by user and book ID
 router.delete('/remove/:userId/:bookId', async (req, res) => {
     try {
-        const sql = req.sql;
+        const db = req.sql;
         const { userId, bookId } = req.params;
 
-        await sql`DELETE FROM wishlist WHERE user_id = ${userId} AND book_id = ${bookId}`;
+        await db.execute('DELETE FROM wishlist WHERE user_id = ? AND book_id = ?', [userId, bookId]);
         res.json({ message: 'Removed from wishlist' });
     } catch (error) {
         console.error('Remove from wishlist error:', error);
@@ -86,13 +86,13 @@ router.delete('/remove/:userId/:bookId', async (req, res) => {
 // Check if book is in wishlist
 router.get('/check/:userId/:bookId', async (req, res) => {
     try {
-        const sql = req.sql;
+        const db = req.sql;
         const { userId, bookId } = req.params;
 
-        const result = await sql`
-            SELECT id FROM wishlist 
-            WHERE user_id = ${userId} AND book_id = ${bookId}
-        `;
+        const [result] = await db.execute(
+            'SELECT id FROM wishlist WHERE user_id = ? AND book_id = ?',
+            [userId, bookId]
+        );
 
         res.json({ inWishlist: result.length > 0 });
     } catch (error) {

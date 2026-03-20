@@ -60,16 +60,19 @@ if (typeof showNotification === 'undefined') {
 
 // ===== HELPER FUNCTIONS =====
 async function getCurrentUser() {
-    // 1. Definitively check physical token presence FIRST
-    const directToken = (typeof API !== 'undefined' && API.Token) ? API.Token.get() : (localStorage.getItem('accessToken') || localStorage.getItem('token') || localStorage.getItem('jwt_token'));
+    // 1. Definitively check physical token presence FIRST via the path-isolated TokenManager
+    // This is the absolute source of truth. If this is empty, you are NOT logged in.
+    const directToken = (typeof API !== 'undefined' && API.Token) ? API.Token.get() : localStorage.getItem('accessToken');
 
-    if (!directToken || (typeof API !== 'undefined' && API.Token && !API.Token.isValid())) {
+    if (!directToken) {
+        // Token is gone, so cache MUST be gone too
         currentUserCache = null;
+        localStorage.removeItem('abc_books_current_user');
         return null;
     }
 
     // 2. Return cached user if available
-    if (currentUserCache) {
+    if (currentUserCache && currentUserCache.id) {
         return currentUserCache;
     }
 
@@ -107,6 +110,15 @@ async function getCurrentUser() {
 
 function clearUserCache() {
     currentUserCache = null;
+    // Nuke everything to prevent ghost logins or abandoned data
+    localStorage.removeItem('abc_books_current_user');
+    localStorage.removeItem('abc_books_cart');
+    localStorage.removeItem('abc_books_wishlist');
+    localStorage.removeItem('abc_books_pending_action');
+    localStorage.removeItem('abc_books_pending_book');
+    localStorage.removeItem('currentUser'); // Legacy support
+    localStorage.removeItem('token'); // Legacy support
+    localStorage.removeItem('jwt_token'); // Legacy support
 }
 
 // ===== MODAL FUNCTIONS =====
@@ -258,11 +270,12 @@ function initGoogleSignIn() {
             googleInitialized = true;
 
             // Display Google One Tap prompt automatically on landing
-            google.accounts.id.prompt((notification) => {
-                if (notification.isNotDisplayed()) {
-                    console.log('One Tap not displayed:', notification.getNotDisplayedReason());
-                }
-            });
+            // Disabled per user request
+            // google.accounts.id.prompt((notification) => {
+            //     if (notification.isNotDisplayed()) {
+            //         console.log('One Tap not displayed:', notification.getNotDisplayedReason());
+            //     }
+            // });
         } catch (error) {
             console.error('Error initializing Google Sign-In:', error);
             setTimeout(initGoogleSignIn, 1000);
@@ -546,7 +559,7 @@ async function handleForgotPassword(event) {
         const response = await API.Auth.forgotPassword(emailInput.value);
 
         if (successBanner) {
-            successBanner.querySelector('span').textContent = response.message || 'Reset link sent! Please check your email inbox.';
+            successBanner.querySelector('span').innerHTML = '<strong>Check your inbox!</strong> Reset instructions have been sent to your email address.';
             successBanner.style.display = 'flex';
             emailInput.value = ''; // Clear input on success
         } else {
@@ -954,6 +967,7 @@ async function loadCartItems() {
 }
 
 async function addToCart(bookId, bookData) {
+    console.log('🛒 Attempting to add to cart:', { bookId, title: bookData?.title });
     const user = await getCurrentUser();
 
     // Strict validation: Must have a valid session and user object

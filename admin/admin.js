@@ -206,6 +206,10 @@ function navigateToSection(section) {
         featured: 'Featured Books',
         trending: 'Trending Now',
         bestseller: 'Bestsellers',
+        boxSets: 'Box Sets Collections',
+        islamicBooks: 'Islamic Books Section',
+        fiction: 'Fiction Favorites Section',
+        urdu: 'Urdu Books',
         english: 'English Books',
         arabic: 'Arabic Books',
         kashmiri: 'Kashmiri Books',
@@ -304,6 +308,9 @@ async function loadSectionData(section) {
         case 'children':
         case 'bestseller':
         case 'indianAuthors':
+        case 'boxSets':
+        case 'islamicBooks':
+        case 'fiction':
             try {
                 const response = await API.Books.getBySection(section);
                 renderSectionBooks(section, response.books || []);
@@ -1050,9 +1057,21 @@ async function showAddToSectionModal(section) {
         }
 
         // Add section
-        const currentSections = bookToAdd.sections || [];
-        if (!currentSections.includes(section)) {
-            const newSections = [...currentSections, section];
+        let currentSections = bookToAdd.sections || [];
+
+        // Handle Box Sets Exclusivity
+        let newSections = [];
+        if (section === 'boxSets') {
+            newSections = ['boxSets']; // Exclusive
+        } else {
+            // Remove 'boxSets' if adding to any other section
+            newSections = currentSections.filter(s => s !== 'boxSets');
+            if (!newSections.includes(section)) {
+                newSections.push(section);
+            }
+        }
+
+        if (JSON.stringify(currentSections) !== JSON.stringify(newSections)) {
             await API.Books.update(bookToAdd.id, {
                 ...bookToAdd,
                 sections: newSections
@@ -1060,8 +1079,6 @@ async function showAddToSectionModal(section) {
             alert('Added to ' + section);
             loadSectionData(section);
             loadDashboardData();
-        } else {
-            alert('Book is already in this section');
         }
 
     } catch (error) {
@@ -1309,3 +1326,23 @@ async function populateBookFormForEdit(book) {
 }
 // Cleanup secondary duplicate definitions that were at the end of the file
 // Note: All relevant logic from the bottom has been merged into the main sections above.
+// Toggle Box Set Exclusivity (Make it the only section if checked)
+function toggleBoxSetExclusivity(cb) {
+    if (cb.checked) {
+        // Uncheck all other sections
+        const checkboxes = document.querySelectorAll('input[name="sections"]');
+        checkboxes.forEach(box => {
+            if (box !== cb) {
+                box.checked = false;
+            }
+        });
+    }
+}
+
+// Add event listener to other checkboxes to uncheck boxSets if they are checked
+document.addEventListener('change', function (e) {
+    if (e.target.name === 'sections' && e.target.value !== 'boxSets' && e.target.checked) {
+        const boxSetsCb = document.querySelector('input[name="sections"][value="boxSets"]');
+        if (boxSetsCb) boxSetsCb.checked = false;
+    }
+});

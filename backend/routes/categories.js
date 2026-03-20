@@ -5,14 +5,12 @@ const router = express.Router();
 // Get all categories (organized by language)
 router.get('/', async (req, res) => {
     try {
-        const sql = req.sql;
+        const db = req.sql;
 
         // Get all categories
-        const categories = await sql`
-            SELECT * FROM categories 
-            WHERE visible = true
-            ORDER BY is_language DESC, display_order ASC
-        `;
+        const [categories] = await db.execute(
+            'SELECT * FROM categories WHERE visible = true ORDER BY is_language DESC, display_order ASC'
+        );
 
         // Organize into language -> subcategories structure
         const languages = categories.filter(c => c.is_language);
@@ -36,13 +34,11 @@ router.get('/', async (req, res) => {
 // Get languages only (main categories)
 router.get('/languages', async (req, res) => {
     try {
-        const sql = req.sql;
+        const db = req.sql;
 
-        const languages = await sql`
-            SELECT * FROM categories 
-            WHERE is_language = true AND visible = true
-            ORDER BY display_order ASC
-        `;
+        const [languages] = await db.execute(
+            'SELECT * FROM categories WHERE is_language = true AND visible = true ORDER BY display_order ASC'
+        );
 
         res.json({ languages });
     } catch (error) {
@@ -54,14 +50,14 @@ router.get('/languages', async (req, res) => {
 // Get subcategories for a specific language
 router.get('/language/:languageSlug', async (req, res) => {
     try {
-        const sql = req.sql;
+        const db = req.sql;
         const { languageSlug } = req.params;
 
         // Get language category
-        const languages = await sql`
-            SELECT * FROM categories 
-            WHERE LOWER(slug) = LOWER(${languageSlug}) AND is_language = true
-        `;
+        const [languages] = await db.execute(
+            'SELECT * FROM categories WHERE LOWER(slug) = LOWER(?) AND is_language = true',
+            [languageSlug]
+        );
 
         if (languages.length === 0) {
             return res.status(404).json({ error: 'Language not found' });
@@ -70,11 +66,10 @@ router.get('/language/:languageSlug', async (req, res) => {
         const language = languages[0];
 
         // Get subcategories
-        const subcategories = await sql`
-            SELECT * FROM categories 
-            WHERE parent_id = ${language.id} AND visible = true
-            ORDER BY display_order ASC
-        `;
+        const [subcategories] = await db.execute(
+            'SELECT * FROM categories WHERE parent_id = ? AND visible = true ORDER BY display_order ASC',
+            [language.id]
+        );
 
         res.json({
             language,
@@ -89,17 +84,15 @@ router.get('/language/:languageSlug', async (req, res) => {
 // Get category by ID
 router.get('/:id', async (req, res) => {
     try {
-        const sql = req.sql;
+        const db = req.sql;
         const { id } = req.params;
 
-        const categories = await sql`
-            SELECT c.*, 
-                   p.name as parent_name, 
-                   p.slug as parent_slug
+        const [categories] = await db.execute(`
+            SELECT c.*, p.name as parent_name, p.slug as parent_slug
             FROM categories c
             LEFT JOIN categories p ON c.parent_id = p.id
-            WHERE c.id = ${id}
-        `;
+            WHERE c.id = ?
+        `, [id]);
 
         if (categories.length === 0) {
             return res.status(404).json({ error: 'Category not found' });
@@ -115,28 +108,24 @@ router.get('/:id', async (req, res) => {
 // Add new category (admin only)
 router.post('/', async (req, res) => {
     try {
-        const sql = req.sql;
+        const db = req.sql;
         const { name, slug, icon, parent_id, is_language, display_order, visible } = req.body;
 
         // Create slug from name if not provided
         const categorySlug = slug || name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 
-        const result = await sql`
+        const [insertResult] = await db.execute(`
             INSERT INTO categories (name, slug, icon, parent_id, is_language, display_order, visible)
-            VALUES (
-                ${name}, 
-                ${categorySlug}, 
-                ${icon || 'fa-book'}, 
-                ${parent_id || null}, 
-                ${is_language || false},
-                ${display_order || 0},
-                ${visible !== false}
-            )
-            RETURNING *
-        `;
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        `, [
+            name, categorySlug, icon || 'fa-book', parent_id || null, 
+            is_language || false, display_order || 0, visible !== false
+        ]);
+
+        const [categoryResults] = await db.execute('SELECT * FROM categories WHERE id = ?', [insertResult.insertId]);
 
         res.status(201).json({
-            category: result[0],
+            category: categoryResults[0],
             message: 'Category added successfully'
         });
     } catch (error) {
@@ -151,30 +140,28 @@ router.post('/', async (req, res) => {
 // Update category (admin only)
 router.put('/:id', async (req, res) => {
     try {
-        const sql = req.sql;
+        const db = req.sql;
         const { id } = req.params;
         const { name, slug, icon, parent_id, is_language, display_order, visible } = req.body;
 
-        const result = await sql`
+        const [updateResult] = await db.execute(`
             UPDATE categories SET
-                name = ${name},
-                slug = ${slug},
-                icon = ${icon || 'fa-book'},
-                parent_id = ${parent_id || null},
-                is_language = ${is_language || false},
-                display_order = ${display_order || 0},
-                visible = ${visible !== false},
-                updated_at = NOW()
-            WHERE id = ${id}
-            RETURNING *
-        `;
+                name = ?, slug = ?, icon = ?, parent_id = ?, is_language = ?, 
+                display_order = ?, visible = ?, updated_at = NOW()
+            WHERE id = ?
+        `, [
+            name, slug, icon || 'fa-book', parent_id || null, is_language || false,
+            display_order || 0, visible !== false, id
+        ]);
 
-        if (result.length === 0) {
+        if (updateResult.affectedRows === 0) {
             return res.status(404).json({ error: 'Category not found' });
         }
 
+        const [categoryResults] = await db.execute('SELECT * FROM categories WHERE id = ?', [id]);
+
         res.json({
-            category: result[0],
+            category: categoryResults[0],
             message: 'Category updated successfully'
         });
     } catch (error) {
@@ -186,17 +173,17 @@ router.put('/:id', async (req, res) => {
 // Delete category (admin only)
 router.delete('/:id', async (req, res) => {
     try {
-        const sql = req.sql;
+        const db = req.sql;
         const { id } = req.params;
 
         // Check if it's a language category and has subcategories
-        const category = await sql`SELECT * FROM categories WHERE id = ${id}`;
+        const [category] = await db.execute('SELECT * FROM categories WHERE id = ?', [id]);
         if (category.length === 0) {
             return res.status(404).json({ error: 'Category not found' });
         }
 
         if (category[0].is_language) {
-            const subcategories = await sql`SELECT COUNT(*) as count FROM categories WHERE parent_id = ${id}`;
+            const [subcategories] = await db.execute('SELECT COUNT(*) as count FROM categories WHERE parent_id = ?', [id]);
             if (subcategories[0].count > 0) {
                 return res.status(400).json({
                     error: 'Cannot delete language category with subcategories. Delete subcategories first.'
@@ -204,7 +191,7 @@ router.delete('/:id', async (req, res) => {
             }
         }
 
-        await sql`DELETE FROM categories WHERE id = ${id}`;
+        await db.execute('DELETE FROM categories WHERE id = ?', [id]);
 
         res.json({ message: 'Category deleted successfully' });
     } catch (error) {
@@ -216,16 +203,14 @@ router.delete('/:id', async (req, res) => {
 // Get books by language
 router.get('/books/language/:language', async (req, res) => {
     try {
-        const sql = req.sql;
+        const db = req.sql;
         const { language } = req.params;
         const { limit = 50 } = req.query;
 
-        const books = await sql`
-            SELECT * FROM books 
-            WHERE LOWER(language) = LOWER(${language})
-            ORDER BY created_at DESC
-            LIMIT ${parseInt(limit)}
-        `;
+        const parsedLimit = parseInt(limit) || 50;
+        const [books] = await db.execute(`
+            SELECT * FROM books WHERE LOWER(language) = LOWER(?) ORDER BY created_at DESC LIMIT ?
+        `, [language, parsedLimit]);
 
         res.json({ books, count: books.length });
     } catch (error) {
@@ -237,17 +222,14 @@ router.get('/books/language/:language', async (req, res) => {
 // Get books by language and subcategory
 router.get('/books/:language/:subcategory', async (req, res) => {
     try {
-        const sql = req.sql;
+        const db = req.sql;
         const { language, subcategory } = req.params;
         const { limit = 50 } = req.query;
 
-        const books = await sql`
-            SELECT * FROM books 
-            WHERE LOWER(language) = LOWER(${language})
-              AND LOWER(subcategory) = LOWER(${subcategory})
-            ORDER BY created_at DESC
-            LIMIT ${parseInt(limit)}
-        `;
+        const parsedLimit = parseInt(limit) || 50;
+        const [books] = await db.execute(`
+            SELECT * FROM books WHERE LOWER(language) = LOWER(?) AND LOWER(subcategory) = LOWER(?) ORDER BY created_at DESC LIMIT ?
+        `, [language, subcategory, parsedLimit]);
 
         res.json({ books, count: books.length });
     } catch (error) {

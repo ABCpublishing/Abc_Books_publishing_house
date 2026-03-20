@@ -517,6 +517,7 @@ div {
 /* ===== BOOK GRIDS (Indian Authors, Fiction, etc.) ===== */
 @media (max-width: 992px) {
 
+    .islamic-books-grid,
     .indian-authors-grid,
     .fiction-books-grid {
         display: grid;
@@ -528,12 +529,14 @@ div {
 
 @media (max-width: 576px) {
 
+    .islamic-books-grid,
     .indian-authors-grid,
     .fiction-books-grid {
         grid-template-columns: repeat(2, 1fr);
         gap: 10px;
     }
 
+    .islamic-books-grid .book-card,
     .indian-authors-grid .book-card,
     .fiction-books-grid .book-card {
         min-width: 100% !important;

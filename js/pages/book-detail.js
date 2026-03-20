@@ -280,10 +280,10 @@ async function addToCartDetail() {
 
     const qty = parseInt(document.getElementById('quantity').value) || 1;
 
-    // Check precise physical token presence immediately 
-    const hasToken = localStorage.getItem('accessToken') || localStorage.getItem('token') || localStorage.getItem('jwt_token');
+    // Use unified login check with token isolation
+    const loggedIn = await isUserLoggedIn();
 
-    if (!hasToken) {
+    if (!loggedIn) {
         // Save pending action
         localStorage.setItem('abc_books_pending_action', 'add_to_cart');
         localStorage.setItem('abc_books_pending_book', JSON.stringify({

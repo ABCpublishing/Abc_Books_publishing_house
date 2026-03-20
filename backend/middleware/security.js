@@ -54,10 +54,11 @@ const authenticateAdmin = async (req, res, next) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
         // Check if user is admin (you can enhance this with a role field in the database)
-        const sql = req.sql;
-        const users = await sql`
-            SELECT id, email, is_admin FROM users WHERE id = ${decoded.userId}
-        `;
+        const db = req.sql;
+        const [users] = await db.execute(
+            'SELECT id, email, is_admin FROM users WHERE id = ?',
+            [decoded.userId]
+        );
 
         if (users.length === 0 || !users[0].is_admin) {
             return res.status(403).json({
@@ -152,8 +153,8 @@ const sanitizeInput = (req, res, next) => {
 
 // ===== Security Headers Middleware =====
 const securityHeaders = (req, res, next) => {
-    // Prevent clickjacking
-    res.setHeader('X-Frame-Options', 'DENY');
+    // Allow framing for same origin and specific third parties like Razorpay
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
 
     // XSS Protection
     res.setHeader('X-XSS-Protection', '1; mode=block');
@@ -171,8 +172,8 @@ const securityHeaders = (req, res, next) => {
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://accounts.google.com",
         "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com",
         "img-src 'self' data: https: blob: https://www.gstatic.com https://*.googleusercontent.com",
-        "connect-src 'self' https://api.razorpay.com https://*.vercel.app https://*.neon.tech https://accounts.google.com",
-        "frame-src 'self' https://accounts.google.com"
+        "connect-src 'self' https://api.razorpay.com https://lumberjack.razorpay.com https://*.vercel.app https://*.neon.tech https://accounts.google.com",
+        "frame-src 'self' https://api.razorpay.com https://checkout.razorpay.com https://accounts.google.com"
     ].join('; '));
 
     next();

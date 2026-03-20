@@ -5,13 +5,13 @@ const router = express.Router();
 // Get current logged-in user's profile
 router.get('/me', authenticate, async (req, res) => {
     try {
-        const sql = req.sql;
+        const db = req.sql;
         const userId = req.userId;
 
-        const users = await sql`
-            SELECT id, name, email, phone, is_admin, created_at
-            FROM users WHERE id = ${userId}
-        `;
+        const [users] = await db.execute(
+            'SELECT id, name, email, phone, is_admin, created_at FROM users WHERE id = ?',
+            [userId]
+        );
 
         if (users.length === 0) {
             return res.status(404).json({ error: 'User not found' });
@@ -20,10 +20,10 @@ router.get('/me', authenticate, async (req, res) => {
         const user = users[0];
 
         // Get user's order stats
-        const orderStats = await sql`
-            SELECT COUNT(*) as count, COALESCE(SUM(total), 0) as total_spent
-            FROM orders WHERE user_id = ${userId}
-        `;
+        const [orderStats] = await db.execute(
+            'SELECT COUNT(*) as count, COALESCE(SUM(total), 0) as total_spent FROM orders WHERE user_id = ?',
+            [userId]
+        );
         user.stats = {
             total_orders: parseInt(orderStats[0].count),
             total_spent: parseFloat(orderStats[0].total_spent) || 0
@@ -39,20 +39,18 @@ router.get('/me', authenticate, async (req, res) => {
 // Get all users (admin)
 router.get('/', authenticateAdmin, async (req, res) => {
     try {
-        const sql = req.sql;
+        const db = req.sql;
 
-        const users = await sql`
-            SELECT id, name, email, phone, is_admin, created_at, updated_at
-            FROM users
-            ORDER BY created_at DESC
-        `;
+        const [users] = await db.execute(
+            'SELECT id, name, email, phone, is_admin, created_at, updated_at FROM users ORDER BY created_at DESC'
+        );
 
         // Get order count for each user
         for (let user of users) {
-            const orderCount = await sql`
-                SELECT COUNT(*) as count, COALESCE(SUM(total), 0) as total_spent
-                FROM orders WHERE user_id = ${user.id}
-            `;
+            const [orderCount] = await db.execute(
+                'SELECT COUNT(*) as count, COALESCE(SUM(total), 0) as total_spent FROM orders WHERE user_id = ?',
+                [user.id]
+            );
             user.order_count = parseInt(orderCount[0].count);
             user.total_spent = parseFloat(orderCount[0].total_spent) || 0;
         }
@@ -67,7 +65,7 @@ router.get('/', authenticateAdmin, async (req, res) => {
 // Get user by ID with order history (requires authentication)
 router.get('/:id', authenticate, async (req, res) => {
     try {
-        const sql = req.sql;
+        const db = req.sql;
         const { id } = req.params;
 
         // Validate ID is a number
@@ -75,10 +73,10 @@ router.get('/:id', authenticate, async (req, res) => {
             return res.status(400).json({ error: 'Invalid user ID' });
         }
 
-        const users = await sql`
-            SELECT id, name, email, phone, created_at
-            FROM users WHERE id = ${id}
-        `;
+        const [users] = await db.execute(
+            'SELECT id, name, email, phone, created_at FROM users WHERE id = ?',
+            [id]
+        );
 
         if (users.length === 0) {
             return res.status(404).json({ error: 'User not found' });
@@ -87,20 +85,21 @@ router.get('/:id', authenticate, async (req, res) => {
         const user = users[0];
 
         // Get user's orders
-        user.orders = await sql`
-            SELECT * FROM orders 
-            WHERE user_id = ${id}
-            ORDER BY created_at DESC
-        `;
+        const [orders] = await db.execute(
+            'SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC',
+            [id]
+        );
+        user.orders = orders;
 
         // Get order items for each order
         for (let order of user.orders) {
-            order.items = await sql`
+            const [items] = await db.execute(`
                 SELECT oi.*, b.title, b.author, b.image
                 FROM order_items oi
                 LEFT JOIN books b ON oi.book_id = b.id
-                WHERE oi.order_id = ${order.id}
-            `;
+                WHERE oi.order_id = ?
+            `, [order.id]);
+            order.items = items;
         }
 
         // Calculate stats
@@ -120,21 +119,24 @@ router.get('/:id', authenticate, async (req, res) => {
 // Delete user (admin only - requires admin authentication)
 router.delete('/:id', authenticateAdmin, async (req, res) => {
     try {
-        const sql = req.sql;
+        const db = req.sql;
         const { id } = req.params;
 
-        // Delete user's cart and wishlist first
-        await sql`DELETE FROM cart WHERE user_id = ${id}`;
-        await sql`DELETE FROM wishlist WHERE user_id = ${id}`;
-
-        // Delete user
-        const result = await sql`DELETE FROM users WHERE id = ${id} RETURNING id, name`;
-
-        if (result.length === 0) {
+        // Fetch user basic info to get name before delete
+        const [users] = await db.execute('SELECT id, name FROM users WHERE id = ?', [id]);
+        if (users.length === 0) {
             return res.status(404).json({ error: 'User not found' });
         }
+        const user = users[0];
 
-        res.json({ message: `User ${result[0].name} deleted successfully` });
+        // Delete user's cart and wishlist first
+        await db.execute('DELETE FROM cart WHERE user_id = ?', [id]);
+        await db.execute('DELETE FROM wishlist WHERE user_id = ?', [id]);
+
+        // Delete user
+        await db.execute('DELETE FROM users WHERE id = ?', [id]);
+
+        res.json({ message: `User ${user.name} deleted successfully` });
     } catch (error) {
         console.error('Delete user error:', error);
         res.status(500).json({ error: 'Failed to delete user' });
@@ -144,25 +146,26 @@ router.delete('/:id', authenticateAdmin, async (req, res) => {
 // Update user role (admin)
 router.patch('/:id/role', authenticateAdmin, async (req, res) => {
     try {
-        const sql = req.sql;
+        const db = req.sql;
         const { id } = req.params;
         const { is_admin } = req.body;
 
-        const result = await sql`
-            UPDATE users 
-            SET is_admin = ${is_admin}, updated_at = NOW()
-            WHERE id = ${id}
-            RETURNING id, name, is_admin
-        `;
+        const [updateResult] = await db.execute(
+            'UPDATE users SET is_admin = ?, updated_at = NOW() WHERE id = ?',
+            [is_admin, id]
+        );
 
-        if (result.length === 0) {
+        if (updateResult.affectedRows === 0) {
             return res.status(404).json({ error: 'User not found' });
         }
 
+        const [users] = await db.execute('SELECT id, name, is_admin FROM users WHERE id = ?', [id]);
+        const user = users[0];
+
         res.json({
             success: true,
-            message: `User ${result[0].name} updated to ${result[0].is_admin ? 'Admin' : 'Customer'}`,
-            user: result[0]
+            message: `User ${user.name} updated to ${user.is_admin ? 'Admin' : 'Customer'}`,
+            user: user
         });
     } catch (error) {
         console.error('Update role error:', error);

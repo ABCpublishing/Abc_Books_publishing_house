@@ -6,7 +6,7 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 const express = require('express');
 const cors = require('cors');
-const { neon } = require('@neondatabase/serverless');
+const mysql = require('mysql2/promise');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -31,8 +31,27 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // ===== Security Middleware =====
-// Apply security headers to all responses
+// Apply security headers to all responses (including static files)
 app.use(securityHeaders);
+
+// Serve frontend: static files + index.html at root
+const rootDir = path.join(__dirname, '..');
+
+// Serve favicon.ico from favicon.svg (prevents 404)
+app.get('/favicon.ico', (req, res) => {
+    res.sendFile(path.join(rootDir, 'favicon.svg'));
+});
+
+// Explicitly handle CSS MIME types for some Windows environments if needed
+app.use((req, res, next) => {
+    if (req.url.endsWith('.css')) {
+        res.setHeader('Content-Type', 'text/css');
+    }
+    next();
+});
+
+app.use(express.static(rootDir));
+app.get('/', (req, res) => res.sendFile(path.join(rootDir, 'index.html')));
 
 // Request logging for monitoring
 app.use(requestLogger);
@@ -93,26 +112,32 @@ app.use(express.json({ limit: '10mb' }));
 app.use(sanitizeInput);
 
 // Database connection
-const sql = neon(process.env.DATABASE_URL);
+const pool = mysql.createPool({
+    uri: process.env.DATABASE_URL,
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
+});
 
-// Make sql available to routes
+// Make pool available to routes
 app.use((req, res, next) => {
-    req.sql = sql;
+    req.sql = pool;
     next();
 });
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', message: 'ABC Books API v2.0 (Verified) is running!' });
+    res.json({ status: 'ok', message: 'ABC Books API v2.0 (MySQL Verified) is running!' });
 });
 
 // Maintenance Route - Verify All Users (admin only)
 app.get('/api/verify-all-users', authenticateAdmin, async (req, res) => {
     try {
-        const result = await req.sql`UPDATE users SET is_verified = TRUE WHERE is_verified = FALSE RETURNING id, email`;
+        await req.sql.execute('UPDATE users SET is_verified = TRUE WHERE is_verified = FALSE');
+        const [result] = await req.sql.execute('SELECT id, email FROM users');
         res.json({
             success: true,
-            message: `✅ Successfully verified ${result.length} users.`,
+            message: `✅ Successfully verified users.`,
             users: result
         });
     } catch (error) {
@@ -131,17 +156,6 @@ app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/categories', categoriesRoutes);
 
-// Serve frontend: static files + index.html at root
-const rootDir = path.join(__dirname, '..');
-
-// Serve favicon.ico from favicon.svg (prevents 404)
-app.get('/favicon.ico', (req, res) => {
-    res.sendFile(path.join(rootDir, 'favicon.svg'));
-});
-
-app.use(express.static(rootDir));
-app.get('/', (req, res) => res.sendFile(path.join(rootDir, 'index.html')));
-
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error('Error:', err);
@@ -153,7 +167,7 @@ if (require.main === module) {
     app.listen(PORT, () => {
         console.log(`🚀 ABC Books API running on http://localhost:${PORT}`);
         console.log(`📖 Open the site in your browser: http://localhost:${PORT}`);
-        console.log(`📚 Database: Neon PostgreSQL`);
+        console.log(`📚 Database: MySQL`);
     });
 }
 

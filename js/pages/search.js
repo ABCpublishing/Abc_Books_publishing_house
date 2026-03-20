@@ -24,7 +24,8 @@ document.addEventListener('DOMContentLoaded', () => {
             'trending': 'Trending Now',
             'featured': 'Featured Books',
             'newReleases': 'New Releases',
-            'editors': "Editor's Choice"
+            'editors': "Editor's Choice",
+            'boxSets': 'Box Sets Collection'
         };
         const label = sectionLabels[section] || section;
         const qEl = document.getElementById('searchQuery');

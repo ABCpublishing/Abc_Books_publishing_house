@@ -224,7 +224,7 @@ function applyPromo() {
     const code = document.getElementById('promoCode').value.trim().toUpperCase();
 
     const promoCodes = {
-        'NEWYEAR2025': 20,  // 20% off
+        'NEWYEAR2026': 20,  // 20% off
         'BOOKS10': 10,      // 10% off
         'SAVE50': 50        // Flat ₹50 off
     };

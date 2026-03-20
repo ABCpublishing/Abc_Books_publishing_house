@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const { authenticate, authenticateAdmin } = require('../middleware/security');
+const EmailService = require('../services/email');
 
 // Apply authentication to all order routes
 router.use(authenticate);
@@ -9,23 +10,24 @@ router.use(authenticate);
 // Get all orders (admin)
 router.get('/', authenticateAdmin, async (req, res) => {
     try {
-        const sql = req.sql;
+        const db = req.sql;
 
-        const orders = await sql`
+        const [orders] = await db.execute(`
             SELECT o.*, u.name as customer_name, u.email as customer_email
             FROM orders o
             LEFT JOIN users u ON o.user_id = u.id
             ORDER BY o.created_at DESC
-        `;
+        `);
 
         // Get order items for each order
         for (let order of orders) {
-            order.items = await sql`
+            const [items] = await db.execute(`
                 SELECT oi.*, b.title, b.author, b.image
                 FROM order_items oi
                 LEFT JOIN books b ON oi.book_id = b.id
-                WHERE oi.order_id = ${order.id}
-            `;
+                WHERE oi.order_id = ?
+            `, [order.id]);
+            order.items = items;
         }
 
         res.json({ orders });
@@ -38,22 +40,22 @@ router.get('/', authenticateAdmin, async (req, res) => {
 // Get user's orders
 router.get('/my-orders', async (req, res) => {
     try {
-        const sql = req.sql;
+        const db = req.sql;
         const userId = req.userId; // From auth middleware
 
-        const orders = await sql`
-            SELECT * FROM orders 
-            WHERE user_id = ${userId}
-            ORDER BY created_at DESC
-        `;
+        const [orders] = await db.execute(
+            'SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC',
+            [userId]
+        );
 
         for (let order of orders) {
-            order.items = await sql`
+            const [items] = await db.execute(`
                 SELECT oi.*, b.title, b.author, b.image
                 FROM order_items oi
                 LEFT JOIN books b ON oi.book_id = b.id
-                WHERE oi.order_id = ${order.id}
-            `;
+                WHERE oi.order_id = ?
+            `, [order.id]);
+            order.items = items;
         }
 
         res.json({ orders });
@@ -66,17 +68,17 @@ router.get('/my-orders', async (req, res) => {
 // Get order by ID
 router.get('/:id', async (req, res) => {
     try {
-        const sql = req.sql;
+        const db = req.sql;
         const { id } = req.params;
         const userId = req.userId;
         const isAdmin = req.isAdmin;
 
-        const orders = await sql`
+        const [orders] = await db.execute(`
             SELECT o.*, u.name as customer_name, u.email as customer_email
             FROM orders o
             LEFT JOIN users u ON o.user_id = u.id
-            WHERE o.id = ${id} OR o.order_id = ${id}
-        `;
+            WHERE o.id = ? OR o.order_id = ?
+        `, [id, id]);
 
         if (orders.length === 0) {
             return res.status(404).json({ error: 'Order not found' });
@@ -93,19 +95,20 @@ router.get('/:id', async (req, res) => {
         }
 
         // Fetch order items
-        order.items = await sql`
+        const [items] = await db.execute(`
             SELECT oi.*, b.title, b.author, b.image
             FROM order_items oi
             LEFT JOIN books b ON oi.book_id = b.id
-            WHERE oi.order_id = ${order.id}
-        `;
+            WHERE oi.order_id = ?
+        `, [order.id]);
+        order.items = items;
 
         // Fetch order status history
-        order.history = await sql`
-            SELECT * FROM order_status_history
-            WHERE order_id = ${order.id}
-            ORDER BY created_at ASC
-        `;
+        const [history] = await db.execute(
+            'SELECT * FROM order_status_history WHERE order_id = ? ORDER BY created_at ASC',
+            [order.id]
+        );
+        order.history = history;
 
         res.json({ order });
     } catch (error) {
@@ -117,7 +120,7 @@ router.get('/:id', async (req, res) => {
 // Create new order
 router.post('/', async (req, res) => {
     try {
-        const sql = req.sql;
+        const db = req.sql;
         const {
             user_id,
             items,
@@ -156,29 +159,34 @@ router.post('/', async (req, res) => {
         const actualUserId = user_id || req.userId;
         const initialStatus = payment_method === 'razorpay' ? 'paid' : 'confirmed';
 
-        const orderResult = await sql`
+        const [orderResult] = await db.execute(`
             INSERT INTO orders (
                 order_id, user_id, subtotal, discount, total,
                 shipping_first_name, shipping_last_name, shipping_email, shipping_phone,
                 shipping_address1, shipping_address2, shipping_city, shipping_state, shipping_pincode,
                 payment_method, status
             ) VALUES (
-                ${orderId}, ${actualUserId || null}, ${subtotal || 0}, ${discount || 0}, ${total || 0},
-                ${shipping_first_name || ''}, ${shipping_last_name || ''}, ${shipping_email || ''}, ${shipping_phone || ''},
-                ${shipping_address1 || ''}, ${shipping_address2 || ''}, ${shipping_city || ''}, ${shipping_state || ''}, ${shipping_pincode || ''},
-                ${payment_method || 'COD'}, ${initialStatus}
+                ?, ?, ?, ?, ?,
+                ?, ?, ?, ?,
+                ?, ?, ?, ?, ?,
+                ?, ?
             )
-            RETURNING *
-        `;
+        `, [
+            orderId, actualUserId || null, subtotal || 0, discount || 0, total || 0,
+            shipping_first_name || '', shipping_last_name || '', shipping_email || '', shipping_phone || '',
+            shipping_address1 || '', shipping_address2 || '', shipping_city || '', shipping_state || '', shipping_pincode || '',
+            payment_method || 'COD', initialStatus
+        ]);
 
-        const order = orderResult[0];
+        const [orderRecords] = await db.execute('SELECT * FROM orders WHERE id = ?', [orderResult.insertId]);
+        const order = orderRecords[0];
         console.log('✅ Order created:', order.order_id);
 
         // Record initial status in history
-        await sql`
-            INSERT INTO order_status_history (order_id, status, notes)
-            VALUES (${order.id}, ${initialStatus}, 'Order placed successfully')
-        `;
+        await db.execute(
+            'INSERT INTO order_status_history (order_id, status, notes) VALUES (?, ?, ?)',
+            [order.id, initialStatus, 'Order placed successfully']
+        );
         console.log('✅ Initial status history recorded');
 
         // Add order items - handle both integer book_id and string local IDs
@@ -201,19 +209,19 @@ router.post('/', async (req, res) => {
             const itemImage = item.image || item.book_image || '';
 
             try {
-                await sql`
-                    INSERT INTO order_items (order_id, book_id, quantity, price, book_title, book_author, book_image)
-                    VALUES (${order.id}, ${bookId}, ${itemQty}, ${itemPrice}, ${itemTitle}, ${itemAuthor}, ${itemImage})
-                `;
+                await db.execute(
+                    'INSERT INTO order_items (order_id, book_id, quantity, price, book_title, book_author, book_image) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                    [order.id, bookId, itemQty, itemPrice, itemTitle, itemAuthor, itemImage]
+                );
                 console.log('✅ Added order item:', { bookId, title: itemTitle, itemQty, itemPrice });
             } catch (itemError) {
                 console.log('⚠️ Error adding item, trying without book_id:', itemError.message);
                 // Insert without foreign key if book doesn't exist
                 try {
-                    await sql`
-                        INSERT INTO order_items (order_id, book_id, quantity, price, book_title, book_author, book_image)
-                        VALUES (${order.id}, NULL, ${itemQty}, ${itemPrice}, ${itemTitle}, ${itemAuthor}, ${itemImage})
-                    `;
+                    await db.execute(
+                        'INSERT INTO order_items (order_id, book_id, quantity, price, book_title, book_author, book_image) VALUES (?, NULL, ?, ?, ?, ?, ?)',
+                        [order.id, itemQty, itemPrice, itemTitle, itemAuthor, itemImage]
+                    );
                 } catch (err2) {
                     console.log('⚠️ Fallback insert error:', err2.message);
                 }
@@ -222,9 +230,22 @@ router.post('/', async (req, res) => {
 
         // Clear user's cart if user is logged in
         if (user_id) {
-            await sql`DELETE FROM cart WHERE user_id = ${user_id}`;
+            await db.execute('DELETE FROM cart WHERE user_id = ?', [user_id]);
             console.log('✅ Cart cleared for user:', user_id);
         }
+
+        // 4. Send Order Confirmation Email (Async)
+        EmailService.sendOrderConfirmationEmail({
+            ...order,
+            items: parsedItems
+        }).catch(emailErr => console.error('📧 Background email error:', emailErr));
+
+        // 5. Send Admin Notification Email (Async)
+        EmailService.sendAdminOrderNotification({
+            ...order,
+            items: parsedItems
+        }).catch(emailErr => console.error('📧 Admin notification email error:', emailErr));
+
 
         res.status(201).json({
             order: {
@@ -247,7 +268,7 @@ router.post('/', async (req, res) => {
 // Update order status & tracking info (admin only)
 router.patch('/:id/status', authenticateAdmin, async (req, res) => {
     try {
-        const sql = req.sql;
+        const db = req.sql;
         const { id } = req.params;
         const {
             status,
@@ -263,36 +284,36 @@ router.patch('/:id/status', authenticateAdmin, async (req, res) => {
         // We ensure data integrity by checking order existence first.
 
         // 1. Get existing order to verify ID
-        const orders = await sql`SELECT id, status FROM orders WHERE id = ${id} OR order_id = ${id}`;
+        const [orders] = await db.execute('SELECT id, status FROM orders WHERE id = ? OR order_id = ?', [id, id]);
         if (orders.length === 0) {
             return res.status(404).json({ error: 'Order not found' });
         }
         const order = orders[0];
 
         // 2. Update order table
-        const updateResult = await sql`
+        await db.execute(`
             UPDATE orders SET 
-                status = ${status || order.status}, 
-                tracking_id = ${tracking_id || null},
-                courier_name = ${courier_name || null},
-                estimated_delivery_date = ${estimated_delivery_date || null},
-                updated_at = NOW()
-            WHERE id = ${order.id}
-            RETURNING *
-        `;
+                status = ?, tracking_id = ?, courier_name = ?,
+                estimated_delivery_date = ?, updated_at = NOW()
+            WHERE id = ?
+        `, [
+            status || order.status, tracking_id || null, courier_name || null,
+            estimated_delivery_date || null, order.id
+        ]);
+        const [updateResult] = await db.execute('SELECT * FROM orders WHERE id = ?', [order.id]);
 
         // 3. Insert into history table (Audit Trail)
         if (status && status !== order.status) {
-            await sql`
-                INSERT INTO order_status_history (order_id, status, notes)
-                VALUES (${order.id}, ${status}, ${notes || 'Status updated by administrator'})
-            `;
+            await db.execute(
+                'INSERT INTO order_status_history (order_id, status, notes) VALUES (?, ?, ?)',
+                [order.id, status, notes || 'Status updated by administrator']
+            );
         } else if (notes || tracking_id || courier_name) {
             // Log update even if status didn't change but tracking was added
-            await sql`
-                INSERT INTO order_status_history (order_id, status, notes)
-                VALUES (${order.id}, ${status || order.status}, ${notes || 'Tracking information updated'})
-            `;
+            await db.execute(
+                'INSERT INTO order_status_history (order_id, status, notes) VALUES (?, ?, ?)',
+                [order.id, status || order.status, notes || 'Tracking information updated']
+            );
         }
 
         res.json({
@@ -310,19 +331,19 @@ router.patch('/:id/status', authenticateAdmin, async (req, res) => {
 // Delete order (admin only)
 router.delete('/:id', authenticateAdmin, async (req, res) => {
     try {
-        const sql = req.sql;
+        const db = req.sql;
         const { id } = req.params;
 
         // Resolve integer ID first if order_id (string) was provided
-        const orders = await sql`SELECT id FROM orders WHERE id = ${id} OR order_id = ${id}`;
+        const [orders] = await db.execute('SELECT id FROM orders WHERE id = ? OR order_id = ?', [id, id]);
         if (orders.length === 0) {
             return res.status(404).json({ error: 'Order not found' });
         }
         const internalId = orders[0].id;
 
-        await sql`DELETE FROM order_items WHERE order_id = ${internalId}`;
-        await sql`DELETE FROM order_status_history WHERE order_id = ${internalId}`;
-        const result = await sql`DELETE FROM orders WHERE id = ${internalId} RETURNING id`;
+        await db.execute('DELETE FROM order_items WHERE order_id = ?', [internalId]);
+        await db.execute('DELETE FROM order_status_history WHERE order_id = ?', [internalId]);
+        await db.execute('DELETE FROM orders WHERE id = ?', [internalId]);
 
         res.json({ message: 'Order deleted successfully' });
     } catch (error) {

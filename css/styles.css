@@ -605,10 +605,10 @@ textarea {
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     scroll-snap-align: start;
 
-    /* Standard Card Sizing */
-    width: 220px;
-    min-width: 220px;
-    max-width: 220px;
+    /* Standard Card Sizing - Optimized */
+    width: 200px;
+    min-width: 200px;
+    max-width: 200px;
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -622,9 +622,9 @@ textarea {
 /* Specific override for Hero Slider to ensure consistency */
 .hero-books-slider .book-card,
 .books-track .book-card {
-    width: 220px !important;
-    min-width: 220px !important;
-    max-width: 220px !important;
+    width: 200px !important;
+    min-width: 200px !important;
+    max-width: 200px !important;
 }
 
 /* Mobile Responsiveness for Cards */
@@ -643,14 +643,14 @@ textarea {
 }
 
 .book-card:hover {
-    transform: translateY(-12px) scale(1.03);
-    box-shadow: 0 16px 32px rgba(228, 43, 38, 0.2), 0 8px 16px rgba(0, 0, 0, 0.1);
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 12px 24px rgba(228, 43, 38, 0.15), 0 5px 12px rgba(0, 0, 0, 0.08);
     border-color: var(--primary);
-    z-index: 10;
+    z-index: 100;
 }
 
 .book-card .book-cover {
-    height: 300px;
+    height: 260px;
     /* Taller cover area for better display */
     background: linear-gradient(135deg, #fafafa 0%, #f0f0f0 100%);
     display: flex;
@@ -1436,9 +1436,9 @@ textarea {
 
 .featured-books-grid {
     display: flex;
-    gap: 12px;
+    gap: 15px;
     overflow-x: auto;
-    padding-bottom: 12px;
+    padding: 15px 5px 15px;
     scrollbar-width: thin;
     scrollbar-color: var(--primary) var(--gray-100);
 }
@@ -1477,6 +1477,42 @@ textarea {
     background: var(--primary);
     width: 22px;
     border-radius: var(--radius-sm);
+}
+
+/* ===== Dynamic Content Grids (Islamic, Indian Authors, Fiction) ===== */
+.islamic-books-grid,
+.indian-authors-grid,
+.fiction-books-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 25px;
+    margin: 30px 0;
+    padding-top: 15px;
+    justify-content: center;
+}
+
+.islamic-section {
+    padding: 60px 0;
+    background: var(--white);
+    margin: 40px 0;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+/* Ensure book cards in grids take full width of their grid cell */
+.islamic-books-grid .book-card,
+.indian-authors-grid .book-card,
+.fiction-books-grid .book-card {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+}
+
+/* Center the CTA Button */
+.section-cta {
+    display: flex;
+    justify-content: center;
+    margin-top: 35px;
 }
 
 /* ===== Trending Section ===== */
@@ -1562,8 +1598,8 @@ textarea {
 
 .trending-section .book-card:hover {
     border-color: #f7941d;
-    box-shadow: 0 12px 32px rgba(247, 148, 29, 0.4);
-    transform: translateY(-12px) scale(1.05);
+    box-shadow: 0 10px 24px rgba(247, 148, 29, 0.3);
+    transform: translateY(-8px) scale(1.02);
 }
 
 .trending-section .slider-arrow {
@@ -3343,33 +3379,7 @@ textarea {
     margin-right: auto;
 }
 
-.indian-authors-grid,
-.fiction-books-grid {
-    display: flex;
-    gap: 15px;
-    overflow-x: auto;
-    scroll-behavior: smooth;
-    scrollbar-width: thin;
-    scrollbar-color: var(--primary) var(--gray-100);
-    padding: 15px 5px;
-}
-
-.indian-authors-grid::-webkit-scrollbar,
-.fiction-books-grid::-webkit-scrollbar {
-    height: 6px;
-}
-
-.indian-authors-grid::-webkit-scrollbar-track,
-.fiction-books-grid::-webkit-scrollbar-track {
-    background: var(--gray-100);
-    border-radius: 10px;
-}
-
-.indian-authors-grid::-webkit-scrollbar-thumb,
-.fiction-books-grid::-webkit-scrollbar-thumb {
-    background: var(--primary);
-    border-radius: 10px;
-}
+/* Using grid layout defined at the top of the file for these sections */
 
 .section-cta {
     text-align: center;
@@ -3854,6 +3864,7 @@ textarea {
     color: var(--text-secondary);
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
@@ -3921,6 +3932,7 @@ textarea {
     line-height: 1.3 !important;
     display: -webkit-box !important;
     -webkit-line-clamp: 2 !important;
+    line-clamp: 2 !important;
     -webkit-box-orient: vertical !important;
     overflow: hidden !important;
     margin-bottom: 2px !important;
