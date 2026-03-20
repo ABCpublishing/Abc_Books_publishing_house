@@ -187,6 +187,60 @@ module.exports = {
             console.error('Error sending admin notification email:', error);
             return false;
         }
+    },
+
+    sendContactNotification: async (contact) => {
+        const adminEmail = process.env.ADMIN_EMAIL;
+        if (!mg || !adminEmail) {
+            console.log('📧 Contact notification skipped (no Mailgun or ADMIN_EMAIL).');
+            return false;
+        }
+
+        try {
+            await mg.messages.create(DOMAIN, {
+                from: FROM_EMAIL,
+                to: [adminEmail],
+                subject: `📬 NEW MESSAGE: ${contact.subject}`,
+                html: `
+                    <div style="font-family: sans-serif; max-width: 600px; padding: 25px; background: #fdfdfd; border: 1px solid #e2e8f0; border-radius: 12px; border-top: 6px solid #4a5568;">
+                        <h2 style="color: #2d3748; margin-top: 0;">New Message from Bookstore</h2>
+                        <hr style="border: none; border-top: 1px solid #edf2f7; margin-bottom: 20px;">
+                        
+                        <div style="margin-bottom: 20px;">
+                            <p style="margin: 0; font-size: 13px; color: #718096; text-transform: uppercase;">From:</p>
+                            <p style="margin: 5px 0 0 0; font-size: 16px; color: #1a202c; font-weight: 600;">${contact.name} (${contact.email})</p>
+                        </div>
+                        
+                        <div style="margin-bottom: 20px;">
+                            <p style="margin: 0; font-size: 13px; color: #718096; text-transform: uppercase;">Subject/Reason:</p>
+                            <p style="margin: 5px 0 0 0; font-size: 16px; color: #1a202c;">${contact.subject}</p>
+                        </div>
+
+                        ${contact.phone ? `
+                        <div style="margin-bottom: 20px;">
+                            <p style="margin: 0; font-size: 13px; color: #718096; text-transform: uppercase;">Phone Number:</p>
+                            <p style="margin: 5px 0 0 0; font-size: 16px; color: #1a202c;">${contact.phone}</p>
+                        </div>` : ''}
+
+                        <div style="background: #f7fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                            <p style="margin: 0; font-size: 13px; color: #718096; text-transform: uppercase; margin-bottom: 8px;">Message:</p>
+                            <div style="font-size: 15px; color: #2d3748; line-height: 1.6; white-space: pre-wrap;">${contact.message}</div>
+                        </div>
+
+                        <div style="margin-top: 30px; border-top: 1px solid #edf2f7; padding-top: 20px; text-align: center; color: #a0aec0; font-size: 12px;">
+                            <p>This message was sent via the Contact Form on abcbooks.store</p>
+                            <p>© 2026 ABC Publishing House</p>
+                        </div>
+                    </div>
+                `
+            });
+            console.log('📧 Contact notification email sent for:', contact.email);
+            return true;
+        } catch (error) {
+            console.error('Error sending contact notification email:', error);
+            return false;
+        }
     }
 };
+
 

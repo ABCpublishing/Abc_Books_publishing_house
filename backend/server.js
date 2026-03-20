@@ -130,21 +130,28 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'ABC Books API v2.0 (MySQL Verified) is running!' });
 });
 
-// Maintenance Route - Verify All Users (admin only)
-app.get('/api/verify-all-users', authenticateAdmin, async (req, res) => {
+
+
+// Contact form endpoint
+app.post('/api/contact', express.json(), async (req, res) => {
     try {
-        await req.sql.execute('UPDATE users SET is_verified = TRUE WHERE is_verified = FALSE');
-        const [result] = await req.sql.execute('SELECT id, email FROM users');
-        res.json({
-            success: true,
-            message: `✅ Successfully verified users.`,
-            users: result
-        });
+        const EmailService = require('./services/email');
+        const contactData = req.body;
+        
+        // Basic validation
+        if (!contactData.name || !contactData.email || !contactData.message) {
+            return res.status(400).json({ error: 'Missing required fields' });
+        }
+
+        await EmailService.sendContactNotification(contactData);
+        
+        res.json({ message: 'Thank you! Your message has been sent successfully.' });
     } catch (error) {
-        console.error('Verification failed:', error);
-        res.status(500).json({ success: false, error: error.message });
+        console.error('Contact form error:', error);
+        res.status(500).json({ error: 'Failed to send message' });
     }
 });
+
 
 // Routes
 app.use('/api/auth', authRoutes);

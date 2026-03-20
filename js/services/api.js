@@ -353,6 +353,16 @@ const CategoriesAPI = {
     }
 };
 
+// ===== Contact API =====
+const ContactAPI = {
+    async sendMessage(contactData) {
+        return await apiRequest('/contact', {
+            method: 'POST',
+            body: JSON.stringify(contactData)
+        });
+    }
+};
+
 // Export all APIs
 window.API = {
     Auth: AuthAPI,
@@ -362,7 +372,9 @@ window.API = {
     Orders: OrdersAPI,
     Users: UsersAPI,
     Categories: CategoriesAPI,
+    Contact: ContactAPI,
     Token: TokenManager
 };
+
 
 console.log('✅ API Service initialized');
