@@ -14,39 +14,36 @@ router.get('/', async (req, res) => {
 
         if (search) {
             const pattern = '%' + search + '%';
-            const [rows] = await db.execute(`
-                SELECT b.*, GROUP_CONCAT(bs.section_name) as sections_str
+            books = await db(`
+                SELECT b.*, STRING_AGG(bs.section_name, ',') as sections_str
                 FROM books b
                 LEFT JOIN book_sections bs ON b.id = bs.book_id
-                WHERE b.title LIKE ? 
-                   OR b.author LIKE ?
-                   OR b.description LIKE ?
+                WHERE b.title ILIKE $1 
+                   OR b.author ILIKE $2
+                   OR b.description ILIKE $3
                 GROUP BY b.id
                 ORDER BY b.created_at DESC
-                LIMIT ?
+                LIMIT $4
             `, [pattern, pattern, pattern, parsedLimit]);
-            books = rows;
         } else if (category) {
-            const [rows] = await db.execute(`
-                SELECT b.*, GROUP_CONCAT(bs.section_name) as sections_str
+            books = await db(`
+                SELECT b.*, STRING_AGG(bs.section_name, ',') as sections_str
                 FROM books b
                 LEFT JOIN book_sections bs ON b.id = bs.book_id
-                WHERE LOWER(b.category) = LOWER(?)
+                WHERE LOWER(b.category) = LOWER($1)
                 GROUP BY b.id
                 ORDER BY b.created_at DESC
-                LIMIT ?
+                LIMIT $2
             `, [category, parsedLimit]);
-            books = rows;
         } else {
-            const [rows] = await db.execute(`
-                SELECT b.*, GROUP_CONCAT(bs.section_name) as sections_str
+            books = await db(`
+                SELECT b.*, STRING_AGG(bs.section_name, ',') as sections_str
                 FROM books b
                 LEFT JOIN book_sections bs ON b.id = bs.book_id
                 GROUP BY b.id
                 ORDER BY b.created_at DESC
-                LIMIT ?
+                LIMIT $1
             `, [parsedLimit]);
-            books = rows;
         }
 
         books.forEach(b => {
@@ -70,8 +67,8 @@ router.get('/section/:section', async (req, res) => {
 
         console.log(`📚 Fetching books for section: ${section}`);
 
-        const [books] = await db.execute(
-            'SELECT b.* FROM books b INNER JOIN book_sections bs ON b.id = bs.book_id WHERE bs.section_name = ? ORDER BY bs.display_order ASC',
+        const books = await db(
+            'SELECT b.* FROM books b INNER JOIN book_sections bs ON b.id = bs.book_id WHERE bs.section_name = $1 ORDER BY bs.display_order ASC',
             [section]
         );
 
@@ -89,11 +86,11 @@ router.get('/:id', async (req, res) => {
         const db = req.sql;
         const { id } = req.params;
 
-        const [books] = await db.execute(`
-            SELECT b.*, GROUP_CONCAT(bs.section_name) as sections_str
+        const books = await db(`
+            SELECT b.*, STRING_AGG(bs.section_name, ',') as sections_str
             FROM books b
             LEFT JOIN book_sections bs ON b.id = bs.book_id
-            WHERE b.id = ?
+            WHERE b.id = $1
             GROUP BY b.id
         `, [id]);
 
@@ -118,21 +115,21 @@ router.post('/', authenticateAdmin, async (req, res) => {
         const db = req.sql;
         const { title, author, publisher, price, original_price, image, description, category, language, subcategory, rating, sections } = req.body;
 
-        const [insertResult] = await db.execute(`
+        const bookResults = await db(`
             INSERT INTO books (title, author, publisher, price, original_price, image, description, category, language, subcategory, rating)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            RETURNING *
         `, [
             title, author, publisher || 'ABC Publishing', price, original_price || null, image || null, 
             description || '', category || language || 'General', language || 'Urdu', subcategory || '', rating || 4.5
         ]);
 
-        const [bookResults] = await db.execute('SELECT * FROM books WHERE id = ?', [insertResult.insertId]);
         const book = bookResults[0];
 
         // Add sections if provided
         if (sections && Array.isArray(sections) && sections.length > 0) {
             for (const section of sections) {
-                await db.execute('INSERT INTO book_sections (book_id, section_name) VALUES (?, ?)', [book.id, section]);
+                await db('INSERT INTO book_sections (book_id, section_name) VALUES ($1, $2)', [book.id, section]);
             }
         }
 
@@ -150,31 +147,31 @@ router.put('/:id', authenticateAdmin, async (req, res) => {
         const { id } = req.params;
         const { title, author, publisher, price, original_price, image, description, category, language, subcategory, rating, sections } = req.body;
 
-        const [updateResult] = await db.execute(`
+        const updateResult = await db(`
             UPDATE books SET
-                title = ?, author = ?, publisher = ?, price = ?, original_price = ?,
-                image = ?, description = ?, category = ?, language = ?, subcategory = ?, rating = ?, updated_at = NOW()
-            WHERE id = ?
+                title = $1, author = $2, publisher = $3, price = $4, original_price = $5,
+                image = $6, description = $7, category = $8, language = $9, subcategory = $10, rating = $11, updated_at = NOW()
+            WHERE id = $12
+            RETURNING *
         `, [
             title, author, publisher || 'ABC Publishing', price, original_price || null,
             image || null, description || '', category || language || 'General', language || 'Urdu', subcategory || '', rating || 4.5, id
         ]);
 
-        if (updateResult.affectedRows === 0) {
+        if (updateResult.length === 0) {
             return res.status(404).json({ error: 'Book not found' });
         }
 
-        const [bookResults] = await db.execute('SELECT * FROM books WHERE id = ?', [id]);
-        const book = bookResults[0];
+        const book = updateResult[0];
 
         // Update sections if provided
         if (sections && Array.isArray(sections)) {
             // Remove old sections
-            await db.execute('DELETE FROM book_sections WHERE book_id = ?', [id]);
+            await db('DELETE FROM book_sections WHERE book_id = $1', [id]);
 
             // Add new sections
             for (const section of sections) {
-                await db.execute('INSERT INTO book_sections (book_id, section_name) VALUES (?, ?)', [book.id, section]);
+                await db('INSERT INTO book_sections (book_id, section_name) VALUES ($1, $2)', [book.id, section]);
             }
         }
 
@@ -191,11 +188,11 @@ router.delete('/:id', authenticateAdmin, async (req, res) => {
         const db = req.sql;
         const { id } = req.params;
 
-        await db.execute('DELETE FROM book_sections WHERE book_id = ?', [id]);
+        await db('DELETE FROM book_sections WHERE book_id = $1', [id]);
         
-        const [result] = await db.execute('DELETE FROM books WHERE id = ?', [id]);
+        const result = await db('DELETE FROM books WHERE id = $1 RETURNING id', [id]);
 
-        if (result.affectedRows === 0) {
+        if (result.length === 0) {
             return res.status(404).json({ error: 'Book not found' });
         }
 

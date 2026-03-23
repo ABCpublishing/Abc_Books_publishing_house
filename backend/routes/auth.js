@@ -15,8 +15,8 @@ router.post('/register', async (req, res) => {
         const db = req.sql;
 
         // Check if email already exists
-        const [existingUser] = await db.execute(
-            'SELECT id FROM users WHERE email = ?',
+        const existingUser = await db(
+            'SELECT id FROM users WHERE email = $1',
             [email]
         );
 
@@ -32,16 +32,11 @@ router.post('/register', async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Insert new user - is_verified starts as FALSE for security
-        const [insertResult] = await db.execute(
-            'INSERT INTO users (name, email, phone, password_hash, verification_token, is_verified) VALUES (?, ?, ?, ?, ?, FALSE)',
+        const result = await db(
+            'INSERT INTO users (name, email, phone, password_hash, verification_token, is_verified) VALUES ($1, $2, $3, $4, $5, FALSE) RETURNING id, name, email, phone, created_at',
             [name, email, phone, hashedPassword, verificationToken]
         );
         
-        const [result] = await db.execute(
-            'SELECT id, name, email, phone, created_at FROM users WHERE id = ?',
-            [insertResult.insertId]
-        );
-
         const user = result[0];
 
         // Send actual verification email
@@ -87,12 +82,12 @@ router.get('/verify', async (req, res) => {
         }
 
         // Find user by token
-        const [result] = await db.execute(
-            'UPDATE users SET is_verified = TRUE, verification_token = NULL WHERE verification_token = ?',
+        const result = await db(
+            'UPDATE users SET is_verified = TRUE, verification_token = NULL WHERE verification_token = $1 RETURNING id',
             [token]
         );
 
-        if (result.affectedRows === 0) {
+        if (result.length === 0) {
             return res.status(400).json({ error: 'Invalid or expired verification token' });
         }
 
@@ -112,8 +107,8 @@ router.post('/login', async (req, res) => {
         const identifier = phone || email;
 
         // Find user by phone or email
-        const [users] = await db.execute(
-            'SELECT id, name, email, phone, password_hash, created_at, is_verified FROM users WHERE phone = ? OR email = ?',
+        const users = await db(
+            'SELECT id, name, email, phone, password_hash, created_at, is_verified FROM users WHERE phone = $1 OR email = $2',
             [identifier, identifier]
         );
 
@@ -126,10 +121,6 @@ router.post('/login', async (req, res) => {
         // Check verification (Warning only for now to not block users)
         if (user.is_verified === false) {
             console.log(`⚠️ Unverified user logging in: ${identifier}`);
-            // Optionally auto-verify on first successful login if we want to be very lenient
-            /*
-            await sql`UPDATE users SET is_verified = TRUE WHERE id = ${user.id}`;
-            */
         }
 
         // Verify password
@@ -175,8 +166,8 @@ router.get('/me', async (req, res) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
         const db = req.sql;
-        const [users] = await db.execute(
-            'SELECT id, name, email, phone, created_at FROM users WHERE id = ?',
+        const users = await db(
+            'SELECT id, name, email, phone, created_at FROM users WHERE id = $1',
             [decoded.userId]
         );
 
@@ -206,8 +197,8 @@ router.post('/forgot-password', async (req, res) => {
         const { email } = req.body;
         const db = req.sql;
 
-        const [users] = await db.execute(
-            'SELECT id, name FROM users WHERE email = ?',
+        const users = await db(
+            'SELECT id, name FROM users WHERE email = $1',
             [email]
         );
 
@@ -229,8 +220,8 @@ router.post('/forgot-password', async (req, res) => {
         const tokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
         const expiry = new Date(Date.now() + 3600000); // 1 hour (Strict)
 
-        await db.execute(
-            'UPDATE users SET reset_password_token = ?, reset_password_expires = ? WHERE id = ?',
+        await db(
+            'UPDATE users SET reset_password_token = $1, reset_password_expires = $2 WHERE id = $3',
             [tokenHash, expiry, user.id]
         );
 
@@ -267,8 +258,8 @@ router.post('/reset-password', async (req, res) => {
         const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
 
         // Find user by token hash and check expiry
-        const [users] = await db.execute(
-            'SELECT id FROM users WHERE reset_password_token = ? AND reset_password_expires > NOW()',
+        const users = await db(
+            'SELECT id FROM users WHERE reset_password_token = $1 AND reset_password_expires > NOW()',
             [tokenHash]
         );
 
@@ -282,8 +273,8 @@ router.post('/reset-password', async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Update user
-        await db.execute(
-            'UPDATE users SET password_hash = ?, reset_password_token = NULL, reset_password_expires = NULL, is_verified = TRUE WHERE id = ?',
+        await db(
+            'UPDATE users SET password_hash = $1, reset_password_token = NULL, reset_password_expires = NULL, is_verified = TRUE WHERE id = $2',
             [hashedPassword, user.id]
         );
 
@@ -313,7 +304,7 @@ router.post('/google', async (req, res) => {
         const { email, name, picture, sub: googleId } = payload;
 
         // Check if user exists by email
-        let [users] = await db.execute('SELECT id, name, email, phone, created_at FROM users WHERE email = ?', [email]);
+        let users = await db('SELECT id, name, email, phone, created_at FROM users WHERE email = $1', [email]);
         let user;
 
         if (users.length === 0) {
@@ -322,13 +313,9 @@ router.post('/google', async (req, res) => {
             const randomPassword = crypto.randomBytes(16).toString('hex');
             const hashedPassword = await bcrypt.hash(randomPassword, 10);
 
-            const [insertResult] = await db.execute(
-                'INSERT INTO users (name, email, password_hash, is_verified) VALUES (?, ?, ?, TRUE)',
+            const result = await db(
+                'INSERT INTO users (name, email, password_hash, is_verified) VALUES ($1, $2, $3, TRUE) RETURNING id, name, email, phone, created_at',
                 [name, email, hashedPassword]
-            );
-            const [result] = await db.execute(
-                'SELECT id, name, email, phone, created_at FROM users WHERE id = ?',
-                [insertResult.insertId]
             );
             user = result[0];
             console.log(`[Google Auth] New user registered: ${email}`);

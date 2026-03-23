@@ -6,7 +6,7 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 const express = require('express');
 const cors = require('cors');
-const mysql = require('mysql2/promise');
+const { neon } = require('@neondatabase/serverless');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -112,22 +112,18 @@ app.use(express.json({ limit: '10mb' }));
 app.use(sanitizeInput);
 
 // Database connection
-const pool = mysql.createPool({
-    uri: process.env.DATABASE_URL,
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
-});
+// Standard Neon serverless connection
+const sql = neon(process.env.DATABASE_URL);
 
-// Make pool available to routes
+// Make sql available to routes
 app.use((req, res, next) => {
-    req.sql = pool;
+    req.sql = sql;
     next();
 });
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', message: 'ABC Books API v2.0 (MySQL Verified) is running!' });
+    res.json({ status: 'ok', message: 'ABC Books API v2.0 (Neon PostgreSQL) is running!' });
 });
 
 
@@ -179,7 +175,7 @@ if (require.main === module) {
     app.listen(PORT, () => {
         console.log(`🚀 ABC Books API running on http://localhost:${PORT}`);
         console.log(`📖 Open the site in your browser: http://localhost:${PORT}`);
-        console.log(`📚 Database: MySQL`);
+        console.log(`📚 Database: Neon PostgreSQL`);
     });
 }
 
