@@ -6,7 +6,6 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 const express = require('express');
 const cors = require('cors');
-const { neon } = require('@neondatabase/serverless');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -112,12 +111,37 @@ app.use(express.json({ limit: '10mb' }));
 app.use(sanitizeInput);
 
 // Database connection
-// Standard Neon serverless connection
-const sql = neon(process.env.DATABASE_URL);
+// Using the standard pg driver for best compatibility with Neon pooler and standard TCP
+const { Pool } = require('pg');
+const pool = new Pool({ 
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+        rejectUnauthorized: false // Required for Neon SSL
+    }
+});
+
+// Catch pool errors so the Vercel function doesn't crash completely
+pool.on('error', (err) => {
+    console.error('Unexpected error on idle Postgres client', err);
+});
+
+// Helper function to maintain compatibility with existing route code
+// This allows routes to use: const rows = await db(query, params)
+const sqlHelper = async (query, params) => {
+    try {
+        const result = await pool.query(query, params);
+        return result.rows;
+    } catch (error) {
+        console.error('Database Query Error:', error.message);
+        console.error('Query:', query);
+        console.error('Params:', params);
+        throw error;
+    }
+};
 
 // Make sql available to routes
 app.use((req, res, next) => {
-    req.sql = sql;
+    req.sql = sqlHelper;
     next();
 });
 
