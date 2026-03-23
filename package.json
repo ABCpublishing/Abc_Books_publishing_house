@@ -1,7 +1,7 @@
 {
   "name": "abc-books-root",
   "version": "1.0.0",
-  "description": "Root package for Vercel deployment with Neon PostgreSQL support",
+  "description": "Root package for Vercel deployment with standard PostgreSQL (pg) and email support",
   "scripts": {
     "start": "node backend/server.js",
     "build": "echo No build step"
@@ -10,13 +10,16 @@
     "node": "20.x"
   },
   "dependencies": {
-    "@neondatabase/serverless": "^0.10.4",
+    "@neondatabase/serverless": "^0.9.5",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.18.2",
+    "form-data": "^4.0.5",
     "google-auth-library": "^10.6.1",
     "jsonwebtoken": "^9.0.2",
+    "mailgun.js": "^12.7.1",
+    "pg": "^8.11.3",
     "razorpay": "^2.9.2"
   },
   "devDependencies": {

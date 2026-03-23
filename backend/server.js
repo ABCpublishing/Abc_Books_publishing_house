@@ -111,18 +111,22 @@ app.use(express.json({ limit: '10mb' }));
 app.use(sanitizeInput);
 
 // Database connection
-// Using the standard pg driver for best compatibility with Neon pooler and standard TCP
-const { Pool } = require('pg');
-const pool = new Pool({ 
-    connectionString: process.env.DATABASE_URL,
-    ssl: {
-        rejectUnauthorized: false // Required for Neon SSL
-    }
-});
+// Database connection
+// Using the official Neon WebSockets/HTTP serverless driver to prevent Vercel crashes
+const { Pool } = require('@neondatabase/serverless');
 
-// Catch pool errors so the Vercel function doesn't crash completely
+// Remove the '-pooler' part from the hostname if the user accidentally included it
+// The serverless driver requires the direct HTTP endpoint, not the TCP pooler endpoint.
+let connectionString = process.env.DATABASE_URL || '';
+if (connectionString.includes('-pooler.')) {
+    connectionString = connectionString.replace('-pooler.', '.');
+}
+
+const pool = new Pool({ connectionString });
+
+// Wait for pool errors
 pool.on('error', (err) => {
-    console.error('Unexpected error on idle Postgres client', err);
+    console.error('Unexpected error on idle Neon client', err);
 });
 
 // Helper function to maintain compatibility with existing route code
