@@ -111,30 +111,23 @@ app.use(express.json({ limit: '10mb' }));
 app.use(sanitizeInput);
 
 // Database connection
-// Database connection
-// Using the official Neon WebSockets/HTTP serverless driver to prevent Vercel crashes
-const { Pool } = require('@neondatabase/serverless');
+// Using neon() HTTP function - most reliable for Vercel serverless (no WebSockets needed)
+const { neon } = require('@neondatabase/serverless');
 
-// Remove the '-pooler' part from the hostname if the user accidentally included it
-// The serverless driver requires the direct HTTP endpoint, not the TCP pooler endpoint.
-let connectionString = process.env.DATABASE_URL || '';
-if (connectionString.includes('-pooler.')) {
-    connectionString = connectionString.replace('-pooler.', '.');
+// Fix pooler URL if present (neon HTTP driver needs direct endpoint)
+let dbUrl = process.env.DATABASE_URL || '';
+if (dbUrl.includes('-pooler.')) {
+    dbUrl = dbUrl.replace('-pooler.', '.');
 }
 
-const pool = new Pool({ connectionString });
-
-// Wait for pool errors
-pool.on('error', (err) => {
-    console.error('Unexpected error on idle Neon client', err);
-});
+const sql = neon(dbUrl);
 
 // Helper function to maintain compatibility with existing route code
-// This allows routes to use: const rows = await db(query, params)
+// neon() sql function called with (query, params) returns rows directly
 const sqlHelper = async (query, params) => {
     try {
-        const result = await pool.query(query, params);
-        return result.rows;
+        const rows = await sql(query, params);
+        return rows;
     } catch (error) {
         console.error('Database Query Error:', error.message);
         console.error('Query:', query);

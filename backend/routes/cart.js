@@ -1,7 +1,5 @@
 // ===== Cart Routes =====
 const express = require('express');
-// ===== Cart Routes =====
-const express = require('express');
 const router = express.Router();
 const { authenticate } = require('../middleware/security');
 
