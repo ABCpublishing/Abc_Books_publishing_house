@@ -343,7 +343,7 @@ function loadOrderSummary() {
     }
 
     // Shipping
-    const shipping = subtotal >= 499 ? 'FREE' : '₹49';
+    const shipping = (subtotal >= 499 || subtotal < 0.01) ? 'FREE' : '₹49';
     document.getElementById('summaryShipping').textContent = shipping;
 }
 

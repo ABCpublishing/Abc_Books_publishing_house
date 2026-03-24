@@ -78,6 +78,6 @@ document.addEventListener('DOMContentLoaded', () => {
             toggleMobileMenu();
         });
     } else {
-        console.error('❌ Mobile menu button (.mobile-menu-btn) not found!');
+        console.warn('Mobile menu button (.mobile-menu-btn) not found on this page.');
     }
 });

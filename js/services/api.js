@@ -206,7 +206,7 @@ const BooksAPI = {
 // ===== Cart API =====
 const CartAPI = {
     async get(userId) {
-        return await apiRequest(`/cart/${userId}`);
+        return await apiRequest('/cart');
     },
 
     async add(cartItem) {
@@ -238,7 +238,7 @@ const CartAPI = {
 // ===== Wishlist API =====
 const WishlistAPI = {
     async get(userId) {
-        return await apiRequest(`/wishlist/${userId}`);
+        return await apiRequest('/wishlist');
     },
 
     async add(wishlistItem) {
@@ -262,7 +262,7 @@ const OrdersAPI = {
     },
 
     async getByUser(userId) {
-        return await apiRequest(`/orders/user/${userId}`);
+        return await apiRequest('/orders/my-orders');
     },
 
     async create(orderData) {

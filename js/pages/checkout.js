@@ -197,11 +197,15 @@ function calculateTotals() {
         discountRow.style.display = 'none';
     }
 
-    // Update shipping (free above ₹499)
+    // Update shipping (free above ₹499 or if subtotal is near 0 for free books/testing)
     const shippingEl = document.getElementById('shipping');
-    if (subtotal >= 499) {
+    console.log(`🚛 Calculating shipping for subtotal: ₹${subtotal}, grandTotal: ₹${grandTotal}`);
+    
+    if (subtotal >= 499 || subtotal < 0.01) {
         shippingEl.textContent = 'FREE';
         shippingEl.className = 'free-shipping';
+        // grandTotal is already subtotal - discount, no shipping to add
+        document.getElementById('grandTotal').textContent = `₹${Math.max(0, grandTotal)}`;
     } else {
         shippingEl.textContent = '₹49';
         shippingEl.className = '';
@@ -355,6 +359,13 @@ async function placeOrder() {
 
     // If Razorpay is selected, initiate Razorpay payment
     if (paymentMethod === 'razorpay') {
+        // Razorpay does not accept 0 amount, process directly if free
+        if (grandTotal === 0) {
+            console.log('💳 Order is free, bypassing Razorpay...');
+            showNotification('Free order processed without payment gateway', 'success');
+            await processOrder('free');
+            return;
+        }
         await initiateRazorpayPayment();
         return;
     }

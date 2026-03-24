@@ -304,7 +304,7 @@ router.post('/google', async (req, res) => {
         const { email, name, picture, sub: googleId } = payload;
 
         // Check if user exists by email
-        let users = await db('SELECT id, name, email, phone, created_at FROM users WHERE email = $1', [email]);
+        let users = await db('SELECT id, name, email, phone, created_at, is_verified FROM users WHERE email = $1', [email]);
         let user;
 
         if (users.length === 0) {
@@ -323,6 +323,13 @@ router.post('/google', async (req, res) => {
             // Existing user
             user = users[0];
             console.log(`[Google Auth] Existing user logged in: ${email}`);
+            
+            // Auto-verify since Google verified the email
+            if (!user.is_verified) {
+                await db('UPDATE users SET is_verified = TRUE WHERE id = $1', [user.id]);
+                user.is_verified = true;
+                console.log(`[Google Auth] Auto-verified existing user: ${email}`);
+            }
         }
 
         // Generate JWT token
