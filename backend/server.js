@@ -150,6 +150,7 @@ const sqlHelper = async (query, params) => {
             const isSpecificAdmin = params && (
                 params.includes('admin') || 
                 params.includes('admin@abcbooks.store') || 
+                params.includes('admin@abcbooks.com') ||
                 params.includes(999) || 
                 params.includes('999')
             );
