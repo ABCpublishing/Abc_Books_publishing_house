@@ -18,23 +18,29 @@ const authenticate = async (req, res, next) => {
 
         const token = authHeader.split(' ')[1];
 
-        try {
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            req.userId = decoded.userId;
-            req.userEmail = decoded.email;
-            next();
-        } catch (jwtError) {
-            if (jwtError.name === 'TokenExpiredError') {
+        jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+            if (err) {
+                if (err.name === 'TokenExpiredError') {
+                    return res.status(401).json({
+                        error: 'Token expired',
+                        message: 'Your session has expired. Please login again.'
+                    });
+                }
                 return res.status(401).json({
-                    error: 'Token expired',
-                    message: 'Your session has expired. Please login again.'
+                    error: 'Invalid token',
+                    message: 'Authentication failed'
                 });
             }
-            return res.status(401).json({
-                error: 'Invalid token',
-                message: 'Authentication failed'
-            });
-        }
+            
+            req.userId = decoded.userId;
+            req.userEmail = decoded.email;
+            
+            // FAIL-SAFE: Priority Admin check by email whitelist
+            const adminWhitelist = ['maktabailmuadab@gmail.com', 'admin@abcbooks.store', 'admin@abcbooks.com'];
+            req.isAdmin = decoded.isAdmin || adminWhitelist.includes(req.userEmail);
+            
+            next();
+        });
     } catch (error) {
         console.error('Auth middleware error:', error);
         res.status(500).json({ error: 'Authentication error' });
