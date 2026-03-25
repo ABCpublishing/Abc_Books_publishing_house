@@ -18,27 +18,28 @@ async function fetchAllBooks() {
     if (_fetchPromise) return _fetchPromise;
 
     _fetchPromise = (async () => {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 12000); // 12s timeout
+
         try {
             console.log('📚 Fetching global book catalog...');
             // Use the centralized API service if available, otherwise fetch directly
             let books = [];
-            if (window.API && window.API.Books) {
-                const response = await window.API.Books.getAll({ limit: 1000 });
-                books = response.books || [];
-            } else {
-                const apiBase = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
-                    ? "http://localhost:3001/api"
-                    : "/api";
-                const response = await fetch(`${apiBase}/books?limit=1000`);
-                const data = await response.json();
-                books = data.books || [];
-            }
+            const apiBase = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
+                ? "http://localhost:3001/api"
+                : "/api";
+
+            const response = await fetch(`${apiBase}/books?limit=1000`, { signal: controller.signal });
+            clearTimeout(timeoutId);
+            const data = await response.json();
+            books = data.books || [];
             
             _cachedBooks = books;
             _cacheTimestamp = Date.now();
             console.log(`✅ Loaded catalog with ${_cachedBooks.length} books`);
             return _cachedBooks;
         } catch (e) {
+            clearTimeout(timeoutId);
             console.error('❌ Failed to fetch all books:', e);
             return _cachedBooks || [];
         } finally {
@@ -107,7 +108,7 @@ async function getBooksForSection(section) {
 /**
  * Creates a book card HTML component
  */
-function createBookCard(book) {
+function createBookCard(book, index = null) {
     if (!book) return '';
 
     // Handle initial for placeholder
@@ -135,11 +136,14 @@ function createBookCard(book) {
 
     // Escape title for HTML attributes
     const escapedTitle = (book.title || '').replace(/"/g, '&quot;');
+    
+    // Staggered animation class
+    const animationClass = index !== null ? `animate-fade-in stagger-${(index % 8) + 1}` : '';
 
     return `
-        <div class="book-card" data-book-id="${book.id}" onclick="viewBookDetail('${book.id}')">
-            ${discount > 0 ? `<div class="discount-badge">${discount}% OFF</div>` : ''}
+        <div class="book-card ${animationClass}" data-book-id="${book.id}" onclick="viewBookDetail('${book.id}')">
             <div class="book-cover">
+                ${discount > 0 ? `<div class="discount-badge">${discount}% OFF</div>` : ''}
                 <img src="${bookImage}" alt="${escapedTitle}" 
                      onerror="this.onerror=null; this.src='${placeholderSVG}';">
             </div>

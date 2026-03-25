@@ -385,14 +385,13 @@
                 return;
             }
 
-            // Generate HTML
             grid.innerHTML = books.map((book, index) => {
-                // Determine rank based on current view/index
                 const rank = index + 1;
                 const isTop3 = rank <= 3;
+                const animationDelay = (index % 8) * 0.05;
 
                 return `
-                <div class="book-card" onclick="window.location.href='/pages/book-detail.html?id=${book.id}'" style="cursor: pointer;">
+                <div class="book-card animate-fade-in stagger-${(index % 8) + 1}" onclick="window.location.href='/pages/book-detail.html?id=${book.id}'" style="cursor: pointer;">
                     <div class="rank-badge ${isTop3 ? 'top-3' : ''}">#${rank}</div>
                     <div class="book-cover">
                         <img src="${book.image}" alt="${book.title}" loading="lazy" onerror="this.src='https://via.placeholder.com/220x320?text=${encodeURIComponent(book.title)}'">

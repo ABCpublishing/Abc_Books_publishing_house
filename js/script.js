@@ -13,7 +13,7 @@ async function renderIslamicBooks() {
     if (islamicContainer && islamicBooks.length > 0) {
         // Limit to 8 books for the grid display
         const booksToShow = islamicBooks.slice(0, 8);
-        islamicContainer.innerHTML = booksToShow.map(book => createBookCard(book)).join('');
+        islamicContainer.innerHTML = booksToShow.map((book, index) => createBookCard(book, index)).join('');
         console.log('✅ Islamic books grid rendered:', booksToShow.length);
     } else {
         console.warn('⚠️ No Islamic books container found or no books');
@@ -26,7 +26,7 @@ async function renderFeaturedBooks() {
     const featuredContainer = document.getElementById('featuredBooks');
 
     if (featuredContainer && featuredBooks.length > 0) {
-        featuredContainer.innerHTML = featuredBooks.map(book => createBookCard(book)).join('');
+        featuredContainer.innerHTML = featuredBooks.map((book, index) => createBookCard(book, index)).join('');
     }
 }
 
@@ -844,4 +844,101 @@ function showNotification(message, type = 'success') {
     }, 3000);
 }
 
-// Mobile menu functions are in mobile-menu.js
+// Show skeleton loaders for book grids
+function showSkeletons(containerId, count = 8) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    container.innerHTML = '';
+    for (let i = 0; i < count; i++) {
+        container.innerHTML += `
+            <div class="skeleton-book animate-fade-in stagger-${(i % 8) + 1}">
+                <div class="skeleton skeleton-img"></div>
+                <div class="skeleton skeleton-text"></div>
+                <div class="skeleton skeleton-text-sm"></div>
+                <div class="skeleton skeleton-text-sm" style="width: 40%"></div>
+            </div>
+        `;
+    }
+}
+
+// Initialize Live Search Autocomplete
+function initializeSearchAutocomplete() {
+    const searchInput = document.querySelector('.search-bar input');
+    const dropdown = document.getElementById('searchResultsDropdown');
+    
+    if (!searchInput || !dropdown) return;
+
+    let debounceTimer;
+
+    searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.trim();
+        
+        clearTimeout(debounceTimer);
+        
+        if (query.length < 2) {
+            dropdown.classList.remove('active');
+            return;
+        }
+
+        debounceTimer = setTimeout(async () => {
+            try {
+                // Fetch results from server (Search API)
+                const results = await API.Books.getAll({ search: query, limit: 6 });
+                
+                if (results && results.books && results.books.length > 0) {
+                    renderSearchDropdown(results.books);
+                    dropdown.classList.add('active');
+                } else {
+                    dropdown.innerHTML = '<div class="search-no-results">No books found</div>';
+                    dropdown.classList.add('active');
+                }
+            } catch (err) {
+                console.error('Search error:', err);
+            }
+        }, 300);
+    });
+
+    // Close dropdown on click outside
+    document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.classList.remove('active');
+        }
+    });
+
+    // Add CSS transition for focus scaling
+    searchInput.style.transition = 'transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+    searchInput.addEventListener('focus', () => {
+        searchInput.parentElement.style.transform = 'scale(1.02)';
+        searchInput.parentElement.style.boxShadow = '0 10px 30px rgba(0,0,0,0.1)';
+    });
+    searchInput.addEventListener('blur', () => {
+        searchInput.parentElement.style.transform = 'scale(1)';
+        searchInput.parentElement.style.boxShadow = 'none';
+    });
+}
+
+function renderSearchDropdown(books) {
+    const dropdown = document.getElementById('searchResultsDropdown');
+    
+    let html = books.map(book => `
+        <div class="search-result-item" onclick="window.location.href='/pages/book-detail.html?id=${book.id}'">
+            <img src="${book.image}" alt="${book.title}" onerror="this.src='/images/placeholder-book.png'">
+            <div class="search-result-info">
+                <div class="search-result-title">${book.title}</div>
+                <div class="search-result-author">by ${book.author}</div>
+                <div class="search-result-price">₹${book.price}</div>
+            </div>
+        </div>
+    `).join('');
+
+    html += `<a href="/pages/search.html?q=${document.querySelector('.search-bar input').value}" class="view-all-results">View All Results</a>`;
+    
+    dropdown.innerHTML = html;
+}
+
+// Global initialization
+document.addEventListener('DOMContentLoaded', () => {
+    initializeSearchAutocomplete();
+});
+

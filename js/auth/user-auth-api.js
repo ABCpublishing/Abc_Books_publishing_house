@@ -1041,13 +1041,26 @@ async function addToCart(bookId, bookData) {
 }
 
 async function removeFromCart(cartId) {
+    console.log('🗑️ Global remove from cart:', cartId);
     try {
+        // Also update localStorage for immediate sync with other pages (like checkout)
+        let localCart = JSON.parse(localStorage.getItem('abc_books_cart') || '[]');
+        localCart = localCart.filter(item => String(item.id) !== String(cartId));
+        localStorage.setItem('abc_books_cart', JSON.stringify(localCart));
+
+        // Sync with API
         await API.Cart.remove(cartId);
         await updateCartCount();
         await loadCartItems();
+        
+        if (typeof showNotification === 'function') {
+            showNotification('Item removed from cart', 'info');
+        }
     } catch (error) {
         console.error('Error removing from cart:', error);
-        alert('Error removing from cart');
+        // Fallback: If API fails, just refresh UI from localStorage
+        await updateCartCount();
+        await loadCartItems();
     }
 }
 

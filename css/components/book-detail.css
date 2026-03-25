@@ -78,13 +78,16 @@
     position: absolute;
     top: 20px;
     left: 20px;
-    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
     color: white;
-    padding: 8px 15px;
-    border-radius: 20px;
+    padding: 6px 16px;
+    border-radius: 50px;
     font-weight: 700;
     font-size: 14px;
-    box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+    box-shadow: 0 4px 15px rgba(39, 174, 96, 0.4);
+    z-index: 10;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(4px);
 }
 
 .book-main-image {

@@ -232,9 +232,41 @@ body {
     color: #27ae60;
 }
 
+.checkout-qty-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #f8f9fa;
+    padding: 2px 6px;
+    border-radius: 40px;
+}
+
+.checkout-qty-controls .qty-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 1px solid #ddd;
+    background: white;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.checkout-qty-controls .qty-btn:hover {
+    background: #e8f0fe;
+    border-color: #1a73e8;
+    color: #1a73e8;
+}
+
 .cart-item-details .qty {
-    font-size: 13px;
-    color: #666;
+    font-size: 14px;
+    font-weight: 600;
+    color: #2c3e50;
+    min-width: 20px;
+    text-align: center;
 }
 
 .cart-item .remove-btn {

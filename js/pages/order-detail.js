@@ -342,8 +342,8 @@ function loadOrderSummary() {
         document.getElementById('summaryDiscount').textContent = `-₹${discount}`;
     }
 
-    // Shipping
-    const shipping = (subtotal >= 499 || subtotal < 0.01) ? 'FREE' : '₹49';
+    // Shipping (Always FREE)
+    const shipping = subtotal > 0 ? 'FREE' : '₹0';
     document.getElementById('summaryShipping').textContent = shipping;
 }
 

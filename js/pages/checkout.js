@@ -100,7 +100,8 @@ async function loadCartItems() {
             if (apiCart && Array.isArray(apiCart) && apiCart.length > 0) {
                 // Transform API cart items to match expected format
                 cartItems = apiCart.map(item => ({
-                    id: item.book_id || item.id,
+                    id: item.id, // KEEP the primary key for the cart entry so deletion works on the server
+                    book_id: item.book_id || item.id, // Store book_id separately if needed
                     title: item.title || 'Book',
                     author: item.author || 'Unknown Author',
                     price: parseFloat(item.price) || 0,
@@ -146,10 +147,14 @@ async function loadCartItems() {
                 <p class="author">${item.author || 'Unknown Author'}</p>
                 <div class="price-qty">
                     <span class="price">₹${item.price}</span>
-                    <span class="qty">Qty: ${item.quantity || 1}</span>
+                    <div class="checkout-qty-controls">
+                        <button class="qty-btn" onclick="updateItemQuantity('${item.id}', ${(item.quantity || 1) - 1})">-</button>
+                        <span class="qty">${item.quantity || 1}</span>
+                        <button class="qty-btn" onclick="updateItemQuantity('${item.id}', ${(item.quantity || 1) + 1})">+</button>
+                    </div>
                 </div>
             </div>
-            <button class="remove-btn" onclick="removeItem('${item.id}')">
+            <button class="remove-btn" onclick="removeItem('${item.id}')" title="Remove Product">
                 <i class="fas fa-trash"></i>
             </button>
         </div>
@@ -197,30 +202,88 @@ function calculateTotals() {
         discountRow.style.display = 'none';
     }
 
-    // Update shipping (free above ₹499 or if subtotal is near 0 for free books/testing)
+    // Update shipping (Always FREE as requested)
     const shippingEl = document.getElementById('shipping');
-    console.log(`🚛 Calculating shipping for subtotal: ₹${subtotal}, grandTotal: ₹${grandTotal}`);
+    console.log(`🚛 Calculating shipping... forced FREE for all products`);
     
-    if (subtotal >= 499 || subtotal < 0.01) {
-        shippingEl.textContent = 'FREE';
-        shippingEl.className = 'free-shipping';
-        // grandTotal is already subtotal - discount, no shipping to add
-        document.getElementById('grandTotal').textContent = `₹${Math.max(0, grandTotal)}`;
-    } else {
-        shippingEl.textContent = '₹49';
-        shippingEl.className = '';
-        grandTotal += 49;
-        document.getElementById('grandTotal').textContent = `₹${grandTotal}`;
-    }
+    // Always free shipping
+    shippingEl.textContent = subtotal > 0 ? 'FREE' : '₹0';
+    shippingEl.className = subtotal > 0 ? 'free-shipping' : '';
+    
+    // Total is just subtotal - discount
+    document.getElementById('grandTotal').textContent = `₹${Math.max(0, grandTotal)}`;
 }
 
 // Remove item from cart
-function removeItem(bookId) {
-    cartItems = cartItems.filter(item => item.id !== bookId);
+async function removeItem(bookId) {
+    console.log('🗑️ Removing item from cart:', bookId);
+
+    // 1. Update local array immediately for responsive UI
+    // Use String comparison to handle both numeric and string IDs
+    cartItems = cartItems.filter(item => String(item.id) !== String(bookId));
+    
+    // 2. Update localStorage (backup)
     localStorage.setItem('abc_books_cart', JSON.stringify(cartItems));
-    loadCartItems();
+
+    // 3. Try to update API if logged in
+    const currentUser = JSON.parse(localStorage.getItem('abc_books_current_user') || 'null');
+    if (typeof API !== 'undefined' && API.Cart && currentUser && currentUser.id) {
+        try {
+            await API.Cart.remove(bookId);
+            console.log('✅ Removed item from API cart');
+        } catch (error) {
+            console.error('❌ Failed to remove item from API cart:', error.message);
+        }
+    }
+
+    // 4. Refresh UI components
+    await loadCartItems();
     loadSummaryItems();
     calculateTotals();
+
+    // 5. Sync global cart count in sidebar
+    if (typeof updateCartCount === 'function') {
+        updateCartCount();
+    }
+
+    if (typeof showNotification === 'function') {
+        showNotification('Item removed from cart', 'info');
+    }
+}
+
+// Update quantity from checkout page
+async function updateItemQuantity(cartId, newQuantity) {
+    if (newQuantity < 1) {
+        return removeItem(cartId);
+    }
+
+    console.log('🔄 Updating checkout item quantity:', { cartId, newQuantity });
+
+    // Update locally for speed
+    const itemIndex = cartItems.findIndex(item => String(item.id) === String(cartId));
+    if (itemIndex >= 0) {
+        cartItems[itemIndex].quantity = newQuantity;
+        localStorage.setItem('abc_books_cart', JSON.stringify(cartItems));
+    }
+
+    // Update API if logged in
+    const user = JSON.parse(localStorage.getItem('abc_books_current_user') || 'null');
+    if (user && user.id && typeof API !== 'undefined' && API.Cart) {
+        try {
+            await API.Cart.update(cartId, newQuantity);
+        } catch (error) {
+            console.error('❌ Failed to update API cart quantity:', error);
+        }
+    }
+
+    // Refresh everything
+    await loadCartItems();
+    loadSummaryItems();
+    calculateTotals();
+
+    if (typeof updateCartCount === 'function') {
+        updateCartCount();
+    }
 }
 
 // Apply promo code

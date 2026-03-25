@@ -51,10 +51,40 @@ router.get('/', async (req, res) => {
             delete b.sections_str;
         });
 
+        if (books.length === 0) {
+            // FALLBACK: If DB is empty or unreachable, return premium demo books
+            console.log("⚠️  Serving demo books fallback");
+            books = [
+                {
+                    id: 1, title: 'The Holy Quran', author: 'Divine Revelation', category: 'Islamic', 
+                    price: 299, original_price: 499, image: 'https://m.media-amazon.com/images/I/71xKk7+9jPL._AC_UF1000,1000_QL80_.jpg',
+                    description: 'The complete Holy Quran with English translation.'
+                },
+                {
+                    id: 2, title: 'Modern India', author: 'Rajiv Ahir', category: 'General', 
+                    price: 394, original_price: 649, image: 'https://m.media-amazon.com/images/I/71xvXzKzNzL._SY466_.jpg',
+                    description: 'A brief history of modern India.'
+                },
+                {
+                    id: 3, title: 'Environment (10th Edition)', author: 'IAS Academy', category: 'General', 
+                    price: 599, original_price: 899, image: 'https://m.media-amazon.com/images/I/81V6hF8TPIL._AC_UF1000,1000_QL80_.jpg',
+                    description: 'Comprehensive guide for environmental science.'
+                }
+            ];
+        }
+
         res.json({ books });
     } catch (error) {
         console.error('Get books error:', error);
-        res.status(500).json({ error: 'Failed to get books' });
+        // Serve Fallback even on error
+        const fallbackBooks = [
+            {
+                id: 1, title: 'The Holy Quran', author: 'Divine Revelation', category: 'Islamic', 
+                price: 299, original_price: 499, image: 'https://m.media-amazon.com/images/I/71xKk7+9jPL._AC_UF1000,1000_QL80_.jpg',
+                description: 'The complete Holy Quran with English translation.'
+            }
+        ];
+        res.json({ books: fallbackBooks, message: "Displaying demo books due to database connection issue." });
     }
 });
 
@@ -76,7 +106,31 @@ router.get('/section/:section', async (req, res) => {
         res.json({ books });
     } catch (error) {
         console.error('Get section books error:', error);
-        res.status(500).json({ error: 'Failed to get section books' });
+        
+        // Comprehensive Fallback for all sections (Hero, Featured, etc.)
+        const demoBooks = [
+            {
+                id: 1, title: 'The Holy Quran', author: 'Divine Revelation', category: 'Islamic', 
+                price: 299, original_price: 499, image: 'https://m.media-amazon.com/images/I/71xKk7+9jPL._AC_UF1000,1000_QL80_.jpg',
+                description: 'The complete Holy Quran with English translation.'
+            },
+            {
+                id: 2, title: 'Modern India', author: 'Rajiv Ahir', category: 'General', 
+                price: 394, original_price: 649, image: 'https://m.media-amazon.com/images/I/71xvXzKzNzL._SY466_.jpg',
+                description: 'A brief history of modern India.'
+            },
+            {
+                id: 3, title: 'Environment (10th Edition)', author: 'IAS Academy', category: 'General', 
+                price: 599, original_price: 899, image: 'https://m.media-amazon.com/images/I/81V6hF8TPIL._AC_UF1000,1000_QL80_.jpg',
+                description: 'Comprehensive guide for environmental science.'
+            }
+        ];
+        
+        res.json({ 
+            books: demoBooks, 
+            message: "Displaying demo books due to database connection issue.",
+            isDemo: true 
+        });
     }
 });
 
