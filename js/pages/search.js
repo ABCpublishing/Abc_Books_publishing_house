@@ -286,7 +286,14 @@ function createGridCard(book) {
         ? Math.floor(((originalPrice - price) / originalPrice) * 100)
         : 0;
 
-    const imageSrc = book.image || '/images/placeholder.jpg';
+    // IMAGE INTERCEPT LOGIC
+    let displayImage = book.image;
+    // Intercept broken placeholders and empty images
+    if (!displayImage || displayImage.includes('placeholder.com') || displayImage === '') {
+        // Fallback to localized SVG with initial
+        const initial = (book.title || '?').charAt(0).toUpperCase();
+        displayImage = `data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='300' viewBox='00 200 300'%3E%3Crect width='200' height='300' fill='%23f5f5f1'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='serif' font-size='80' fill='%23800000'%3E${initial}%3C/text%3E%3C/svg%3E`;
+    }
 
     return `
         <div class="result-card" onclick="viewBook('${book.id}')">
@@ -300,7 +307,7 @@ function createGridCard(book) {
                         <i class="fas fa-shopping-cart"></i>
                     </button>
                 </div>
-                <img src="${imageSrc}" alt="${book.title}"
+                <img src="${displayImage}" alt="${book.title}"
                     onerror="this.src='/images/placeholder.jpg'">
             </div>
             <div class="book-info">
@@ -321,12 +328,17 @@ function createGridCard(book) {
 
 // Create list card HTML
 function createListCard(book) {
-    const imageSrc = book.image || '/images/placeholder.jpg';
+    // IMAGE INTERCEPT LOGIC
+    let displayImage = book.image;
+    if (!displayImage || displayImage.includes('placeholder.com') || displayImage === '') {
+        const initial = (book.title || '?').charAt(0).toUpperCase();
+        displayImage = `data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='300' viewBox='0 0 200 300'%3E%3Crect width='200' height='300' fill='%23f5f5f1'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='serif' font-size='80' fill='%23800000'%3E${initial}%3C/text%3E%3C/svg%3E`;
+    }
 
     return `
         <div class="result-card-list" onclick="viewBook('${book.id}')">
             <div class="book-image">
-                <img src="${imageSrc}" alt="${book.title}"
+                <img src="${displayImage}" alt="${book.title}"
                     onerror="this.src='/images/placeholder.jpg'">
             </div>
             <div class="book-details">
