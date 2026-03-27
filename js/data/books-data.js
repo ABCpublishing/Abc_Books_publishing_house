@@ -120,7 +120,7 @@ function createBookCard(book, index = null) {
     // Placeholder as a data URL with NO SINGLE QUOTES inside to prevent HTML attribute breakage
     const placeholderSVG = `data:image/svg+xml;charset=utf-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 200 300%22%3E%3Crect fill=%22%23f5f0eb%22 width=%22200%22 height=%22300%22/%3E%3Ctext x=%22100%22 y=%22155%22 text-anchor=%22middle%22 font-family=%22serif%22 font-size=%2248%22 fill=%22%238B0000%22%3E${titleInitial}%3C/text%3E%3C/svg%3E`;
     
-    if (!bookImage) {
+    if (!bookImage || bookImage.includes('placeholder.com')) {
         bookImage = placeholderSVG;
     } else if (!bookImage.startsWith('http') && !bookImage.startsWith('data:') && !bookImage.startsWith('/')) {
         // Amazon image shortcodes fix

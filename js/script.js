@@ -110,7 +110,7 @@ async function renderSidebarBooks() {
     if (authorContainer && featuredBooks.length > 0) {
         authorContainer.innerHTML = featuredBooks.slice(0, 3).map(book => `
             <div class="author-book-item" onclick="viewBookDetail('${book.id}')" style="cursor: pointer;">
-                <img src="${fixImageUrl(book.image)}" alt="${book.title}" onerror="this.src='https://via.placeholder.com/50x70?text=Book'">
+                <img src="${fixImageUrl(book.image)}" alt="${book.title}" onerror="this.src='/images/placeholder.jpg'">
                 <div class="book-details">
                     <h4>${book.title}</h4>
                     <span class="price">₹${book.price}</span>
@@ -125,7 +125,7 @@ async function renderSidebarBooks() {
     if (academicContainer && academicBooks.length > 0) {
         academicContainer.innerHTML = academicBooks.slice(0, 3).map(book => `
             <div class="promo-book-item" onclick="viewBookDetail('${book.id}')" style="cursor: pointer;">
-                <img src="${fixImageUrl(book.image)}" alt="${book.title}" onerror="this.src='https://via.placeholder.com/80x120?text=Book'">
+                <img src="${fixImageUrl(book.image)}" alt="${book.title}" onerror="this.src='/images/placeholder.jpg'">
             </div>
         `).join('');
     }
@@ -136,7 +136,7 @@ async function renderSidebarBooks() {
     if (examContainer && examBooks.length > 0) {
         examContainer.innerHTML = examBooks.slice(0, 3).map(book => `
             <div class="promo-book-item" onclick="viewBookDetail('${book.id}')" style="cursor: pointer;">
-                <img src="${fixImageUrl(book.image)}" alt="${book.title}" onerror="this.src='https://via.placeholder.com/80x120?text=Book'">
+                <img src="${fixImageUrl(book.image)}" alt="${book.title}" onerror="this.src='/images/placeholder.jpg'">
             </div>
         `).join('');
     }
@@ -146,7 +146,7 @@ async function renderSidebarBooks() {
     if (crushContainer && featuredBooks.length > 3) {
         crushContainer.innerHTML = featuredBooks.slice(3, 6).map(book => `
             <div class="promo-book-item" onclick="viewBookDetail('${book.id}')" style="cursor: pointer;">
-                <img src="${fixImageUrl(book.image)}" alt="${book.title}" onerror="this.src='https://via.placeholder.com/80x120?text=Book'">
+                <img src="${fixImageUrl(book.image)}" alt="${book.title}" onerror="this.src='/images/placeholder.jpg'">
             </div>
         `).join('');
     }
@@ -691,10 +691,14 @@ function showLoading() {
 }
 
 function hideLoading() {
+    clearTimeout(window.loaderShowTimeout);
+    clearTimeout(window.loaderSafetyTimeout);
+    
     const loader = document.getElementById('page-loader');
     if (loader) {
         loader.remove();
     }
+    document.body.classList.remove('loading-active');
 }
 
 // ===== Initialize Everything =====

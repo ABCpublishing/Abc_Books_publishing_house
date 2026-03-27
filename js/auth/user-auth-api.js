@@ -257,9 +257,15 @@ const GOOGLE_CLIENT_ID = GOOGLE_CONFIG.CLIENT_ID;
 
 let googleInitialized = false;
 
+let googleInitRetries = 0;
 function initGoogleSignIn() {
     if (typeof google === 'undefined' || !google.accounts) {
-        setTimeout(initGoogleSignIn, 500);
+        if (googleInitRetries < 10) {
+            googleInitRetries++;
+            setTimeout(initGoogleSignIn, 500);
+        } else {
+            console.warn('⚠️ Google Sign-In script failed to load after 10 retries - giving up.');
+        }
         return;
     }
 
@@ -283,7 +289,10 @@ function initGoogleSignIn() {
             // });
         } catch (error) {
             console.error('Error initializing Google Sign-In:', error);
-            setTimeout(initGoogleSignIn, 1000);
+            if (googleInitRetries < 10) {
+                googleInitRetries++;
+                setTimeout(initGoogleSignIn, 1000);
+            }
             return;
         }
     }

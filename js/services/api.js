@@ -15,25 +15,34 @@ const isAdminPath = typeof window !== 'undefined' && window.location.pathname.in
 
 const TokenManager = {
     get: () => {
-        if (isAdminPath) {
-            return localStorage.getItem('adminToken');
+        // Preferred key based on path
+        const preferred = isAdminPath ? 'adminToken' : 'accessToken';
+        const fallback = isAdminPath ? 'accessToken' : 'adminToken';
+        
+        let token = localStorage.getItem(preferred);
+        
+        // If preferred is missing, try fallback
+        if (!token) {
+            token = localStorage.getItem(fallback) || 
+                    localStorage.getItem('token') || 
+                    localStorage.getItem('jwt_token');
         }
-        return localStorage.getItem('accessToken');
+        
+        return token;
     },
     set: (token) => {
-        if (isAdminPath) {
-            localStorage.setItem('adminToken', token);
-        } else {
-            localStorage.setItem('accessToken', token);
-            localStorage.setItem('token', token);
-            localStorage.setItem('jwt_token', token); // KEEP FOR BACKWARD COMPATIBILITY
-        }
+        // Always set both in production for maximum reliability across paths
+        localStorage.setItem('adminToken', token);
+        localStorage.setItem('accessToken', token);
+        localStorage.setItem('token', token);
+        localStorage.setItem('jwt_token', token);
     },
     remove: () => {
         localStorage.removeItem('adminToken');
         localStorage.removeItem('accessToken');
         localStorage.removeItem('token');
         localStorage.removeItem('jwt_token');
+        localStorage.removeItem('abc_admin_user');
     },
     isValid: () => {
         const token = TokenManager.get();

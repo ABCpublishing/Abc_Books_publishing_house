@@ -36,15 +36,18 @@ app.use(securityHeaders);
 // Serve frontend: static files + index.html at root
 const rootDir = path.join(__dirname, '..');
 
-// Serve favicon.ico from favicon.svg (prevents 404)
+// Serve favicon.ico from favicon.svg with correct MIME type
 app.get('/favicon.ico', (req, res) => {
+    res.setHeader('Content-Type', 'image/svg+xml');
     res.sendFile(path.join(rootDir, 'favicon.svg'));
 });
 
-// Explicitly handle CSS MIME types for some Windows environments if needed
+// Explicitly handle MIME types for static assets that may fail on some environments
 app.use((req, res, next) => {
     if (req.url.endsWith('.css')) {
         res.setHeader('Content-Type', 'text/css');
+    } else if (req.url.endsWith('.svg')) {
+        res.setHeader('Content-Type', 'image/svg+xml');
     }
     next();
 });

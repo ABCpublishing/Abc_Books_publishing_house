@@ -770,7 +770,7 @@ async function renderBooksTable(books) {
         return `
             <tr>
                 <td><code style="background:#f0f0f0;padding:2px 6px;border-radius:4px;font-size:12px;">${book.id}</code></td>
-                <td><img src="${book.image}" alt="${book.title}" class="book-img" onerror="this.src='https://via.placeholder.com/50x70?text=No+Image'"></td>
+                <td><img src="${book.image}" alt="${book.title}" class="book-img" onerror="this.src='/images/placeholder.jpg'"></td>
                 <td>${book.title}</td>
                 <td>${book.author}</td>
                 <td>₹${book.price}</td>
@@ -802,7 +802,7 @@ function renderSectionBooks(section, books) {
 
     container.innerHTML = books.map(book => `
         <div class="book-card">
-            <img src="${book.image}" alt="${book.title}" onerror="this.src='https://via.placeholder.com/200x280?text=No+Image'">
+            <img src="${book.image}" alt="${book.title}" onerror="this.src='/images/placeholder.jpg'">
             <div class="book-card-content">
                 <h3 title="${book.title}">${book.title}</h3>
                 <p>${book.author}</p>
@@ -831,7 +831,7 @@ function renderCategoryBooks(section, books) {
 
     container.innerHTML = books.map(book => `
         <div class="book-card">
-            <img src="${book.image}" alt="${book.title}" onerror="this.src='https://via.placeholder.com/200x280?text=No+Image'">
+            <img src="${book.image}" alt="${book.title}" onerror="this.src='/images/placeholder.jpg'">
             <div class="book-card-content">
                 <h3 title="${book.title}">${book.title}</h3>
                 <p>${book.author}</p>

@@ -46,7 +46,7 @@ router.post('/register', async (req, res) => {
 
         // Generate JWT token (still allow auto-login but marked as unverified)
         const token = jwt.sign(
-            { userId: user.id, email: user.email },
+            { userId: user.id, email: user.email, isAdmin: false },
             process.env.JWT_SECRET,
             { expiresIn: '7d' }
         );
@@ -59,7 +59,8 @@ router.post('/register', async (req, res) => {
                 email: user.email,
                 phone: user.phone,
                 createdAt: user.created_at,
-                isVerified: false
+                isVerified: false,
+                isAdmin: false
             },
             token,
             accessToken: token
@@ -108,7 +109,7 @@ router.post('/login', async (req, res) => {
 
         // Find user by phone or email
         const users = await db(
-            'SELECT id, name, email, phone, password_hash, created_at, is_verified FROM users WHERE phone = $1 OR email = $2',
+            'SELECT id, name, email, phone, password_hash, created_at, is_verified, is_admin FROM users WHERE phone = $1 OR email = $2',
             [identifier, identifier]
         );
 
@@ -131,7 +132,7 @@ router.post('/login', async (req, res) => {
 
         // Generate JWT token
         const token = jwt.sign(
-            { userId: user.id, email: user.email },
+            { userId: user.id, email: user.email, isAdmin: !!user.is_admin },
             process.env.JWT_SECRET,
             { expiresIn: '7d' }
         );
@@ -143,7 +144,8 @@ router.post('/login', async (req, res) => {
                 name: user.name,
                 email: user.email,
                 phone: user.phone,
-                createdAt: user.created_at
+                createdAt: user.created_at,
+                isAdmin: !!user.is_admin
             },
             token,
             accessToken: token
@@ -304,7 +306,7 @@ router.post('/google', async (req, res) => {
         const { email, name, picture, sub: googleId } = payload;
 
         // Check if user exists by email
-        let users = await db('SELECT id, name, email, phone, created_at, is_verified FROM users WHERE email = $1', [email]);
+        let users = await db('SELECT id, name, email, phone, created_at, is_verified, is_admin FROM users WHERE email = $1', [email]);
         let user;
 
         if (users.length === 0) {
@@ -334,7 +336,7 @@ router.post('/google', async (req, res) => {
 
         // Generate JWT token
         const token = jwt.sign(
-            { userId: user.id, email: user.email },
+            { userId: user.id, email: user.email, isAdmin: !!user.is_admin },
             process.env.JWT_SECRET,
             { expiresIn: '7d' }
         );
@@ -347,7 +349,8 @@ router.post('/google', async (req, res) => {
                 email: user.email,
                 phone: user.phone,
                 createdAt: user.created_at,
-                picture: picture
+                picture: picture,
+                isAdmin: !!user.is_admin
             },
             token,
             accessToken: token

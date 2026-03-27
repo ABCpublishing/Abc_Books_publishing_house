@@ -73,34 +73,36 @@ const authenticateAdmin = async (req, res, next) => {
             throw jwtError;
         }
 
-        // Check if user is admin
+        // 1. FAST PATH: Check token payload first
+        const adminWhitelist = ['maktabailmuadab@gmail.com', 'admin@abcbooks.store', 'admin@abcbooks.com'];
+        const isWhitelisted = adminWhitelist.includes(decoded.email);
+
+        if (decoded.isAdmin === true || isWhitelisted) {
+            req.userId = decoded.userId;
+            req.isAdmin = true;
+            req.userEmail = decoded.email;
+            return next();
+        }
+
+        // 2. SLOW PATH: Double check database
         const db = req.sql;
         const users = await db(
             'SELECT id, email, is_admin FROM users WHERE id = $1 OR email = $2',
             [decoded.userId, decoded.email]
         );
 
-        // FAIL-SAFE: Explicitly allow designated admin emails even if DB says no or is down
-        const adminWhiteslist = ['maktabailmuadab@gmail.com', 'admin@abcbooks.store', 'admin@abcbooks.com'];
-        const isWhitelisted = adminWhiteslist.includes(decoded.email) || adminWhiteslist.includes(req.userEmail);
-
-        if (users.length === 0 || (!users[0].is_admin && !isWhitelisted)) {
-            // One last check: If the DB is mocking responses, users[0] will be our mock admin
-            if (users.length > 0 && users[0].id === 999) {
-                req.userId = 999;
-                req.isAdmin = true;
-                return next();
-            }
-
-            return res.status(403).json({
-                error: 'Access denied',
-                message: 'Admin privileges required'
-            });
+        if (users.length > 0 && users[0].is_admin) {
+            req.userId = users[0].id;
+            req.isAdmin = true;
+            return next();
         }
 
-        req.userId = decoded.userId || users[0].id;
-        req.isAdmin = true;
-        next();
+        // If both checks fail
+        return res.status(403).json({
+            error: 'Access denied',
+            message: 'Admin privileges required'
+        });
+
     } catch (error) {
         console.error('Admin auth error:', error);
         res.status(401).json({ 
