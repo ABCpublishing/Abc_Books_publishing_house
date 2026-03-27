@@ -238,6 +238,37 @@ app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/categories', categoriesRoutes);
 
+// --- Stats Endpoint (Efficient for Admin Dashboard) ---
+app.get('/api/stats', authenticateAdmin, async (req, res) => {
+    try {
+        const stats = await sqlHelper(`
+            SELECT 
+                (SELECT COUNT(*) FROM books) as total_books,
+                (SELECT COUNT(*) FROM users) as total_users,
+                (SELECT COUNT(*) FROM orders) as total_orders
+        `);
+
+        // Get section counts
+        const sectionStats = await sqlHelper(`
+            SELECT section, COUNT(*) as count 
+            FROM books, UNNEST(sections) as section
+            GROUP BY section
+        `);
+
+        res.json({
+            status: 'ok',
+            counts: stats[0],
+            sections: sectionStats.reduce((acc, curr) => {
+                acc[curr.section] = parseInt(curr.count);
+                return acc;
+            }, {})
+        });
+    } catch (error) {
+        console.error('Stats error:', error);
+        res.status(500).json({ error: 'Failed to fetch statistics' });
+    }
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error('Error:', err);
@@ -248,8 +279,6 @@ app.use((err, req, res, next) => {
 if (require.main === module) {
     app.listen(PORT, () => {
         console.log(`🚀 ABC Books API running on http://localhost:${PORT}`);
-        console.log(`📖 Open the site in your browser: http://localhost:${PORT}`);
-        console.log(`📚 Database: Neon PostgreSQL`);
     });
 }
 

@@ -225,49 +225,25 @@ function navigateToSection(section) {
 // ===== LOAD DASHBOARD DATA =====
 async function loadDashboardData() {
     try {
-        // Fetch all books to get counts
-        const allBooksResponse = await API.Books.getAll({ limit: 1000 });
-        const allBooks = allBooksResponse.books || [];
+        // Fetch centralized stats (efficient)
+        const statsResponse = await API.fetch('/api/stats');
+        const stats = statsResponse.counts || {};
+        const sectionCounts = statsResponse.sections || {};
 
-        // We need to count sections manually since API doesn't return section counts
-        // This is inefficient but works for now. 
-        // Ideally backend should provide better stats endpoint.
-        let heroCount = 0;
-        let editorsCount = 0;
-        let featuredCount = 0;
+        // Update UI counters
+        if (document.getElementById('totalBooksCount')) document.getElementById('totalBooksCount').textContent = stats.total_books || 0;
+        if (document.getElementById('usersCount')) document.getElementById('usersCount').textContent = stats.total_users || 0;
+        if (document.getElementById('ordersCount')) document.getElementById('ordersCount').textContent = stats.total_orders || 0;
 
-        // Fetch counts for specific sections (parallel)
-        const [heroBooks, editorsBooks, featuredBooks, usersRes, ordersRes] = await Promise.all([
-            API.Books.getBySection('hero').catch(() => ({ books: [] })),
-            API.Books.getBySection('editors').catch(() => ({ books: [] })),
-            API.Books.getBySection('featured').catch(() => ({ books: [] })),
-            API.Users.getAll().catch(error => {
-                if (error.message.includes('Access denied') || error.message.includes('Admin privileges')) throw error;
-                return { users: [] };
-            }),
-            API.Orders.getAll().catch(error => {
-                if (error.message.includes('Access denied') || error.message.includes('Admin privileges')) throw error;
-                return { orders: [] };
-            })
-        ]);
-
-        document.getElementById('totalBooksCount').textContent = allBooks.length;
-        document.getElementById('heroCount').textContent = heroBooks.books?.length || 0;
-        document.getElementById('editorsCount').textContent = editorsBooks.books?.length || 0;
-        document.getElementById('featuredCount').textContent = featuredBooks.books?.length || 0;
-
-        // Update users and orders if elements exist
-        if (document.getElementById('usersCount')) {
-            document.getElementById('usersCount').textContent = usersRes.users?.length || 0;
-        }
-        if (document.getElementById('ordersCount')) {
-            document.getElementById('ordersCount').textContent = ordersRes.orders?.length || 0;
-        }
+        // Update section specific counts
+        if (document.getElementById('heroCount')) document.getElementById('heroCount').textContent = sectionCounts.hero || 0;
+        if (document.getElementById('editorsCount')) document.getElementById('editorsCount').textContent = sectionCounts.editors || 0;
+        if (document.getElementById('featuredCount')) document.getElementById('featuredCount').textContent = sectionCounts.featured || 0;
 
         // Load activity log
         loadActivityLog();
     } catch (error) {
-        console.error('Error loading dashboard data:', error);
+        console.error('Error loading dashboard stats:', error);
         if (error.message.includes('Access denied') || error.message.includes('Admin privileges')) {
             alert('Your session is invalid or you lack admin privileges. Please log in again.');
             localStorage.setItem(STORAGE_KEYS.ADMIN_AUTH, 'false');
@@ -766,11 +742,17 @@ async function renderBooksTable(books) {
 
     tbody.innerHTML = books.map(book => {
         const sectionBadges = (sectionMap[book.id] || []).map(s => `<span class="badge">${s}</span>`).join('');
+        
+        // INTERCEPT BROKEN PLACEHOLDERS
+        let displayImage = book.image;
+        if (!displayImage || displayImage.includes('placeholder.com')) {
+            displayImage = '/images/placeholder.jpg';
+        }
 
         return `
             <tr>
                 <td><code style="background:#f0f0f0;padding:2px 6px;border-radius:4px;font-size:12px;">${book.id}</code></td>
-                <td><img src="${book.image}" alt="${book.title}" class="book-img" onerror="this.src='/images/placeholder.jpg'"></td>
+                <td><img src="${displayImage}" alt="${book.title}" class="book-img" onerror="this.src='/images/placeholder.jpg'"></td>
                 <td>${book.title}</td>
                 <td>${book.author}</td>
                 <td>₹${book.price}</td>
