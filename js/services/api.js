@@ -374,6 +374,7 @@ const ContactAPI = {
 
 // Export all APIs
 window.API = {
+    fetch: apiRequest,
     Auth: AuthAPI,
     Books: BooksAPI,
     Cart: CartAPI,

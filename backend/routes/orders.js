@@ -195,7 +195,10 @@ router.post('/', async (req, res) => {
             payment_method || 'COD', initialStatus
         ]);
 
-        const order = orderResult[0];
+        const order = orderResult && orderResult[0];
+        if (!order) {
+            throw new Error('Database failed to return created order. It may have failed to save.');
+        }
         console.log('✅ Order created:', order.order_id);
 
         // Record initial status in history

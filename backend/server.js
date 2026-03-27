@@ -169,24 +169,32 @@ const sqlHelper = async (query, params) => {
     } catch (error) {
         console.error('🌐 Database Connectivity Error (Handled by Mock Fallback):', error.message);
         
-        // 1. Mock Books as ultimate fallback
-        if (q.includes('from books')) {
-            console.log('📦 Mocking Books response...');
-            return [
-                { id: 1, title: 'The Holy Quran', author: 'Divine Revelation', price: 299, original_price: 499, image: 'https://m.media-amazon.com/images/I/71xKk7+9jPL._AC_UF1000,1000_QL80_.jpg', category: 'Islamic', rating: 5.0 }
-            ];
+        // Only provide mock fallbacks for SELECT queries to avoid breaking INSERT/UPDATE flows
+        const isSelect = q.startsWith('select ');
+        
+        if (isSelect) {
+            // 1. Mock Books as ultimate fallback
+            if (q.includes('from books')) {
+                console.log('📦 Mocking Books response...');
+                return [
+                    { id: 1, title: 'The Holy Quran', author: 'Divine Revelation', price: 299, original_price: 499, image: '', category: 'Islamic', rating: 5.0 }
+                ];
+            }
+
+            // 2. Mock Orders
+            if (q.includes('from orders')) {
+                console.log('🛒 Mocking Orders response...');
+                return [
+                    { id: 101, order_id: 'ABC-1001', user_id: 999, total: 299, status: 'confirmed', created_at: new Date() }
+                ];
+            }
+
+            // 3. Fallback for other tables
+            return [];
         }
 
-        // 2. Mock Orders
-        if (q.includes('from orders')) {
-            console.log('🛒 Mocking Orders response...');
-            return [
-                { id: 101, order_id: 'ABC-1001', user_id: 999, total: 299, status: 'confirmed', created_at: new Date() }
-            ];
-        }
-
-        // 3. Fallback for other tables
-        return [];
+        // Re-throw if it was a mutation (INSERT/UPDATE/DELETE)
+        throw error;
     }
 };
 
