@@ -638,7 +638,17 @@ div {
 
     .footer-bottom {
         text-align: center !important;
-        padding: 15px !important;
+        padding: 20px 15px !important;
+    }
+
+    .footer-bottom-content {
+        flex-direction: column !important;
+        gap: 15px !important;
+        align-items: center !important;
+    }
+
+    .design-credit {
+        justify-content: center !important;
     }
 
     .newsletter-form {

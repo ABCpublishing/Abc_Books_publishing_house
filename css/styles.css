@@ -2384,7 +2384,7 @@ textarea {
 
 /* ===== Footer ===== */
 .footer {
-    background: var(--gray-900);
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); /* Deep Navy Gradient as seen in image */
     color: var(--white);
 }
 
@@ -2516,7 +2516,55 @@ textarea {
 
 .footer-bottom p {
     font-size: 13px;
-    color: var(--gray-400);
+    color: #94a3b8; /* Matching the muted text color from image */
+}
+
+/* Design Credit - QuantaFONS Style */
+.design-credit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px; /* Reduced gap for tighter alignment */
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 400;
+    font-family: 'Poppins', 'Inter', sans-serif;
+    margin: 0;
+    background: transparent;
+    padding: 0;
+}
+
+.design-logo {
+    height: 24px;
+    width: auto;
+    display: block;
+    filter: invert(1) brightness(2) contrast(1.1);
+    background: transparent;
+    border: none;
+    margin: 0; /* Removed margin to close the gap further */
+    mix-blend-mode: lighten;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.design-credit a {
+    color: #ffffff;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+/* Unified Hover Trigger - affects both logo and text together */
+.design-credit:hover {
+    cursor: pointer;
+}
+
+.design-credit:hover .design-logo {
+    transform: scale(1.1); /* Logo expands slightly */
+}
+
+.design-credit:hover a {
+    opacity: 0.8;
+    text-decoration: underline; /* Visual cue for the link */
 }
 
 .payment-icons {
