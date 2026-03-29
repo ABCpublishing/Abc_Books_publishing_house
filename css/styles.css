@@ -2401,20 +2401,19 @@ textarea {
 .footer-logo {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 15px;
+    gap: 15px;
+    margin-bottom: 25px;
 }
 
 .footer-logo .logo-img {
-    height: 48px;
+    height: 50px;
     width: auto;
     object-fit: contain;
-    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.2));
-    transition: transform 0.2s ease;
+    transition: transform 0.3s ease;
 }
 
 .footer-logo:hover .logo-img {
-    transform: scale(1.02);
+    transform: scale(1.05);
 }
 
 .footer-logo .logo-text {
@@ -2423,17 +2422,12 @@ textarea {
     justify-content: center;
 }
 
-.footer-logo .logo-icon {
-    width: 45px;
-    height: 45px;
-    font-size: 20px;
-}
-
 .footer-logo .logo-sub {
-    color: rgba(255, 255, 255, 0.9);
-    font-size: 12px;
-    font-weight: 600;
+    color: var(--white);
+    font-size: 11px;
+    font-weight: 700;
     letter-spacing: 1.5px;
+    text-transform: uppercase;
 }
 
 .brand-col p {

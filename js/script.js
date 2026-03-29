@@ -100,6 +100,7 @@ async function renderSidebarBooks() {
     const fixImageUrl = (img) => {
         if (!img) return `data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22150%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22100%22 height=%22150%22/%3E%3C/svg%3E`;
         if (img.startsWith('http') || img.startsWith('data:') || img.startsWith('/')) return img;
+        // Known bug: some Amazon shortcodes are broken. We will append the base URL but also rely on onerror
         if (img.match(/^[a-zA-Z0-9_\-.]+\.jpg$/)) return "https://m.media-amazon.com/images/I/" + img;
         return img;
     };
@@ -110,7 +111,7 @@ async function renderSidebarBooks() {
     if (authorContainer && featuredBooks.length > 0) {
         authorContainer.innerHTML = featuredBooks.slice(0, 3).map(book => `
             <div class="author-book-item" onclick="viewBookDetail('${book.id}')" style="cursor: pointer;">
-                <img src="${fixImageUrl(book.image)}" alt="${book.title}" onerror="this.src='/images/placeholder.jpg'">
+                <img src="${fixImageUrl(book.image)}" alt="${book.title}" onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2250%22 height=%2275%22%3E%3Crect fill=%22%23f0f0f0%22 width=%2250%22 height=%2275%22/%3E%3Ctext x=%2225%22 y=%2240%22 font-family=%22serif%22 font-size=%2220%22 fill=%22%238B0000%22 text-anchor=%22middle%22%3EB%3C/text%3E%3C/svg%3E';">
                 <div class="book-details">
                     <h4>${book.title}</h4>
                     <span class="price">₹${book.price}</span>
@@ -125,7 +126,7 @@ async function renderSidebarBooks() {
     if (academicContainer && academicBooks.length > 0) {
         academicContainer.innerHTML = academicBooks.slice(0, 3).map(book => `
             <div class="promo-book-item" onclick="viewBookDetail('${book.id}')" style="cursor: pointer;">
-                <img src="${fixImageUrl(book.image)}" alt="${book.title}" onerror="this.src='/images/placeholder.jpg'">
+                <img src="${fixImageUrl(book.image)}" alt="${book.title}" onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2250%22 height=%2275%22%3E%3Crect fill=%22%23f0f0f0%22 width=%2250%22 height=%2275%22/%3E%3Ctext x=%2225%22 y=%2240%22 font-family=%22serif%22 font-size=%2220%22 fill=%22%238B0000%22 text-anchor=%22middle%22%3EB%3C/text%3E%3C/svg%3E';">
             </div>
         `).join('');
     }
@@ -136,7 +137,7 @@ async function renderSidebarBooks() {
     if (examContainer && examBooks.length > 0) {
         examContainer.innerHTML = examBooks.slice(0, 3).map(book => `
             <div class="promo-book-item" onclick="viewBookDetail('${book.id}')" style="cursor: pointer;">
-                <img src="${fixImageUrl(book.image)}" alt="${book.title}" onerror="this.src='/images/placeholder.jpg'">
+                <img src="${fixImageUrl(book.image)}" alt="${book.title}" onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2250%22 height=%2275%22%3E%3Crect fill=%22%23f0f0f0%22 width=%2250%22 height=%2275%22/%3E%3Ctext x=%2225%22 y=%2240%22 font-family=%22serif%22 font-size=%2220%22 fill=%22%238B0000%22 text-anchor=%22middle%22%3EB%3C/text%3E%3C/svg%3E';">
             </div>
         `).join('');
     }
@@ -146,7 +147,7 @@ async function renderSidebarBooks() {
     if (crushContainer && featuredBooks.length > 3) {
         crushContainer.innerHTML = featuredBooks.slice(3, 6).map(book => `
             <div class="promo-book-item" onclick="viewBookDetail('${book.id}')" style="cursor: pointer;">
-                <img src="${fixImageUrl(book.image)}" alt="${book.title}" onerror="this.src='/images/placeholder.jpg'">
+                <img src="${fixImageUrl(book.image)}" alt="${book.title}" onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2250%22 height=%2275%22%3E%3Crect fill=%22%23f0f0f0%22 width=%2250%22 height=%2275%22/%3E%3Ctext x=%2225%22 y=%2240%22 font-family=%22serif%22 font-size=%2220%22 fill=%22%238B0000%22 text-anchor=%22middle%22%3EB%3C/text%3E%3C/svg%3E';">
             </div>
         `).join('');
     }

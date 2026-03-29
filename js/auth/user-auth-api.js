@@ -256,16 +256,21 @@ const GOOGLE_CONFIG = {
 const GOOGLE_CLIENT_ID = GOOGLE_CONFIG.CLIENT_ID;
 
 let googleInitialized = false;
-
 let googleInitRetries = 0;
 function initGoogleSignIn() {
     if (typeof google === 'undefined' || !google.accounts) {
-        if (googleInitRetries < 10) {
+        if (googleInitRetries < 20) {
             googleInitRetries++;
             setTimeout(initGoogleSignIn, 500);
         } else {
-            console.warn('⚠️ Google Sign-In script failed to load after 10 retries - giving up.');
+            console.warn('⚠️ Google Sign-In script failed to load. This might be due to an adblocker or network issues.');
         }
+        return;
+    }
+
+    // CRITICAL: Check if Client ID is still the placeholder
+    if (GOOGLE_CLIENT_ID.includes('your-google-client-id')) {
+        console.error('❌ GOOGLE_CLIENT_ID is not configured! Please set it up in the Google Cloud Console and update your .env and JS config.');
         return;
     }
 
@@ -276,19 +281,17 @@ function initGoogleSignIn() {
                 callback: handleGoogleSignIn,
                 auto_select: false,
                 cancel_on_tap_outside: true,
-                itp_support: true
+                itp_support: true,
+                context: 'signup' // Higher priority for FedCM
             });
             googleInitialized = true;
-
-            // Display Google One Tap prompt automatically on landing
-            // Disabled per user request
-            // google.accounts.id.prompt((notification) => {
-            //     if (notification.isNotDisplayed()) {
-            //         console.log('One Tap not displayed:', notification.getNotDisplayedReason());
-            //     }
-            // });
+            console.log('✅ Google GSI initialized with Client ID:', GOOGLE_CLIENT_ID.substring(0, 15) + '...');
         } catch (error) {
             console.error('Error initializing Google Sign-In:', error);
+            // If we get a 403 here or similar, it's usually an origin issue
+            if (error.message && error.message.includes('403')) {
+                console.error('🛑 GOOGLE AUTH 403: This origin is not authorized. Add ' + window.location.origin + ' to your Authorized JavaScript Origins in Google Cloud Console.');
+            }
             if (googleInitRetries < 10) {
                 googleInitRetries++;
                 setTimeout(initGoogleSignIn, 1000);
