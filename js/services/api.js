@@ -78,9 +78,15 @@ async function apiRequest(endpoint, options = {}) {
         ...options
     };
 
+
     try {
-        console.log(`🔄 API Request: ${endpoint}`, config);
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+        // Add cache-busting timestamp to avoid outdated data
+        const timestamp = new Date().getTime();
+        const separator = endpoint.includes('?') ? '&' : '?';
+        const cacheBustedEndpoint = `${endpoint}${separator}cb=${timestamp}`;
+        
+        console.log(`🔄 API Request: ${cacheBustedEndpoint}`, config);
+        const response = await fetch(`${API_BASE_URL}${cacheBustedEndpoint}`, config);
 
         // Check if response is JSON
         const contentType = response.headers.get('content-type');

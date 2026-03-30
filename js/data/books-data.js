@@ -29,7 +29,9 @@ async function fetchAllBooks() {
                 ? "http://localhost:3001/api"
                 : "/api";
 
-            const response = await fetch(`${apiBase}/books?limit=1000`, { signal: controller.signal });
+
+            const timestamp = new Date().getTime();
+            const response = await fetch(`${apiBase}/books?limit=1000&cb=${timestamp}`, { signal: controller.signal });
             clearTimeout(timeoutId);
             const data = await response.json();
             books = data.books || [];

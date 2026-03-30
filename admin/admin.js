@@ -14,6 +14,38 @@ const ADMIN_CREDENTIALS = {
     password: 'admin123'
 };
 
+
+// Helper to fix image URLs (consistent with books-data.js)
+const fixImageUrl = (img) => {
+    // Branded SVG for placeholders (Soft Coral/Red)
+    const placeholderSVG = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 300'%3E%3Crect fill='%23fef3f2' width='200' height='300'/%3E%3Ctext x='100' y='165' text-anchor='middle' font-family='serif' font-size='64' fill='%23e44d32'%3EB%3C/text%3E%3C/svg%3E`;
+    
+    if (!img || img === '' || img === 'null') return placeholderSVG;
+    
+    if (img.startsWith('http') || img.startsWith('data:') || img.startsWith('/')) {
+        // Amazon image shortcodes fix: Strip complex modifiers that cause 404s
+        if (img.includes('.media-amazon.com/images/I/')) {
+            let baseImg = img.split('._')[0];
+            if (!baseImg.endsWith('.jpg') && !baseImg.endsWith('.png')) {
+                return baseImg + '.jpg';
+            }
+            return baseImg;
+        }
+        return img;
+    }
+
+    // Amazon shortcodes fallback
+    let cleanId = img.trim();
+    if (cleanId.includes('._')) {
+        cleanId = cleanId.split('._')[0];
+    }
+    if (!cleanId.endsWith('.jpg') && !cleanId.endsWith('.png')) {
+        cleanId = cleanId + '.jpg';
+    }
+    
+    return "https://m.media-amazon.com/images/I/" + cleanId;
+};
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function () {
     checkAuth();
@@ -744,16 +776,13 @@ async function renderBooksTable(books) {
     tbody.innerHTML = books.map(book => {
         const sectionBadges = (sectionMap[book.id] || []).map(s => `<span class="badge">${s}</span>`).join('');
         
-        // INTERCEPT BROKEN PLACEHOLDERS
-        let displayImage = book.image;
-        if (!displayImage || displayImage.includes('placeholder.com')) {
-            displayImage = '/images/placeholder.jpg';
-        }
 
+        const displayImage = fixImageUrl(book.image);
+        
         return `
             <tr>
                 <td><code style="background:#f0f0f0;padding:2px 6px;border-radius:4px;font-size:12px;">${book.id}</code></td>
-                <td><img src="${displayImage}" alt="${book.title}" class="book-img" onerror="this.src='/images/placeholder.jpg'"></td>
+                <td><img src="${displayImage}" alt="${book.title}" class="book-img" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22150%22%3E%3Crect fill=%22%23fef3f2%22 width=%22100%22 height=%22150%22/%3E%3C/svg%3E'"></td>
                 <td>${book.title}</td>
                 <td>${book.author}</td>
                 <td>₹${book.price}</td>
