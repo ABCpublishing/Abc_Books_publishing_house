@@ -630,15 +630,29 @@ textarea {
 /* Mobile Responsiveness for Cards */
 @media (max-width: 768px) {
 
+
     .book-card,
-    .hero-books-slider .book-card {
-        width: 160px !important;
-        min-width: 160px !important;
-        max-width: 160px !important;
+    .hero-books-slider .book-card,
+    .featured-books-grid .book-card,
+    .trending-books-track .book-card,
+    .new-releases-track .book-card {
+        width: 150px !important;
+        min-width: 150px !important;
+        max-width: 150px !important;
+        height: auto !important;
+        margin-right: 5px;
     }
 
     .book-card .book-cover {
-        height: 200px !important;
+        height: 180px !important;
+        padding: 5px !important;
+        overflow: hidden;
+    }
+    
+    .book-card .book-cover img {
+        max-height: 160px !important;
+        width: auto;
+        object-fit: contain;
     }
 }
 

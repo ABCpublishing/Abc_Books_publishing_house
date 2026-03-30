@@ -1,22 +1,22 @@
-const mysql = require('mysql2/promise');
-require('dotenv').config();
+const { neon } = require('@neondatabase/serverless');
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 async function checkDb() {
-    let db;
     try {
-        db = await mysql.createConnection(process.env.DATABASE_URL);
+        const sql = neon(process.env.DATABASE_URL);
         
         console.log('--- Books ---');
-        const [books] = await db.query('SELECT id, title FROM books');
+        const books = await sql('SELECT id, title FROM books LIMIT 10');
         console.log(books);
 
         console.log('\n--- Book Sections ---');
-        const [sections] = await db.query('SELECT * FROM book_sections');
+        const sections = await sql('SELECT * FROM book_sections LIMIT 10');
         console.log(sections);
 
         process.exit(0);
     } catch (e) {
-        console.error(e);
+        console.error('❌ Database connection error:', e.message);
         process.exit(1);
     }
 }

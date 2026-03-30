@@ -117,16 +117,32 @@ function createBookCard(book, index = null) {
     // Safety check for image URL
     let bookImage = book.image;
     
+
     // Placeholder as a data URL with NO SINGLE QUOTES inside to prevent HTML attribute breakage
-    const placeholderSVG = `data:image/svg+xml;charset=utf-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 200 300%22%3E%3Crect fill=%22%23f5f0eb%22 width=%22200%22 height=%22300%22/%3E%3Ctext x=%22100%22 y=%22155%22 text-anchor=%22middle%22 font-family=%22serif%22 font-size=%2248%22 fill=%22%238B0000%22%3E${titleInitial}%3C/text%3E%3C/svg%3E`;
+    const placeholderSVG = `data:image/svg+xml;charset=utf-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 200 300%22%3E%3Crect fill=%22%23fef3f2%22 width=%22200%22 height=%22300%22/%3E%3Ctext x=%22100%22 y=%22165%22 text-anchor=%22middle%22 font-family=%22serif%22 font-size=%2264%22 fill=%22%23e44d32%22%3E${titleInitial}%3C/text%3E%3C/svg%3E`;
     
-    if (!bookImage || bookImage.includes('placeholder.com')) {
+    if (!bookImage || bookImage.includes('placeholder.com') || bookImage === '') {
         bookImage = placeholderSVG;
-    } else if (!bookImage.startsWith('http') && !bookImage.startsWith('data:') && !bookImage.startsWith('/')) {
-        // Amazon image shortcodes fix
-        if (bookImage.match(/^[a-zA-Z0-9_\-.]+\.jpg$/)) {
-            bookImage = "https://m.media-amazon.com/images/I/" + bookImage;
+    } else if (bookImage.startsWith('http') || bookImage.startsWith('data:') || bookImage.startsWith('/')) {
+        // Amazon image shortcodes fix: Strip complex modifiers that cause 404s
+        if (bookImage.includes('.media-amazon.com/images/I/')) {
+            let baseImg = bookImage.split('._')[0];
+            if (!baseImg.endsWith('.jpg') && !baseImg.endsWith('.png')) {
+                bookImage = baseImg + '.jpg';
+            } else {
+                bookImage = baseImg;
+            }
         }
+    } else {
+        // Amazon shortcodes fallback
+        let cleanId = bookImage.trim();
+        if (cleanId.includes('._')) {
+            cleanId = cleanId.split('._')[0];
+        }
+        if (!cleanId.endsWith('.jpg') && !cleanId.endsWith('.png')) {
+            cleanId = cleanId + '.jpg';
+        }
+        bookImage = "https://m.media-amazon.com/images/I/" + cleanId;
     }
     
     // Price formatting

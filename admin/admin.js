@@ -226,7 +226,7 @@ function navigateToSection(section) {
 async function loadDashboardData() {
     try {
         // Fetch centralized stats (efficient)
-        const statsResponse = await API.fetch('/api/stats');
+        const statsResponse = await API.fetch('/stats');
         const stats = statsResponse.counts || {};
         const sectionCounts = statsResponse.sections || {};
 
@@ -234,6 +234,7 @@ async function loadDashboardData() {
         if (document.getElementById('totalBooksCount')) document.getElementById('totalBooksCount').textContent = stats.total_books || 0;
         if (document.getElementById('usersCount')) document.getElementById('usersCount').textContent = stats.total_users || 0;
         if (document.getElementById('ordersCount')) document.getElementById('ordersCount').textContent = stats.total_orders || 0;
+        if (document.getElementById('wishlistCountStat')) document.getElementById('wishlistCountStat').textContent = stats.total_wishlist || 0;
 
         // Update section specific counts
         if (document.getElementById('heroCount')) document.getElementById('heroCount').textContent = sectionCounts.hero || 0;

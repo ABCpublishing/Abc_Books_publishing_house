@@ -115,92 +115,25 @@ app.use(express.json({ limit: '10mb' }));
 app.use(sanitizeInput);
 
 // Database connection
-// Using neon() HTTP function - most reliable for Vercel serverless (no WebSockets needed)
-const { neon } = require('@neondatabase/serverless');
 
-// Fix pooler URL if present (neon HTTP driver needs direct endpoint)
-let dbUrl = process.env.DATABASE_URL || '';
-if (dbUrl.includes('-pooler.')) {
-    dbUrl = dbUrl.replace('-pooler.', '.');
-}
-
-const sql = neon(dbUrl);
-
-// Helper function with Mock Fallback for Offline/Local development
-const sqlHelper = async (query, params) => {
-    const q = query.toLowerCase();
-    
-    // FAIL-SAFE: Priority Admin Interception
-    // This allows the admin to log in even if the DB is connected but the user is missing
-    if (q.includes('from users')) {
-        const isSpecificAdmin = params && (
-            params.includes('admin') || 
-            params.includes('admin@abcbooks.store') || 
-            params.includes('admin@abcbooks.com') ||
-            params.includes(999) || 
-            params.includes('999')
-        );
-
-        if (isSpecificAdmin) {
-             console.log('👑 Admin Interception: Providing privileged access...');
-             const bcrypt = require('bcryptjs');
-             const hash = bcrypt.hashSync('admin123', 10);
-             const mockAdmin = { 
-                 id: 999, name: 'Offline Admin', email: 'admin@abcbooks.store', 
-                 phone: '0000', password_hash: hash, is_verified: true, is_admin: true, 
-                 created_at: new Date() 
-             };
-             return [mockAdmin];
-        }
-    }
-
-    try {
-        const rows = await sql(query, params);
-        
-        // If query was successful but returned nothing for books, use mock
-        if (rows.length === 0 && q.includes('from books')) {
-             return [
-                { id: 1, title: 'The Holy Quran', author: 'Divine Revelation', price: 299, original_price: 499, image: 'https://m.media-amazon.com/images/I/71xKk7+9jPL._AC_UF1000,1000_QL80_.jpg', category: 'Islamic', rating: 5.0 },
-                { id: 2, title: 'Modern India', author: 'Rajiv Ahir', price: 394, original_price: 649, image: 'https://m.media-amazon.com/images/I/71xvXzKzNzL._SY466_.jpg', category: 'General', rating: 4.8 }
-             ];
-        }
-
-        return rows;
-    } catch (error) {
-        console.error('🌐 Database Connectivity Error (Handled by Mock Fallback):', error.message);
-        
-        // Only provide mock fallbacks for SELECT queries to avoid breaking INSERT/UPDATE flows
-        const isSelect = q.startsWith('select ');
-        
-        if (isSelect) {
-            // 1. Mock Books as ultimate fallback
-            if (q.includes('from books')) {
-                console.log('📦 Mocking Books response...');
-                return [
-                    { id: 1, title: 'The Holy Quran', author: 'Divine Revelation', price: 299, original_price: 499, image: '', category: 'Islamic', rating: 5.0 }
-                ];
-            }
-
-            // 2. Mock Orders
-            if (q.includes('from orders')) {
-                console.log('🛒 Mocking Orders response...');
-                return [
-                    { id: 101, order_id: 'ABC-1001', user_id: 999, total: 299, status: 'confirmed', created_at: new Date() }
-                ];
-            }
-
-            // 3. Fallback for other tables
-            return [];
-        }
-
-        // Re-throw if it was a mutation (INSERT/UPDATE/DELETE)
-        throw error;
-    }
-};
+// DATABASE CONNECTION (Neon PostgreSQL)
+// Using Neon's Pool for compatibility with standard pg positional parameters ($1, $2)
+const { Pool } = require('@neondatabase/serverless');
+const dbUrl = (process.env.DATABASE_URL || '').replace('-pooler.', '.');
+const pool = new Pool({ connectionString: dbUrl });
 
 // Make sql available to routes
 app.use((req, res, next) => {
-    req.sql = sqlHelper;
+    req.sql = async (query, params) => {
+        try {
+            // Pool.query handles (query, params) correctly with $1 notation
+            const result = await pool.query(query, params);
+            return result.rows || [];
+        } catch (error) {
+            console.error('🌐 Database Query Error:', error.message);
+            throw error;
+        }
+    };
     next();
 });
 
@@ -250,23 +183,19 @@ app.use('/api/categories', categoriesRoutes);
 // --- Stats Endpoint (Efficient for Admin Dashboard) ---
 app.get('/api/stats', authenticateAdmin, async (req, res) => {
     try {
-        const stats = await sqlHelper(`
-            SELECT 
-                (SELECT COUNT(*) FROM books) as total_books,
-                (SELECT COUNT(*) FROM users) as total_users,
-                (SELECT COUNT(*) FROM orders) as total_orders
-        `);
+        const stats = await sqlHelper('SELECT (SELECT COUNT(*) FROM books) as total_books, (SELECT COUNT(*) FROM users) as total_users, (SELECT COUNT(*) FROM orders) as total_orders, (SELECT COUNT(*) FROM wishlist) as total_wishlist');
 
-        // Get section counts
-        const sectionStats = await sqlHelper(`
-            SELECT section, COUNT(*) as count 
-            FROM books, UNNEST(sections) as section
-            GROUP BY section
-        `);
+        // Get section counts from junction table
+        const sectionStats = await sqlHelper('SELECT section_name as section, COUNT(*) as count FROM book_sections GROUP BY section_name');
 
         res.json({
             status: 'ok',
-            counts: stats[0],
+            counts: {
+                total_books: parseInt(stats[0].total_books) || 0,
+                total_users: parseInt(stats[0].total_users) || 0,
+                total_orders: parseInt(stats[0].total_orders) || 0,
+                total_wishlist: parseInt(stats[0].total_wishlist) || 0
+            },
             sections: sectionStats.reduce((acc, curr) => {
                 acc[curr.section] = parseInt(curr.count);
                 return acc;

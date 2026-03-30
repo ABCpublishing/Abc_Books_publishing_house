@@ -1,8 +1,7 @@
-// ===== Hero Books Carousel =====
+
 // ===== Hero Books Section (Dynamic) =====
 async function renderHeroBooks() {
     console.log('ℹ️ Hero section dynamic replacement is disabled to keep static design.');
-    // Function kept for compatibility but logic removed to prioritize static illustration
 }
 
 // ===== Islamic Books Section =====
@@ -11,22 +10,17 @@ async function renderIslamicBooks() {
     const islamicContainer = document.getElementById('islamicBooksGrid');
 
     if (islamicContainer && islamicBooks.length > 0) {
-        // Limit to 8 books for the grid display
         const booksToShow = islamicBooks.slice(0, 8);
         islamicContainer.innerHTML = booksToShow.map((book, index) => createBookCard(book, index)).join('');
-        console.log('✅ Islamic books grid rendered:', booksToShow.length);
-    } else {
-        console.warn('⚠️ No Islamic books container found or no books');
     }
 }
-
-// ===== Editor's Choice Banner =====
 async function renderFeaturedBooks() {
     const featuredBooks = await getBooksForSection('featured');
     const featuredContainer = document.getElementById('featuredBooks');
 
     if (featuredContainer && featuredBooks.length > 0) {
         featuredContainer.innerHTML = featuredBooks.map((book, index) => createBookCard(book, index)).join('');
+        initializeFeaturedSlider();
     }
 }
 
@@ -97,12 +91,33 @@ async function renderFictionBooks() {
 // Render sidebar books
 async function renderSidebarBooks() {
     // Helper to fix image URLs (consistent with books-data.js)
+
     const fixImageUrl = (img) => {
-        if (!img) return `data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22150%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22100%22 height=%22150%22/%3E%3C/svg%3E`;
-        if (img.startsWith('http') || img.startsWith('data:') || img.startsWith('/')) return img;
-        // Known bug: some Amazon shortcodes are broken. We will append the base URL but also rely on onerror
-        if (img.match(/^[a-zA-Z0-9_\-.]+\.jpg$/)) return "https://m.media-amazon.com/images/I/" + img;
-        return img;
+        if (!img) return `data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22150%22%3E%3Crect fill=%22%23fef3f2%22 width=%22100%22 height=%22150%22/%3E%3Ctext x=%2250%22 y=%2285%22 font-family=%22serif%22 font-size=%2224%22 fill=%22%23e44d32%22 text-anchor=%22middle%22%3EB%3C/text%3E%3C/svg%3E`;
+        
+        if (img.startsWith('http') || img.startsWith('data:') || img.startsWith('/')) {
+            // Clean up overly long Amazon modifiers if they cause 404s
+            if (img.includes('.media-amazon.com/images/I/')) {
+                const baseImg = img.split('._')[0];
+                if (!baseImg.endsWith('.jpg') && !baseImg.endsWith('.png')) {
+                    // Try to restore extension if it was part of the base
+                    return baseImg + '.jpg';
+                }
+                return baseImg;
+            }
+            return img;
+        }
+
+        // Amazon shortcodes - handle them more robustly
+        let cleanId = img.trim();
+        if (cleanId.includes('._')) {
+            cleanId = cleanId.split('._')[0];
+        }
+        if (!cleanId.endsWith('.jpg') && !cleanId.endsWith('.png')) {
+            cleanId = cleanId + '.jpg';
+        }
+        
+        return "https://m.media-amazon.com/images/I/" + cleanId;
     };
 
     // 1. Author Spotlight - Use Featured books
@@ -361,10 +376,18 @@ function initializeHeroSlider() {
         startAutoScroll();
     }
 
-    // Pause on hover
+
+    // Pause on interaction
     if (sliderContainer) {
         sliderContainer.addEventListener('mouseenter', stopAutoScroll);
         sliderContainer.addEventListener('mouseleave', startAutoScroll);
+        
+        // Mobile touch handling
+        sliderContainer.addEventListener('touchstart', stopAutoScroll, { passive: true });
+        sliderContainer.addEventListener('touchend', () => {
+            // Resume after 2 seconds of no touch
+            setTimeout(startAutoScroll, 2000);
+        }, { passive: true });
     }
 
     startAutoScroll();
@@ -398,7 +421,8 @@ function initializeChildrenSlider() {
     setupSlider('.children-books-track', '.children-prev', '.children-next');
 }
 
-function setupSlider(trackSelector, prevSelector, nextSelector) {
+
+function setupSlider(trackSelector, prevSelector, nextSelector, options = {}) {
     const track = document.querySelector(trackSelector);
     const prevBtn = document.querySelector(prevSelector);
     const nextBtn = document.querySelector(nextSelector);
@@ -408,9 +432,16 @@ function setupSlider(trackSelector, prevSelector, nextSelector) {
     const cards = track.querySelectorAll('.book-card');
     if (cards.length === 0) return;
 
-    // Force overflow hidden on parent so translateX works properly
+    const { autoScroll = true, interval = 3500 } = options;
+    let autoScrollInterval;
+
+
+    // Force overflow hidden on track so it acts as a fixed viewport
     track.style.overflow = 'hidden';
+    track.style.width = '100%';
+    track.style.display = 'block';
     track.style.scrollSnapType = 'none';
+    track.style.position = 'relative';
 
     // Create inner wrapper for transform
     const wrapper = document.createElement('div');
@@ -427,43 +458,99 @@ function setupSlider(trackSelector, prevSelector, nextSelector) {
 
     let currentIndex = 0;
 
+
     function getMetrics() {
         const cardEl = wrapper.querySelector('.book-card');
         if (!cardEl) return { cardWidth: 235, visibleCards: 3, maxIndex: 0 };
-        const style = window.getComputedStyle(cardEl);
-        const cardWidth = cardEl.offsetWidth + 15; // card + gap
-        const visibleCards = Math.floor(track.offsetWidth / cardWidth) || 1;
+        const cardWidth = cardEl.getBoundingClientRect().width + 15;
+        const visibleCards = Math.max(1, Math.floor((track.offsetWidth + 15) / cardWidth));
         const maxIndex = Math.max(0, cards.length - visibleCards);
         return { cardWidth, visibleCards, maxIndex };
     }
+
 
     function updateSlider() {
         const { cardWidth, maxIndex } = getMetrics();
         currentIndex = Math.min(currentIndex, maxIndex);
         currentIndex = Math.max(currentIndex, 0);
-        wrapper.style.transform = `translateX(-${currentIndex * cardWidth}px)`;
+        
+        // Use smoother transform for better mobile experience
+        const offset = -currentIndex * cardWidth;
+        wrapper.style.transform = `translate3d(${offset}px, 0, 0)`;
 
-        // Update button states
-        prevBtn.style.opacity = currentIndex === 0 ? '0.3' : '1';
-        prevBtn.style.pointerEvents = currentIndex === 0 ? 'none' : 'auto';
-        nextBtn.style.opacity = currentIndex >= maxIndex ? '0.3' : '1';
-        nextBtn.style.pointerEvents = currentIndex >= maxIndex ? 'none' : 'auto';
+        // Update button states - hide on mobile to save space
+        if (window.innerWidth <= 768) {
+            prevBtn.style.display = 'none';
+            nextBtn.style.display = 'none';
+        } else {
+            prevBtn.style.display = 'flex';
+            nextBtn.style.display = 'flex';
+            prevBtn.style.opacity = currentIndex === 0 ? '0.2' : '1';
+            prevBtn.style.pointerEvents = currentIndex === 0 ? 'none' : 'auto';
+            nextBtn.style.opacity = currentIndex >= maxIndex ? '0.2' : '1';
+            nextBtn.style.pointerEvents = currentIndex >= maxIndex ? 'none' : 'auto';
+        }
     }
 
-    nextBtn.addEventListener('click', () => {
+    function nextSlide() {
         const { maxIndex } = getMetrics();
         if (currentIndex < maxIndex) {
             currentIndex++;
-            updateSlider();
+        } else {
+            currentIndex = 0; // Return to start
         }
+        updateSlider();
+    }
+
+    function prevSlide() {
+        if (currentIndex > 0) {
+            currentIndex--;
+        } else {
+            const { maxIndex } = getMetrics();
+            currentIndex = maxIndex; // Go to end
+        }
+        updateSlider();
+    }
+
+    nextBtn.addEventListener('click', () => {
+        nextSlide();
+        resetAutoScroll();
     });
 
     prevBtn.addEventListener('click', () => {
-        if (currentIndex > 0) {
-            currentIndex--;
-            updateSlider();
-        }
+        prevSlide();
+        resetAutoScroll();
     });
+
+    // Auto-scroll logic
+    function startAutoScroll() {
+        if (autoScroll) {
+            autoScrollInterval = setInterval(nextSlide, interval);
+        }
+    }
+
+    function stopAutoScroll() {
+        if (autoScrollInterval) {
+            clearInterval(autoScrollInterval);
+        }
+    }
+
+    function resetAutoScroll() {
+        stopAutoScroll();
+        startAutoScroll();
+    }
+
+
+    // Pause on interaction
+    track.addEventListener('mouseenter', stopAutoScroll);
+    track.addEventListener('mouseleave', startAutoScroll);
+    
+    // Mobile touch handling
+    track.addEventListener('touchstart', stopAutoScroll, { passive: true });
+    track.addEventListener('touchend', () => {
+        // Resume after 2 seconds of no touch
+        setTimeout(startAutoScroll, 2000);
+    }, { passive: true });
 
     // Handle resize
     let resizeTimer;
@@ -473,6 +560,120 @@ function setupSlider(trackSelector, prevSelector, nextSelector) {
     });
 
     updateSlider();
+    startAutoScroll();
+}
+
+
+// Special initializer for Featured Slider (uses dots)
+function initializeFeaturedSlider() {
+    const track = document.getElementById('featuredBooks');
+    const dotsContainer = document.querySelector('.featured-section .section-nav');
+    
+    if (!track || !dotsContainer) return;
+
+    const cards = track.querySelectorAll('.book-card');
+    if (cards.length === 0) return;
+
+
+    track.style.display = 'flex';
+    track.style.gap = '15px';
+    track.style.transition = 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+    track.style.overflow = 'visible';
+    
+    const viewport = track.parentElement;
+    viewport.style.overflow = 'hidden';
+    viewport.style.position = 'relative';
+
+    let currentIndex = 0;
+    let autoScrollInterval;
+
+    function getMetrics() {
+        const viewportWidth = viewport.offsetWidth;
+        const cardWidth = cards[0].getBoundingClientRect().width + 15;
+        const visibleCards = Math.max(1, Math.floor((viewportWidth + 15) / cardWidth));
+        const totalSlides = Math.ceil(cards.length / visibleCards);
+        return { viewportWidth, cardWidth, visibleCards, totalSlides };
+    }
+
+    function createDots() {
+        const { totalSlides } = getMetrics();
+        dotsContainer.innerHTML = Array(totalSlides).fill(0).map((_, i) => 
+            `<span class="nav-dot ${i === 0 ? 'active' : ''}" data-index="${i}"></span>`
+        ).join('');
+        
+        dotsContainer.querySelectorAll('.nav-dot').forEach((dot, index) => {
+            dot.addEventListener('click', () => {
+                currentIndex = index;
+                updateSlider();
+                resetAutoScroll();
+            });
+        });
+    }
+
+    function updateSlider() {
+        const { viewportWidth, totalSlides } = getMetrics();
+        currentIndex = Math.min(currentIndex, totalSlides - 1);
+        
+        // Move by viewport width for true "page" scrolling
+        const offset = -currentIndex * viewportWidth;
+        track.style.transform = `translate3d(${offset}px, 0, 0)`;
+        
+        // Update dots
+        const dots = dotsContainer.querySelectorAll('.nav-dot');
+        dots.forEach((dot, index) => {
+            dot.classList.toggle('active', index === currentIndex);
+        });
+    }
+
+
+    function nextSlide() {
+        const { totalSlides } = getMetrics();
+        if (currentIndex < totalSlides - 1) {
+            currentIndex++;
+        } else {
+            currentIndex = 0;
+        }
+        updateSlider();
+    }
+
+    function startAutoScroll() {
+        autoScrollInterval = setInterval(nextSlide, 5000);
+    }
+
+    function stopAutoScroll() {
+        clearInterval(autoScrollInterval);
+    }
+
+    function resetAutoScroll() {
+        stopAutoScroll();
+        startAutoScroll();
+    }
+
+
+    track.parentElement.addEventListener('mouseenter', stopAutoScroll);
+    track.parentElement.addEventListener('mouseleave', startAutoScroll);
+    
+    // Mobile touch handling
+    track.parentElement.addEventListener('touchstart', stopAutoScroll, { passive: true });
+    track.parentElement.addEventListener('touchend', () => {
+        // Resume after 2 seconds of no touch
+        setTimeout(startAutoScroll, 2000);
+    }, { passive: true });
+
+    // Initial dot generation
+    createDots();
+    updateSlider();
+    startAutoScroll();
+
+    // Re-generate dots on resize as visible cards may change
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+            createDots();
+            updateSlider();
+        }, 250);
+    });
 }
 
 // ===== Category Strip Scroll =====
