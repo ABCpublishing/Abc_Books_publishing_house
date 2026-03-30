@@ -137,9 +137,39 @@ app.use((req, res, next) => {
     next();
 });
 
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'ABC Books API v2.0 (Neon PostgreSQL) is running!' });
+});
+
+// Diagnostic endpoint
+app.get('/api/debug-db', async (req, res) => {
+    try {
+        const dbStatus = {
+            hasUrl: !!process.env.DATABASE_URL,
+            urlPrefix: (process.env.DATABASE_URL || '').substring(0, 15) + '...',
+            timestamp: new Date().toISOString()
+        };
+        
+        const startTime = Date.now();
+        const result = await req.sql('SELECT 1 + 1 as test');
+        const duration = Date.now() - startTime;
+        
+        res.json({
+            status: 'success',
+            diagnostics: dbStatus,
+            queryResult: result,
+            responseTimeMs: duration
+        });
+    } catch (err) {
+        res.status(500).json({
+            status: 'error',
+            error: err.message,
+            stack: err.stack,
+            hasUrl: !!process.env.DATABASE_URL
+        });
+    }
 });
 
 
