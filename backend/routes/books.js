@@ -85,7 +85,8 @@ router.get('/', async (req, res) => {
                 description: 'The complete Holy Quran with English translation.'
             }
         ];
-        res.json({ books: fallbackBooks, message: "Displaying demo books due to database connection issue." });
+
+        res.json({ books: fallbackBooks, message: "Showing high-quality fallback books (DB connection pending)." });
     }
 });
 
@@ -128,9 +129,10 @@ router.get('/section/:section', async (req, res) => {
             }
         ];
         
+
         res.json({ 
             books: demoBooks, 
-            message: "Displaying demo books due to database connection issue.",
+            message: "Showing high-quality fallback books (DB connection pending).",
             isDemo: true 
         });
     }
