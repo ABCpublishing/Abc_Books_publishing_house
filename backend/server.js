@@ -114,21 +114,21 @@ app.use(express.json({ limit: '10mb' }));
 // Input sanitization for all requests
 app.use(sanitizeInput);
 
+
 // Database connection
 
 // DATABASE CONNECTION (Neon PostgreSQL)
-// Using Neon's Pool for compatibility with standard pg positional parameters ($1, $2)
-const { Pool } = require('@neondatabase/serverless');
-const dbUrl = (process.env.DATABASE_URL || '').replace('-pooler.', '.');
-const pool = new Pool({ connectionString: dbUrl });
+const { neon } = require('@neondatabase/serverless');
+const sql = neon(process.env.DATABASE_URL);
 
 // Make sql available to routes
 app.use((req, res, next) => {
     req.sql = async (query, params) => {
         try {
-            // Pool.query handles (query, params) correctly with $1 notation
-            const result = await pool.query(query, params);
-            return result.rows || [];
+            // The 'neon' constructor function handles (query, params) correctly
+            const result = await sql(query, params);
+            // HTTP driver returns rows directly
+            return Array.isArray(result) ? result : (result.rows || []);
         } catch (error) {
             console.error('🌐 Database Query Error:', error.message);
             throw error;
