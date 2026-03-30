@@ -4,7 +4,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>ABC Books | India's Premier Online Bookstore</title>
+    
+    <!-- Security Shield Styles -->
+    <style id="protectionStyles">
+        body.protected { overflow: hidden !important; height: 100vh !important; }
+        #securityShield {
+            position: fixed; inset: 0; z-index: 100000;
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .shield-card {
+            background: white; padding: 40px; border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1); width: 100%; max-width: 400px;
+            text-align: center; transform: translateY(0); transition: all 0.5s ease;
+        }
+        .shield-icon { font-size: 48px; color: #e44d32; margin-bottom: 20px; }
+        .shield-card h2 { font-size: 24px; margin-bottom: 10px; color: #1a1a1b; }
+        .shield-card p { color: #666; margin-bottom: 25px; font-size: 14px; }
+        .shield-input {
+            width: 100%; padding: 15px 20px; border: 2px solid #eee;
+            border-radius: 12px; font-size: 16px; margin-bottom: 20px;
+            outline: none; transition: border-color 0.3s;
+        }
+        .shield-input:focus { border-color: #e44d32; }
+        .shield-btn {
+            width: 100%; padding: 15px; background: #e44d32; color: white;
+            border: none; border-radius: 12px; font-weight: 600; cursor: pointer;
+            transition: transform 0.2s, background 0.3s;
+        }
+        .shield-btn:active { transform: scale(0.98); }
+        .shield-btn:hover { background: #c42b10; }
+        .error-shake { animation: shake 0.5s ease-in-out; border-color: #ff4d4d !important; }
+        @keyframes shake { 
+            0%, 100% { transform: translateX(0); } 
+            25% { transform: translateX(-10px); } 
+            75% { transform: translateX(10px); } 
+        }
+    </style>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="alternate icon" type="image/png" sizes="32x32" href="/favicon.svg">
     <link rel="apple-touch-icon" href="/favicon.svg">
@@ -63,7 +104,17 @@
     <link rel="stylesheet" href="/css/components/hero-modern.css">
 </head>
 
-<body>
+<body class="protected">
+    <!-- Security Shield Overlay -->
+    <div id="securityShield">
+        <div class="shield-card" id="shieldCard">
+            <div class="shield-icon"><i class="fas fa-shield-alt"></i></div>
+            <h2>Private Access Only</h2>
+            <p>Please enter your secret password to view and access the bookstore code.</p>
+            <input type="password" id="shieldPass" class="shield-input" placeholder="••••••••">
+            <button class="shield-btn" onclick="verifyShield()">Unlock Store</button>
+        </div>
+    </div>
     <!-- Decorative Elements -->
     <div class="floating-leaves">
         <div class="leaf leaf-1"></div>
@@ -991,6 +1042,68 @@
     <script src="/js/data/books-data.js?v=3.0"></script>
     <script src="/js/script.js?v=3.0"></script>
     <script src="/js/mobile-menu.js?v=3.0"></script>
+
+    <!-- Protection Script -->
+    <script>
+        (function() {
+            // YOU CAN CHANGE YOUR PASSWORD HERE
+            const SECRET_KEY = "abc2026"; 
+            
+            // 1. Password Verification
+            window.verifyShield = function() {
+                const input = document.getElementById('shieldPass');
+                const shield = document.getElementById('securityShield');
+                if (!input || !shield) return;
+                
+                if (input.value === SECRET_KEY) {
+                    shield.style.opacity = '0';
+                    shield.style.visibility = 'hidden';
+                    shield.style.transform = 'scale(1.1)';
+                    document.body.classList.remove('protected');
+                    sessionStorage.setItem('store_unlocked', 'true');
+                    setTimeout(() => shield.remove(), 800);
+                } else {
+                    input.classList.add('error-shake');
+                    setTimeout(() => input.classList.remove('error-shake'), 500);
+                    input.value = "";
+                }
+            };
+            
+            // Check session
+            if (sessionStorage.getItem('store_unlocked') === 'true') {
+                const shield = document.getElementById('securityShield');
+                if (shield) shield.remove();
+                document.body.classList.remove('protected');
+            }
+
+            // Enter key support
+            document.addEventListener('DOMContentLoaded', () => {
+                const passInput = document.getElementById('shieldPass');
+                if (passInput) {
+                    passInput.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') verifyShield();
+                    });
+                }
+            });
+
+            // 2. Block Right-Click
+            document.addEventListener('contextmenu', e => e.preventDefault());
+
+            // 3. Block Keyboard Shortcuts (F12, Ctrl+Shift+I, Ctrl+U, Ctrl+C)
+            document.onkeydown = function(e) {
+                if (e.keyCode === 123) return false;
+                if (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 105)) return false;
+                if (e.ctrlKey && e.shiftKey && (e.keyCode === 67 || e.keyCode === 99)) return false;
+                if (e.ctrlKey && e.shiftKey && (e.keyCode === 74 || e.keyCode === 106)) return false;
+                if (e.ctrlKey && (e.keyCode === 85 || e.keyCode === 117)) return false;
+                if (e.ctrlKey && (e.keyCode === 67 || e.keyCode === 99)) return false;
+                if (e.ctrlKey && (e.keyCode === 83 || e.keyCode === 115)) return false;
+            };
+
+            // 4. Disable Text Selection
+            document.addEventListener('selectstart', e => e.preventDefault());
+        })();
+    </script>
 </body>
 
 </html>
