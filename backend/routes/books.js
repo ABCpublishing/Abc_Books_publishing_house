@@ -54,20 +54,21 @@ router.get('/', async (req, res) => {
         if (books.length === 0) {
             // FALLBACK: If DB is empty or unreachable, return premium demo books
             console.log("⚠️  Serving demo books fallback");
+
             books = [
                 {
                     id: 1, title: 'The Holy Quran', author: 'Divine Revelation', category: 'Islamic', 
-                    price: 299, original_price: 499, image: '',
+                    price: 299, original_price: 499, image: '71xKk7+9jPL.jpg',
                     description: 'The complete Holy Quran with English translation.'
                 },
                 {
-                    id: 2, title: 'Modern India', author: 'Rajiv Ahir', category: 'General', 
-                    price: 394, original_price: 649, image: '',
+                    id: 2, title: 'Modern India', author: 'Spectrum / Rajiv Ahir', category: 'General', 
+                    price: 394, original_price: 649, image: '8194411649.jpg',
                     description: 'A brief history of modern India.'
                 },
                 {
-                    id: 3, title: 'Environment (10th Edition)', author: 'IAS Academy', category: 'General', 
-                    price: 599, original_price: 899, image: '',
+                    id: 3, title: 'Environment (10th Edition)', author: 'Shankar IAS Academy', category: 'General', 
+                    price: 599, original_price: 899, image: '9390597375.jpg',
                     description: 'Comprehensive guide for environmental science.'
                 }
             ];
@@ -108,20 +109,21 @@ router.get('/section/:section', async (req, res) => {
         console.error('Get section books error:', error);
         
         // Comprehensive Fallback for all sections (Hero, Featured, etc.)
+
         const demoBooks = [
             {
                 id: 1, title: 'The Holy Quran', author: 'Divine Revelation', category: 'Islamic', 
-                price: 299, original_price: 499, image: '',
+                price: 299, original_price: 499, image: '71xKk7+9jPL.jpg',
                 description: 'The complete Holy Quran with English translation.'
             },
             {
-                id: 2, title: 'Modern India', author: 'Rajiv Ahir', category: 'General', 
-                price: 394, original_price: 649, image: '',
+                id: 2, title: 'Modern India', author: 'Spectrum / Rajiv Ahir', category: 'General', 
+                price: 394, original_price: 649, image: '8194411649.jpg',
                 description: 'A brief history of modern India.'
             },
             {
-                id: 3, title: 'Environment (10th Edition)', author: 'IAS Academy', category: 'General', 
-                price: 599, original_price: 899, image: '',
+                id: 3, title: 'Environment (10th Edition)', author: 'Shankar IAS Academy', category: 'General', 
+                price: 599, original_price: 899, image: '9390597375.jpg',
                 description: 'Comprehensive guide for environmental science.'
             }
         ];
