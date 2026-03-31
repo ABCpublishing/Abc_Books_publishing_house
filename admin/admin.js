@@ -740,59 +740,59 @@ async function updateOrderStatusFromAdmin() {
 // ===== RENDER BOOKS TABLE =====
 async function renderBooksTable(books) {
     const tbody = document.getElementById('booksTableBody');
+    if (!tbody) return;
 
     if (!books || books.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="no-data">No books added yet</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="no-data">No books found matching criteria</td></tr>';
         return;
     }
 
-    // We need to fetch sections for each book to display badges? 
-    // That would be N+1 requests. 
-    // Alternatively, just display "Hero" etc if we fetched all books (the API doesn't return sections in getAll list).
-    // For now, we might skip detailed section badges on the main list to save performance, 
-    // OR we fetch all sections first and map them.
-
-    // Let's try to fetch section maps
-    let sectionMap = {};
-    try {
-        const [hero, editors, featured, trending, bestseller] = await Promise.all([
-            API.Books.getBySection('hero').catch(() => ({ books: [] })),
-            API.Books.getBySection('editors').catch(() => ({ books: [] })),
-            API.Books.getBySection('featured').catch(() => ({ books: [] })),
-            API.Books.getBySection('trending').catch(() => ({ books: [] })),
-            API.Books.getBySection('bestseller').catch(() => ({ books: [] }))
-        ]);
-
-        books.forEach(b => {
-            sectionMap[b.id] = [];
-            if (hero.books?.find(hb => hb.id === b.id)) sectionMap[b.id].push('Hero');
-            if (editors.books?.find(eb => eb.id === b.id)) sectionMap[b.id].push('Editors');
-            if (featured.books?.find(fb => fb.id === b.id)) sectionMap[b.id].push('Featured');
-            if (trending.books?.find(tb => tb.id === b.id)) sectionMap[b.id].push('Trending');
-            if (bestseller.books?.find(bb => bb.id === b.id)) sectionMap[b.id].push('Bestseller');
-        });
-    } catch (e) { console.warn('Could not load section badges', e); }
-
     tbody.innerHTML = books.map(book => {
-        const sectionBadges = (sectionMap[book.id] || []).map(s => `<span class="badge">${s}</span>`).join('');
-        
+        // More comprehensive label mapping
+        const sectionLabels = {
+            'hero': 'Hero Main',
+            'featured': 'Featured',
+            'islamicBooks': 'Islamic',
+            'trending': 'Trending',
+            'newReleases': 'New',
+            'indianAuthors': 'Popular Urdu',
+            'children': 'Children',
+            'fiction': 'Fiction',
+            'academic': 'Academic',
+            'exam': 'Exam Mastery',
+            'boxSets': 'BoxSet'
+        };
 
+        const sectionBadges = (book.sections || [])
+            .filter(s => s && s !== 'null' && s !== 'undefined' && s.trim() !== '')
+            .map(s => {
+                const label = sectionLabels[s] || (s.charAt(0).toUpperCase() + s.slice(1));
+                return `<span class="badge" title="Book is in ${label} section" style="background: #f0f4ff; color: #5c7cfa; font-size: 10px; margin-right: 2px; padding: 2px 6px; border-radius: 4px; display: inline-block;">${label}</span>`;
+            }).join('');
+        
         const displayImage = fixImageUrl(book.image);
         
         return `
             <tr>
                 <td><code style="background:#f0f0f0;padding:2px 6px;border-radius:4px;font-size:12px;">${book.id}</code></td>
-                <td><img src="${displayImage}" alt="${book.title}" class="book-img" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22150%22%3E%3Crect fill=%22%23fef3f2%22 width=%22100%22 height=%22150%22/%3E%3C/svg%3E'"></td>
-                <td>${book.title}</td>
-                <td>${book.author}</td>
-                <td>₹${book.price}</td>
-                <td><div class="section-badges">${sectionBadges || '<span style="color: #999;">None</span>'}</div></td>
+                <td><img src="${displayImage}" alt="${book.title}" class="book-img" style="width: 40px; height: 60px; object-fit: cover; border-radius: 4px;" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22150%22%3E%3Crect fill=%22%23fef3f2%22 width=%22100%22 height=%22150%22/%3E%3C/svg%3E'"></td>
+                <td>
+                    <div style="font-weight: 600;">${book.title}</div>
+                    <div style="font-size: 11px; color: #7f8c8d;">${book.category || book.language || 'General'} / ${book.subcategory || 'N/A'}</div>
+                </td>
+                <td style="font-size: 13px;">${book.author}</td>
+                <td style="font-weight: 600; color: #27ae60;">₹${book.price}</td>
+                <td>
+                    <div class="section-badges" style="display: flex; flex-wrap: wrap; gap: 4px; max-width: 150px;">
+                        ${sectionBadges || '<span style="color: #ccc; font-size: 11px;">None Linked</span>'}
+                    </div>
+                </td>
                 <td>
                     <div class="action-icons">
-                        <button class="icon-btn edit" onclick="editBook('${book.id}')" title="Edit">
+                        <button class="icon-btn edit" onclick="editBook('${book.id}')" title="Edit Book">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="icon-btn delete" onclick="deleteBook('${book.id}')" title="Delete">
+                        <button class="icon-btn delete" onclick="deleteBook('${book.id}')" title="Delete Book">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>

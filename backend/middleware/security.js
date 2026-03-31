@@ -73,18 +73,14 @@ const authenticateAdmin = async (req, res, next) => {
             throw jwtError;
         }
 
-        // 1. FAST PATH: Check token payload first
-        const adminWhitelist = ['maktabailmuadab@gmail.com', 'admin@abcbooks.store', 'admin@abcbooks.com'];
-        const isWhitelisted = adminWhitelist.includes(decoded.email);
-
         if (decoded.isAdmin === true || isWhitelisted) {
             req.userId = decoded.userId;
             req.isAdmin = true;
             req.userEmail = decoded.email;
-            return next();
+            return next(); // FAST PATH: Skip DB check
         }
 
-        // 2. SLOW PATH: Double check database
+        // 2. SLOW PATH: Double check database (only if not already verified as admin)
         const db = req.sql;
         const users = await db(
             'SELECT id, email, is_admin FROM users WHERE id = $1 OR email = $2',
