@@ -215,6 +215,10 @@ const BooksAPI = {
 
     async getBySection(section) {
         return await apiRequest(`/books/section/${section}`);
+    },
+
+    async getHomeSummary() {
+        return await apiRequest('/books/home-summary');
     }
 };
 
@@ -244,22 +248,23 @@ const CartAPI = {
         });
     },
 
-    async clear(userId) {
-        const items = await this.get(userId);
-        await Promise.all(items.map(item => this.remove(item.id)));
+    async clear() {
+        return await apiRequest('/cart/actions/clear', {
+            method: 'DELETE'
+        });
     }
 };
 
 // ===== Wishlist API =====
 const WishlistAPI = {
-    async get(userId) {
+    async get() {
         return await apiRequest('/wishlist');
     },
 
-    async add(wishlistItem) {
+    async add(book_id) {
         return await apiRequest('/wishlist', {
             method: 'POST',
-            body: JSON.stringify(wishlistItem)
+            body: JSON.stringify({ book_id })
         });
     },
 
@@ -267,6 +272,16 @@ const WishlistAPI = {
         return await apiRequest(`/wishlist/${id}`, {
             method: 'DELETE'
         });
+    },
+
+    async removeByBookId(bookId) {
+        return await apiRequest(`/wishlist/book/${bookId}`, {
+            method: 'DELETE'
+        });
+    },
+
+    async check(bookId) {
+        return await apiRequest(`/wishlist/check/${bookId}`);
     }
 };
 
@@ -276,7 +291,7 @@ const OrdersAPI = {
         return await apiRequest('/orders');
     },
 
-    async getByUser(userId) {
+    async getByUser() {
         return await apiRequest('/orders/my-orders');
     },
 
@@ -287,10 +302,10 @@ const OrdersAPI = {
         });
     },
 
-    async updateStatus(orderId, status) {
+    async updateStatus(orderId, updateData) {
         return await apiRequest(`/orders/${orderId}/status`, {
             method: 'PATCH',
-            body: JSON.stringify({ status })
+            body: JSON.stringify(updateData)
         });
     },
 

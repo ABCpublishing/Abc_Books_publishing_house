@@ -942,6 +942,8 @@ async function initializeWebsite() {
         renderFromData('trending', 'trendingBooks', initializeTrendingSlider);
         renderFromData('newReleases', 'newReleasesBooks', initializeReleasesSlider);
         renderFromData('children', 'childrenBooks', initializeChildrenSlider);
+        renderFromData('academic', 'academicBooks'); // NEW: Academic Sidebar
+        renderFromData('exam', 'examBooks'); // NEW: Exam Management
         
         // Sections that might need individual fallbacks or specific logic
         renderHeroBooks(); // Usually static or special

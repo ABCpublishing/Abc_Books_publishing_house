@@ -156,32 +156,41 @@ router.get('/home-summary', async (req, res) => {
     try {
         const db = req.sql;
         
-        // Define all sections we want to fetch
-        const sections = ['hero', 'editors', 'featured', 'trending', 'islamicBooks', 'children', 'newReleases'];
+        // Define all sections we want to fetch (Synced with admin labels)
+        const sections = [
+            'hero', 'editors', 'featured', 'trending', 
+            'islamicBooks', 'children', 'newReleases', 
+            'indianAuthors', 'fiction', 'academic', 'exam'
+        ];
         
         const results = {};
         
-        // Use Promise.all for parallel fetching if needed, but for Neon HTTP, 
-        // batching them or using a single complex query is better. 
-        // For now, let's just do them efficiently.
-        
-        for (const section of sections) {
-            // Re-use our logic: check section then category
+        // Fetch all sections in parallel for MAXIMUM performance
+        await Promise.all(sections.map(async (section) => {
+            // Priority 1: Manual Links
             let books = await db(
                 'SELECT b.* FROM books b INNER JOIN book_sections bs ON b.id = bs.book_id WHERE bs.section_name = $1 ORDER BY bs.display_order ASC LIMIT 12',
                 [section]
             );
             
+            // Priority 2: Intelligent Fallback
             if (books.length === 0) {
-                const categoryMap = { 'islamicBooks': 'Islamic', 'children': 'Children' };
+                const categoryMap = { 
+                    'islamicBooks': 'Islamic', 
+                    'children': 'Children',
+                    'indianAuthors': 'Urdu',
+                    'academic': 'Academic',
+                    'exam': 'Exam',
+                    'fiction': 'Fiction'
+                };
                 const target = categoryMap[section] || section;
                 books = await db(
-                    'SELECT * FROM books WHERE category ILIKE $1 OR language ILIKE $1 ORDER BY created_at DESC LIMIT 12',
-                    [target]
+                    'SELECT * FROM books WHERE category ILIKE $1 OR language ILIKE $1 OR subcategory ILIKE $1 ORDER BY created_at DESC LIMIT 12',
+                    [`%${target}%`]
                 );
             }
             results[section] = books;
-        }
+        }));
 
         res.json({ 
             status: 'success',
