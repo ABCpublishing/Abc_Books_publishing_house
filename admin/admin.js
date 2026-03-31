@@ -9,6 +9,7 @@ const STORAGE_KEYS = {
 };
 
 // Default Admin Credentials
+let currentOrderForPrint = null;
 const ADMIN_CREDENTIALS = {
     username: 'admin',
     password: 'admin123'
@@ -595,6 +596,8 @@ async function viewOrderDetails(orderId) {
         const response = await API.Orders.getById(orderId);
         const order = response.order;
         if (!order) { alert('Order not found'); return; }
+
+        currentOrderForPrint = order; // Save for printing
 
         const modal = document.getElementById('orderModal');
         const body = document.getElementById('orderModalBody');
@@ -1358,3 +1361,143 @@ document.addEventListener('change', function (e) {
         if (boxSetsCb) boxSetsCb.checked = false;
     }
 });
+
+// ===== PRINT ORDER INVOICE (Professional Format) =====
+function printOrderInvoice() {
+    if (!currentOrderForPrint) {
+        alert('Order data not available for printing. Please re-open the details.');
+        return;
+    }
+
+    const order = currentOrderForPrint;
+    const printWindow = window.open('', '_blank');
+    
+    // Formatting currency for professional look
+    const formatPrice = (price) => `₹${Number(price || 0).toLocaleString('en-IN')}`;
+    const dateStr = new Date(order.created_at).toLocaleDateString('en-IN', {
+        day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
+    });
+
+    const itemsHtml = (order.items || []).map((item, index) => `
+        <tr>
+            <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">${index + 1}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #eee;">
+                <strong>${item.title || item.book_title}</strong><br>
+                <small style="color: #666;">By: ${item.author || item.book_author || 'N/A'}</small>
+            </td>
+            <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">${formatPrice(item.price)}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">
+                <strong>${formatPrice(item.price * item.quantity)}</strong>
+            </td>
+        </tr>
+    `).join('');
+
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Invoice - ${order.order_id}</title>
+            <style>
+                body { font-family: 'Segoe UI', Arial, sans-serif; padding: 40px; color: #333; line-height: 1.5; }
+                .invoice-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #667eea; padding-bottom: 20px; margin-bottom: 30px; }
+                .company-logo { font-size: 32px; font-weight: 800; color: #667eea; letter-spacing: -1px; display: flex; align-items: center; gap: 10px; margin: 0; }
+                .company-logo span { color: #f5576c; }
+                .invoice-tag { font-size: 24px; font-weight: bold; color: #999; text-transform: uppercase; }
+                .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 40px; }
+                .info-box h4 { margin: 0 0 10px 0; font-size: 14px; text-transform: uppercase; color: #888; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+                .info-box p { margin: 2px 0; font-size: 15px; }
+                .order-summary { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+                .order-summary th { background: #f8fbff; padding: 12px 10px; text-align: left; font-size: 13px; text-transform: uppercase; color: #555; border-bottom: 2px solid #667eea; }
+                .totals-box { margin-left: auto; width: 250px; background: #fdfdfd; border: 1px solid #eee; padding: 15px; border-radius: 8px; }
+                .total-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 14px; }
+                .grand-total { border-top: 2px solid #667eea; margin-top: 10px; padding-top: 10px; font-weight: bold; font-size: 18px; color: #27ae60; }
+                .footer { margin-top: 60px; text-align: center; border-top: 1px solid #eee; padding-top: 20px; font-size: 13px; color: #999; }
+                .print-btn-float { position: fixed; top: 20px; right: 20px; padding: 10px 25px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+                @media print { .print-btn-float { display: none; } }
+            </style>
+        </head>
+        <body>
+            <button class="print-btn-float" onclick="window.print()">🖨️ Click to Print</button>
+
+            <div class="invoice-header">
+                <div>
+                     <h1 class="company-logo">ABC<span>BOOKS</span></h1>
+                     <p style="margin: 0; font-size: 12px; color: #666;">ABC Books Publishing House</p>
+                </div>
+                <div class="invoice-tag">Order Invoice</div>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-box">
+                    <h4>FROM: STORE</h4>
+                    <p><strong>ABC Books Publishing House</strong></p>
+                    <p>Main Market Road, Batamaloo</p>
+                    <p>Srinagar, Jammu & Kashmir - 190011</p>
+                    <p>Contact: +91 1800 123 456</p>
+                    <p>Email: support@abcbooks.store</p>
+                </div>
+                <div class="info-box">
+                    <h4>TO: CUSTOMER</h4>
+                    <p><strong>${order.shipping_first_name} ${order.shipping_last_name}</strong></p>
+                    <p>${order.shipping_address1}</p>
+                    ${order.shipping_address2 ? `<p>${order.shipping_address2}</p>` : ''}
+                    <p>${order.shipping_city}, ${order.shipping_state} - ${order.shipping_pincode}</p>
+                    <p>Tel: ${order.shipping_phone || 'N/A'}</p>
+                </div>
+            </div>
+
+            <div class="info-grid" style="grid-template-columns: 1.5fr 1fr; background: #f9f9f9; padding: 20px; border-radius: 8px; margin-top: -20px;">
+                <div>
+                    <h4 style="border:none; margin:0; padding: 0;">ORDER DETAILS</h4>
+                    <p style="font-size: 18px; color: #667eea; margin: 5px 0;"><strong>ID: #${order.order_id}</strong></p>
+                    <p style="margin: 0;">Placement Date: ${dateStr}</p>
+                </div>
+                <div style="text-align: right;">
+                    <h4 style="border:none; margin:0; text-align: right; padding: 0;">PAYMENT INFO</h4>
+                    <p style="margin: 5px 0;"><strong>Method:</strong> ${order.payment_method.toUpperCase()}</p>
+                    <p style="margin: 0;"><strong>Status:</strong> ${order.status.toUpperCase()}</p>
+                </div>
+            </div>
+
+            <table class="order-summary" style="margin-top: 30px;">
+                <thead>
+                    <tr>
+                        <th style="text-align: center; width: 40px;">S.No</th>
+                        <th>Item Description</th>
+                        <th style="text-align: center; width: 60px;">Qty</th>
+                        <th style="text-align: right; width: 100px;">Price</th>
+                        <th style="text-align: right; width: 100px;">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${itemsHtml}
+                </tbody>
+            </table>
+
+            <div class="totals-box">
+                <div class="total-row"><span>Total Items Cost</span> <span>${formatPrice(order.subtotal || order.total)}</span></div>
+                <div class="total-row"><span>Promo Discount</span> <span>-₹${order.discount || 0}</span></div>
+                <div class="total-row"><span>Shipping & Handling</span> <span>FREE</span></div>
+                <div class="grand-total total-row">
+                    <span>FINAL TOTAL</span> 
+                    <span>${formatPrice(order.total)}</span>
+                </div>
+            </div>
+
+            <div class="footer">
+                <p>Thank you for shopping with ABC Books!</p>
+                <p>For support, please visit www.abcbooks.store/support</p>
+                <p style="font-size: 11px; margin-top: 15px;">&copy; 2026 ABC Books Publishing House. All rights reserved.</p>
+            </div>
+
+            <script>
+                // Show print dialog automatically when order is ready
+                // window.onload = () => { setTimeout(() => window.print(), 500); };
+            </script>
+        </body>
+        </html>
+    `);
+    
+    printWindow.document.close();
+}

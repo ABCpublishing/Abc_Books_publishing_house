@@ -69,7 +69,44 @@ router.post('/create-order', async (req, res) => {
     }
 });
 
-// Verify Payment Signature
+// Webhook Verification (Critical for ensuring orders are processed even if browser is closed)
+// POST /api/payment/webhook
+router.post('/webhook', async (req, res) => {
+    try {
+        const secret = process.env.RAZORPAY_WEBHOOK_SECRET || 'abc_books_webhook_secret';
+        const signature = req.headers['x-razorpay-signature'];
+
+        // Verify webhook signature
+        const shasum = crypto.createHmac('sha256', secret);
+        shasum.update(JSON.stringify(req.body));
+        const digest = shasum.digest('hex');
+
+        if (digest !== signature) {
+            console.log('❌ Webhook signature mismatch');
+            return res.status(400).json({ error: 'Invalid signature' });
+        }
+
+        console.log('✅ Webhook verified:', req.body.event);
+
+        const { event, payload } = req.body;
+
+        // Handle successful payment
+        if (event === 'payment.captured') {
+            const payment = payload.payment.entity;
+            const orderId = payment.order_id;
+            
+            console.log(`💰 Payment captured for Razorpay Order: ${orderId}`);
+            // Logic to update order status in DB would happen here if we have order mapping
+        }
+
+        res.json({ status: 'ok' });
+    } catch (error) {
+        console.error('Webhook error:', error);
+        res.status(500).json({ error: 'Webhook processing failed' });
+    }
+});
+
+// Verify Payment Signature (Frontend Callback)
 // POST /api/payment/verify
 router.post('/verify', async (req, res) => {
     if (!hasRazorpayKeys) {
