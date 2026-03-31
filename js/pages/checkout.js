@@ -405,8 +405,7 @@ function validateForm() {
 // Place order
 async function placeOrder() {
     console.log('🛒 Place Order clicked');
-    console.log('Cart items:', cartItems);
-
+    
     if (cartItems.length === 0) {
         showNotification('Your cart is empty', 'error');
         return;
@@ -416,32 +415,56 @@ async function placeOrder() {
         return;
     }
 
+    // Disable button to prevent double-click
+    const placeOrderBtn = document.querySelector('.btn-place-order');
+    if (placeOrderBtn) {
+        placeOrderBtn.disabled = true;
+        placeOrderBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    }
+
     // Get selected payment method
     const paymentMethod = document.querySelector('input[name="payment"]:checked')?.value || 'cod';
     console.log('💳 Payment method selected:', paymentMethod);
 
-    // If Razorpay is selected, initiate Razorpay payment
-    if (paymentMethod === 'razorpay') {
-        // Razorpay does not accept 0 amount, process directly if free
-        if (grandTotal === 0) {
-            console.log('💳 Order is free, bypassing Razorpay...');
-            showNotification('Free order processed without payment gateway', 'success');
-            await processOrder('free');
+    try {
+        // If Razorpay is selected, initiate Razorpay payment
+        if (paymentMethod === 'razorpay') {
+            // Razorpay does not accept 0 amount, process directly if free
+            if (grandTotal === 0) {
+                console.log('💳 Order is free, bypassing Razorpay...');
+                showNotification('Free order processed without payment gateway', 'success');
+                await processOrder('free');
+                return;
+            }
+            
+            // Check if Razorpay SDK is actually loaded
+            if (typeof Razorpay === 'undefined') {
+                throw new Error('Payment gateway (Razorpay) is currently unavailable. Please try Cash on Delivery or refresh the page.');
+            }
+
+            await initiateRazorpayPayment();
             return;
         }
-        await initiateRazorpayPayment();
-        return;
-    }
 
-    // For other payment methods (COD, UPI, Card, NetBanking), proceed with normal order
-    await processOrder(paymentMethod);
+        // For COD, proceed with normal order
+        await processOrder(paymentMethod);
+    } catch (error) {
+        console.error('❌ Order Placement Error:', error);
+        showNotification(error.message, 'error');
+        
+        // Re-enable button on error
+        if (placeOrderBtn) {
+            placeOrderBtn.disabled = false;
+            placeOrderBtn.innerHTML = '<i class="fas fa-lock"></i> Place Order';
+        }
+    }
 }
 
 // Initiate Razorpay Payment
 async function initiateRazorpayPayment() {
     try {
-        console.log('💳 Initiating Razorpay payment...');
-        showNotification('Initializing payment...', 'info');
+        console.log('💳 Initiating Razorpay payment... Total:', grandTotal);
+        showNotification('Initializing Secure Payment...', 'info');
 
         // Create Razorpay order via backend
         const response = await fetch(`${CHECKOUT_API_BASE}/payment/create-order`, {
@@ -460,16 +483,19 @@ async function initiateRazorpayPayment() {
             })
         });
 
+        // 🛡️ SECURITY CHECK: Validate response
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ Server returned error for create-order:', errorText);
+            throw new Error('Payment server connection failed. Please try again or use Cash on Delivery.');
+        }
+
         const data = await response.json();
         console.log('📥 Razorpay order response:', data);
 
         if (!data.success) {
-            showNotification('Failed to create payment order: ' + (data.error || 'Unknown error'), 'error');
-            return;
+            throw new Error('Failed to create payment order: ' + (data.error || 'Check server configuration'));
         }
-
-        // Get user details for prefilling
-        const currentUser = JSON.parse(localStorage.getItem('abc_books_current_user') || 'null');
 
         // Razorpay checkout options
         const options = {
@@ -477,7 +503,7 @@ async function initiateRazorpayPayment() {
             amount: data.order.amount,
             currency: data.order.currency,
             name: 'ABC Books',
-            description: 'Book Purchase',
+            description: 'Order #' + data.order.receipt,
             order_id: data.order.id,
             prefill: {
                 name: document.getElementById('firstName').value + ' ' + document.getElementById('lastName').value,
@@ -491,50 +517,53 @@ async function initiateRazorpayPayment() {
                 color: '#8B4513'
             },
             handler: async function (response) {
-                console.log('✅ Razorpay payment successful:', response);
+                console.log('✅ Razorpay payment successful, verifying...', response);
+                showNotification('Payment successful! Finalizing order...', 'success');
 
-                // Verify payment on backend
-                const verifyResponse = await fetch(`${CHECKOUT_API_BASE}/payment/verify`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        razorpay_order_id: response.razorpay_order_id,
-                        razorpay_payment_id: response.razorpay_payment_id,
-                        razorpay_signature: response.razorpay_signature
-                    })
-                });
+                try {
+                    // Verify payment on backend
+                    const verifyResponse = await fetch(`${CHECKOUT_API_BASE}/payment/verify`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature
+                        })
+                    });
 
-                const verifyData = await verifyResponse.json();
-                console.log('🔐 Payment verification:', verifyData);
-
-                if (verifyData.success) {
-                    // Payment verified, now save the order
-                    await processOrder('razorpay', response.razorpay_payment_id);
-                } else {
-                    showNotification('Payment verification failed. Please contact support.', 'error');
+                    const verifyData = await verifyResponse.json();
+                    if (verifyData.success) {
+                        await processOrder('razorpay', response.razorpay_payment_id);
+                    } else {
+                        throw new Error('Payment verification failed. Please contact support.');
+                    }
+                } catch (vError) {
+                    showNotification(vError.message, 'error');
                 }
             },
             modal: {
                 ondismiss: function () {
                     console.log('⚠️ Razorpay modal closed');
                     showNotification('Payment cancelled', 'warning');
+                    // Re-enable button
+                    const placeOrderBtn = document.querySelector('.btn-place-order');
+                    if (placeOrderBtn) {
+                        placeOrderBtn.disabled = false;
+                        placeOrderBtn.innerHTML = '<i class="fas fa-lock"></i> Place Order';
+                    }
                 }
             }
         };
 
-        // Open Razorpay checkout
-        const razorpay = new Razorpay(options);
-        razorpay.on('payment.failed', function (response) {
-            console.error('❌ Payment failed:', response.error);
-            showNotification('Payment failed: ' + response.error.description, 'error');
-        });
-        razorpay.open();
+        const rzp = new Razorpay(options);
+        rzp.open();
 
     } catch (error) {
         console.error('❌ Razorpay error:', error);
-        showNotification('Payment initialization failed: ' + error.message, 'error');
+        throw error; // Let placeOrder handle notification and button reset
     }
 }
 

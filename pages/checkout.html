@@ -150,8 +150,8 @@
                     <section class="checkout-section" id="paymentSection">
                         <h2><i class="fas fa-credit-card"></i> Payment Method</h2>
                         <div class="payment-methods">
-                            <label class="payment-option">
-                                <input type="radio" name="payment" value="cod" checked>
+                            <label class="payment-option" for="paymentCod">
+                                <input type="radio" name="payment" id="paymentCod" value="cod" checked>
                                 <div class="payment-content">
                                     <div class="payment-icon"><i class="fas fa-money-bill-wave"></i></div>
                                     <div class="payment-details">
@@ -160,28 +160,20 @@
                                     </div>
                                 </div>
                             </label>
-                            <label class="payment-option razorpay-option">
-                                <input type="radio" name="payment" value="razorpay">
+                            <label class="payment-option razorpay-option" for="paymentRazorpay">
+                                <input type="radio" name="payment" id="paymentRazorpay" value="razorpay">
                                 <div class="payment-content">
-                                    <div class="payment-icon"
-                                        style="background: linear-gradient(135deg, #3395FF, #2374AB);">
+                                    <div class="payment-icon" style="background: linear-gradient(135deg, #3395FF, #2374AB);">
                                         <i class="fas fa-bolt"></i>
                                     </div>
                                     <div class="payment-details">
                                         <h4>Pay with Razorpay</h4>
                                         <p>Cards, UPI, Wallets, NetBanking - All in one</p>
-                                        <div class="razorpay-badge"
-                                            style="display: flex; gap: 8px; margin-top: 5px; flex-wrap: wrap;">
-                                            <span
-                                                style="font-size: 10px; background: #f0f0f0; padding: 2px 6px; border-radius: 3px;">Visa</span>
-                                            <span
-                                                style="font-size: 10px; background: #f0f0f0; padding: 2px 6px; border-radius: 3px;">Mastercard</span>
-                                            <span
-                                                style="font-size: 10px; background: #f0f0f0; padding: 2px 6px; border-radius: 3px;">UPI</span>
-                                            <span
-                                                style="font-size: 10px; background: #f0f0f0; padding: 2px 6px; border-radius: 3px;">GPay</span>
-                                            <span
-                                                style="font-size: 10px; background: #f0f0f0; padding: 2px 6px; border-radius: 3px;">PhonePe</span>
+                                        <div class="razorpay-badge" style="display: flex; gap: 8px; margin-top: 5px; flex-wrap: wrap;">
+                                            <span style="font-size: 10px; background: #f0f0f0; padding: 2px 6px; border-radius: 3px;">Visa</span>
+                                            <span style="font-size: 10px; background: #f0f0f0; padding: 2px 6px; border-radius: 3px;">Mastercard</span>
+                                            <span style="font-size: 10px; background: #f0f0f0; padding: 2px 6px; border-radius: 3px;">UPI</span>
+                                            <span style="font-size: 10px; background: #f0f0f0; padding: 2px 6px; border-radius: 3px;">GPay</span>
                                         </div>
                                     </div>
                                 </div>
