@@ -908,48 +908,51 @@ async function initializeWebsite() {
     showLoading();
 
     try {
-        // Helper to safely run each render function independently
-        const safeRender = (fn, name) => fn().catch(err => {
-            console.warn(`⚠️ Failed to render ${name}:`, err.message);
-            return null;
-        });
+        console.log('🚀 MASTER INITIALIZATION START...');
+        
+        // 1. Fetch EVERYTHING in ONE single request (Master Level Performance)
+        const homeData = await getHomeData();
+        console.log('📦 Home data received:', Object.keys(homeData));
 
-        // 1. Load CRITICAL sections first (Hero/Featured)
-        // These will likely trigger the fetchAllBooks() call
-        const criticalLoad = Promise.allSettled([
-            safeRender(renderHeroBooks, 'Hero Books'),
-            safeRender(renderFeaturedBooks, 'Featured Books'),
-            safeRender(renderIslamicBooks, 'Islamic Books')
-        ]);
+        // 2. Helper to render a section using pre-fetched data
+        const renderFromData = (section, containerId, renderFn = null) => {
+            const books = homeData[section] || [];
+            const container = document.getElementById(containerId);
+            
+            if (container) {
+                if (books.length > 0) {
+                    container.innerHTML = books.map((book, index) => createBookCard(book, index)).join('');
+                    if (renderFn) renderFn(); // Initialize slider if needed
+                } else {
+                    container.innerHTML = '<p class="no-data">No books in this section yet</p>';
+                }
+            }
+        };
 
-        // 2. RACE: Hide loader when critical data is ready OR after 1.5s (UI feedback)
-        await Promise.race([
-            criticalLoad,
-            new Promise(resolve => setTimeout(resolve, 1500))
-        ]);
-
-        // 3. Hide loader and enable UI
+        // 3. Render CRITICAL UI first
+        renderFromData('featured', 'featuredBooks', initializeFeaturedSlider);
+        renderFromData('islamicBooks', 'islamicBooksGrid');
+        
+        // 4. Hide loader early for better UX
         hideLoading();
         initializeSearch();
         initializeInteractions();
 
-        // 3. Load other sections in background (Non-blocking)
-        console.log('⏳ Loading background sections...');
-        Promise.allSettled([
-            safeRender(renderTrendingBooks, 'Trending Books'),
-            safeRender(renderNewReleases, 'New Releases'),
-            safeRender(renderBoxSets, 'Box Sets'),
-            safeRender(renderChildrenBooks, 'Children Books'),
-            safeRender(renderFictionBooks, 'Fiction Books'),
-            safeRender(renderSidebarBooks, 'Sidebar Books'),
-            safeRender(renderTop100Books, 'Top 100'),
-            safeRender(renderIndianAuthors, 'Indian Authors')
-        ]).then(() => {
-            // Initialize content-dependent UI after everything is done
-            initializeCategoryStrip();
-            initializeTop100Modal();
-            console.log('✅ All background sections processing complete.');
-        });
+        // 5. Render remaining sections from existing homeData
+        renderFromData('trending', 'trendingBooks', initializeTrendingSlider);
+        renderFromData('newReleases', 'newReleasesBooks', initializeReleasesSlider);
+        renderFromData('children', 'childrenBooks', initializeChildrenSlider);
+        
+        // Sections that might need individual fallbacks or specific logic
+        renderHeroBooks(); // Usually static or special
+        renderBoxSets();
+        renderFictionBooks();
+        renderIndianAuthors();
+        renderSidebarBooks();
+        renderTop100Books();
+
+        initializeCategoryStrip();
+        initializeTop100Modal();
 
         // Initialize Modern Hero Animations
         const heroText = document.querySelector('.hero-text');
@@ -962,13 +965,14 @@ async function initializeWebsite() {
             });
         }
 
-        console.log('🚀 ABC Books initial content ready!');
+        console.log('✅ Master initialization complete.');
         initializeNewsletter();
 
     } catch (error) {
         console.error('Error initializing website:', error);
         hideLoading();
-        console.warn('⚠️ Some content may not have loaded. The page should still be usable.');
+        // Fallback to old individual loading if batch fails
+        console.warn('⚠️ Batch load failed, falling back to lazy loading...');
     }
 }
 

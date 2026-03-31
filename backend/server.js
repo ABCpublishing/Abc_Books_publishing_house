@@ -213,10 +213,10 @@ app.use('/api/categories', categoriesRoutes);
 // --- Stats Endpoint (Efficient for Admin Dashboard) ---
 app.get('/api/stats', authenticateAdmin, async (req, res) => {
     try {
-        const stats = await sqlHelper('SELECT (SELECT COUNT(*) FROM books) as total_books, (SELECT COUNT(*) FROM users) as total_users, (SELECT COUNT(*) FROM orders) as total_orders, (SELECT COUNT(*) FROM wishlist) as total_wishlist');
+        const stats = await req.sql('SELECT (SELECT COUNT(*) FROM books) as total_books, (SELECT COUNT(*) FROM users) as total_users, (SELECT COUNT(*) FROM orders) as total_orders, (SELECT COUNT(*) FROM wishlist) as total_wishlist');
 
         // Get section counts from junction table
-        const sectionStats = await sqlHelper('SELECT section_name as section, COUNT(*) as count FROM book_sections GROUP BY section_name');
+        const sectionStats = await req.sql('SELECT section_name as section, COUNT(*) as count FROM book_sections GROUP BY section_name');
 
         res.json({
             status: 'ok',

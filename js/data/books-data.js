@@ -54,56 +54,53 @@ async function fetchAllBooks() {
 
 /**
  * Fetches books for a specific home page section
+ * MASTER FIX: Removed the generic fallback that caused newest books to appear in every category.
  */
 async function getBooksForSection(section) {
     try {
         console.log(`🔍 Section Request: ${section}`);
         
-        let books = [];
-        
-        // 1. Try to get books specifically assigned to this section
+        // Use the centralized API fetch if available
         if (window.API && window.API.Books) {
             try {
                 const response = await window.API.Books.getBySection(section);
-                books = response.books || [];
+                return response.books || [];
             } catch (err) {
-                console.warn(`⚠️ Section fetch failed for '${section}', will use fallback.`);
+                console.warn(`⚠️ Section fetch failed for '${section}'.`);
+                return [];
             }
         }
         
-        // 2. FALLBACK/SMART-POPULATE: If section is empty or API failed,
-        // use books from the general catalog to ensure the site isn't empty.
-        if (books.length === 0) {
-            const allBooks = await fetchAllBooks();
-            if (allBooks.length > 0) {
-                // Return different slices based on section to avoid showing the same books everywhere
-                const sectionMap = {
-                    'featured': [0, 8],
-                    'trending': [0, 15],     // Trending shows all top books if no specific trending set
-                    'newReleases': [0, 15],
-                    'islamicBooks': [0, 10],
-                    'indianAuthors': [0, 12],
-                    'children': [0, 12],
-                    'fiction': [0, 12],
-                    'academic': [0, 5],
-                    'exam': [0, 5],
-                    'top100': [0, 50]
-                };
-                
-                const range = sectionMap[section] || [0, 10];
-                books = allBooks.slice(range[0], range[1]);
-                console.log(`💡 ${section} auto-populated with ${books.length} books from catalog.`);
-            } else {
-                console.warn(`❗ No books found even in fallback for section: ${section}`);
-            }
-        } else {
-            console.log(`✅ ${section} loaded with ${books.length} specific books.`);
-        }
+        // Manual fetch if window.API is not ready
+        const apiBase = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
+            ? "http://localhost:3001/api"
+            : "/api";
+            
+        const response = await fetch(`${apiBase}/books/section/${section}`);
+        const data = await response.json();
+        return data.books || [];
         
-        return books;
     } catch (error) {
-        console.error(`❌ getBooksForSection critical error (${section}):`, error);
+        console.error(`❌ getBooksForSection error (${section}):`, error);
         return [];
+    }
+}
+
+/**
+ * MASTER FUNCTION: Fetch multiple sections at once to speed up "refresh"
+ */
+async function getHomeData() {
+    try {
+        const apiBase = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
+            ? "http://localhost:3001/api"
+            : "/api";
+            
+        const response = await fetch(`${apiBase}/books/home-summary`);
+        const result = await response.json();
+        return result.data || {};
+    } catch (error) {
+        console.error('❌ Failed to fetch home data:', error);
+        return {};
     }
 }
 

@@ -37,25 +37,26 @@ router.get('/me', authenticate, async (req, res) => {
 });
 
 // Get all users (admin)
+// MASTER OPTIMIZATION: Use a single query with JOIN/Subquery to avoid N+1
 router.get('/', authenticateAdmin, async (req, res) => {
     try {
         const db = req.sql;
 
-        const users = await db(
-            'SELECT id, name, email, phone, is_admin, created_at, updated_at FROM users ORDER BY created_at DESC'
-        );
+        const users = await db(`
+            SELECT u.id, u.name, u.email, u.phone, u.is_admin, u.created_at, u.updated_at,
+                   COUNT(o.id) as order_count,
+                   COALESCE(SUM(o.total), 0) as total_spent
+            FROM users u
+            LEFT JOIN orders o ON u.id = o.user_id
+            GROUP BY u.id
+            ORDER BY u.created_at DESC
+        `);
 
-        // Get order count for each user
-        for (let user of users) {
-            const orderCount = await db(
-                'SELECT COUNT(*) as count, COALESCE(SUM(total), 0) as total_spent FROM orders WHERE user_id = $1',
-                [user.id]
-            );
-            user.order_count = parseInt(orderCount[0].count);
-            user.total_spent = parseFloat(orderCount[0].total_spent) || 0;
-        }
-
-        res.json({ users });
+        res.json({ users: users.map(u => ({
+            ...u,
+            order_count: parseInt(u.order_count),
+            total_spent: parseFloat(u.total_spent)
+        })) });
     } catch (error) {
         console.error('Get users error:', error);
         res.status(500).json({ error: 'Failed to get users' });

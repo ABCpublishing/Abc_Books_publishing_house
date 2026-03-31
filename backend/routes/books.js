@@ -91,50 +91,106 @@ router.get('/', async (req, res) => {
 });
 
 // Get books by section (hero, featured, trending, etc.)
-// IMPORTANT: This route MUST come BEFORE /:id to avoid being shadowed
+// MASTER FIX: Better fallback logic. If a section is requested that has no mapping,
+// we check if it matches a category to ensure "Real Data" instead of generic fallback.
 router.get('/section/:section', async (req, res) => {
     try {
         const db = req.sql;
         const { section } = req.params;
 
-        console.log(`📚 Fetching books for section: ${section}`);
+        console.log(`🔍 Section Request: ${section}`);
 
-        const books = await db(
+        // 1. Try to get specific section links
+        let books = await db(
             'SELECT b.* FROM books b INNER JOIN book_sections bs ON b.id = bs.book_id WHERE bs.section_name = $1 ORDER BY bs.display_order ASC',
             [section]
         );
 
-        console.log(`✅ Found ${books.length} books in ${section} section`);
+        // 2. INTELLIGENT FALLBACK: If section is empty, check if it's a category
+        // This solves the "new books in every category" problem
+        if (books.length === 0) {
+            console.log(`💡 No manual links for '${section}', checking category fallback...`);
+            
+            // Map section names to DB categories if they differ
+            const categoryMap = {
+                'islamicBooks': 'Islamic',
+                'children': 'Children',
+                'fiction': 'Fiction',
+                'academic': 'Academic',
+                'exam': 'Exam',
+                'urdu': 'Urdu',
+                'english': 'English',
+                'arabic': 'Arabic',
+                'kashmiri': 'Kashmiri'
+            };
+
+            const targetCategory = categoryMap[section] || section;
+            
+            books = await db(
+                'SELECT * FROM books WHERE category ILIKE $1 OR language ILIKE $1 ORDER BY created_at DESC LIMIT 15',
+                [targetCategory]
+            );
+        }
+
+        // 3. FINAL DEMO FALLBACK: Only if DB is completely empty for this category
+        if (books.length === 0) {
+             return res.json({ 
+                books: [], 
+                message: "No books found for this section/category.",
+                isDemo: false 
+            });
+        }
+
         res.json({ books });
     } catch (error) {
         console.error('Get section books error:', error);
-        
-        // Comprehensive Fallback for all sections (Hero, Featured, etc.)
+        res.status(500).json({ error: 'Failed to fetch section books' });
+    }
+});
 
-        const demoBooks = [
-            {
-                id: 1, title: 'The Holy Quran', author: 'Divine Revelation', category: 'Islamic', 
-                price: 299, original_price: 499, image: '/images/quran_cover.png',
-                description: 'The complete Holy Quran with English translation (Premium Edition).'
-            },
-            {
-                id: 2, title: 'Modern India', author: 'Spectrum / Rajiv Ahir', category: 'General', 
-                price: 394, original_price: 649, image: '/images/modern_india.png',
-                description: 'A brief history of modern India (Modern Illustrated Cover).'
-            },
-            {
-                id: 3, title: 'Environment (10th Edition)', author: 'Shankar IAS Academy', category: 'General', 
-                price: 599, original_price: 899, image: '/images/environment.png',
-                description: 'Comprehensive guide for environmental science (Eco-Edition Cover).'
-            }
-        ];
+/**
+ * MASTER ENDPOINT: Home Data (All-in-one)
+ * Solves the "takes a lot of time to refresh" problem by reducing 10+ requests to ONE.
+ */
+router.get('/home-summary', async (req, res) => {
+    try {
+        const db = req.sql;
         
+        // Define all sections we want to fetch
+        const sections = ['hero', 'editors', 'featured', 'trending', 'islamicBooks', 'children', 'newReleases'];
+        
+        const results = {};
+        
+        // Use Promise.all for parallel fetching if needed, but for Neon HTTP, 
+        // batching them or using a single complex query is better. 
+        // For now, let's just do them efficiently.
+        
+        for (const section of sections) {
+            // Re-use our logic: check section then category
+            let books = await db(
+                'SELECT b.* FROM books b INNER JOIN book_sections bs ON b.id = bs.book_id WHERE bs.section_name = $1 ORDER BY bs.display_order ASC LIMIT 12',
+                [section]
+            );
+            
+            if (books.length === 0) {
+                const categoryMap = { 'islamicBooks': 'Islamic', 'children': 'Children' };
+                const target = categoryMap[section] || section;
+                books = await db(
+                    'SELECT * FROM books WHERE category ILIKE $1 OR language ILIKE $1 ORDER BY created_at DESC LIMIT 12',
+                    [target]
+                );
+            }
+            results[section] = books;
+        }
 
         res.json({ 
-            books: demoBooks, 
-            message: "Showing high-quality fallback books (DB connection pending).",
-            isDemo: true 
+            status: 'success',
+            data: results,
+            timestamp: new Date().toISOString()
         });
+    } catch (error) {
+        console.error('Home summary error:', error);
+        res.status(500).json({ error: 'Failed to fetch home summary' });
     }
 });
 

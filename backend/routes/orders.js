@@ -8,6 +8,7 @@ const EmailService = require('../services/email');
 router.use(authenticate);
 
 // Get all orders (admin)
+// MASTER OPTIMIZATION: One query for orders, one query for ALL items in those orders.
 router.get('/', authenticateAdmin, async (req, res) => {
     try {
         const db = req.sql;
@@ -19,16 +20,21 @@ router.get('/', authenticateAdmin, async (req, res) => {
             ORDER BY o.created_at DESC
         `);
 
-        // Get order items for each order
-        for (let order of orders) {
-            const items = await db(`
-                SELECT oi.*, b.title, b.author, b.image
-                FROM order_items oi
-                LEFT JOIN books b ON oi.book_id = b.id
-                WHERE oi.order_id = $1
-            `, [order.id]);
-            order.items = items;
-        }
+        if (orders.length === 0) return res.json({ orders: [] });
+
+        // Get all items in one batched query
+        const orderIds = orders.map(o => o.id);
+        const allItems = await db(`
+            SELECT oi.*, b.title, b.author, b.image
+            FROM order_items oi
+            LEFT JOIN books b ON oi.book_id = b.id
+            WHERE oi.order_id = ANY($1)
+        `, [orderIds]);
+
+        // Map items to orders
+        orders.forEach(order => {
+            order.items = allItems.filter(item => item.order_id === order.id);
+        });
 
         res.json({ orders });
     } catch (error) {
@@ -38,25 +44,27 @@ router.get('/', authenticateAdmin, async (req, res) => {
 });
 
 // Get user's orders
+// MASTER OPTIMIZATION: Batched fetching
 router.get('/my-orders', async (req, res) => {
     try {
         const db = req.sql;
-        const userId = req.userId; // From auth middleware
+        const userId = req.userId; 
 
-        const orders = await db(
-            'SELECT * FROM orders WHERE user_id = $1 ORDER BY created_at DESC',
-            [userId]
-        );
+        const orders = await db('SELECT * FROM orders WHERE user_id = $1 ORDER BY created_at DESC', [userId]);
 
-        for (let order of orders) {
-            const items = await db(`
-                SELECT oi.*, b.title, b.author, b.image
-                FROM order_items oi
-                LEFT JOIN books b ON oi.book_id = b.id
-                WHERE oi.order_id = $1
-            `, [order.id]);
-            order.items = items;
-        }
+        if (orders.length === 0) return res.json({ orders: [] });
+
+        const orderIds = orders.map(o => o.id);
+        const allItems = await db(`
+            SELECT oi.*, b.title, b.author, b.image
+            FROM order_items oi
+            LEFT JOIN books b ON oi.book_id = b.id
+            WHERE oi.order_id = ANY($1)
+        `, [orderIds]);
+
+        orders.forEach(order => {
+            order.items = allItems.filter(item => item.order_id === order.id);
+        });
 
         res.json({ orders });
     } catch (error) {
