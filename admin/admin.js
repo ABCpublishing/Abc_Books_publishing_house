@@ -56,6 +56,12 @@ document.addEventListener('DOMContentLoaded', function () {
     // Set initial active state based on hash or default
     const hash = window.location.hash.slice(1) || 'overview';
     navigateToSection(hash);
+
+    // Listen for hash changes to support back/forward buttons
+    window.addEventListener('hashchange', () => {
+        const newHash = window.location.hash.slice(1) || 'overview';
+        navigateToSection(newHash);
+    });
 });
 
 // ===== AUTHENTICATION =====
@@ -248,8 +254,14 @@ function navigateToSection(section) {
         kashmiri: 'Kashmiri Books',
         settings: 'Settings'
     };
+
     const titleEl = document.getElementById('pageTitle');
     if (titleEl) titleEl.textContent = titles[section] || 'Dashboard';
+
+    // Update hash ONLY if it's different to prevent infinite loops with hashchange event
+    if (window.location.hash.slice(1) !== section) {
+        window.location.hash = section;
+    }
 
     // Load section data
     loadSectionData(section);
@@ -907,6 +919,8 @@ async function editBook(bookId) {
         document.getElementById('bookPublisher').value = book.publisher || 'ABC Publishing';
         document.getElementById('bookPrice').value = book.price;
         document.getElementById('bookOriginalPrice').value = book.original_price || '';
+        document.getElementById('bookWeight').value = book.weight || '';
+        document.getElementById('bookDimensions').value = book.dimensions || '';
         document.getElementById('bookCategory').value = book.category || '';
         document.getElementById('bookImage').value = book.image;
 
@@ -955,6 +969,8 @@ async function handleBookFormSubmit(e) {
         language: document.getElementById('bookLanguage')?.value || 'urdu',
         subcategory: document.getElementById('bookSubcategory')?.value || '',
         category: document.getElementById('bookLanguage')?.value || document.getElementById('bookCategory')?.value || 'general',
+        weight: document.getElementById('bookWeight')?.value || '',
+        dimensions: document.getElementById('bookDimensions')?.value || '',
         rating: 4.5, // Default rating
         sections: Array.from(document.querySelectorAll('input[name="sections"]:checked')).map(cb => cb.value)
     };
@@ -1448,7 +1464,7 @@ function printOrderInvoice() {
                 <div class="header">
                     <div class="logo-area">
                         <h1>ABC<span>BOOKS</span></h1>
-                        <p style="margin:2px 0 0; font-size: 10px; color: #636e72;">ABC Books Publishing House</p>
+                        <p style="margin:2px 0 0; font-size: 10px; color: #636e72;">ABC Publishing House</p>
                     </div>
                     <div class="doc-type">INVOICE</div>
                 </div>
@@ -1471,7 +1487,7 @@ function printOrderInvoice() {
                 <div class="grid">
                     <div class="box">
                         <h4>BILL FROM:</h4>
-                        <p><strong>ABC Books Publishing House</strong></p>
+                        <p><strong>ABC Publishing House</strong></p>
                         <p>13 Custodian Building, Red Cross Road</p>
                         <p>Srinagar, Jammu & Kashmir - 190001</p>
                         <p>GSTIN: 01ABCDB1234F1Z5</p>

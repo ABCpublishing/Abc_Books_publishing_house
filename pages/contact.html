@@ -34,7 +34,7 @@
                 <a href="/index.html" class="logo">
                     <img src="/images/logo.svg" alt="ABC Books" class="logo-img">
                     <div class="logo-text">
-                        <span class="logo-sub">BOOKS</span>
+                        <span class="logo-sub">Publishing House</span>
                     </div>
                 </a>
 
@@ -47,14 +47,41 @@
                 </div>
 
                 <div class="header-actions">
-                    <a href="/pages/about.html" class="action-btn" title="About Us">
-                        <i class="fas fa-info-circle"></i>
-                        <span>About</span>
-                    </a>
-                    <a href="/index.html" class="action-btn cart-btn" title="Home">
-                        <i class="fas fa-home"></i>
-                        <span>Home</span>
-                    </a>
+                    <!-- User Account - Shows Login/Signup OR User icon when logged in -->
+                    <div id="authButtons" class="auth-buttons">
+                        <button class="action-btn" onclick="showLoginModal()" title="Sign In">
+                            <i class="fas fa-sign-in-alt"></i>
+                            <span>Login</span>
+                        </button>
+                        <button class="action-btn signup-btn" onclick="showSignupModal()" title="Sign Up">
+                            <i class="fas fa-user-plus"></i>
+                            <span>Sign Up</span>
+                        </button>
+                    </div>
+                    <!-- User Account When Logged In (hidden by default) -->
+                    <div id="userAccount" class="user-account" style="display: none;">
+                        <button class="action-btn" onclick="toggleUserMenu()" title="My Account">
+                            <i class="fas fa-user-circle"></i>
+                            <span id="userName">Account</span>
+                        </button>
+                        <div class="user-dropdown" id="userDropdown">
+                            <a href="#" onclick="viewOrders()"><i class="fas fa-box"></i> My Orders</a>
+                            <a href="#" onclick="viewWishlist()"><i class="fas fa-heart"></i> My Wishlist</a>
+                            <a href="#" onclick="viewProfile()"><i class="fas fa-user-edit"></i> Edit Profile</a>
+                            <a href="#" onclick="userLogout()"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                        </div>
+                    </div>
+
+                    <button class="action-btn" onclick="toggleWishlist()" title="Wishlist">
+                        <i class="fas fa-heart"></i>
+                        <span>Wishlist</span>
+                        <span class="badge" id="wishlistCount">0</span>
+                    </button>
+                    <button class="action-btn cart-btn" onclick="toggleCart()" title="Shopping Cart">
+                        <i class="fas fa-shopping-bag"></i>
+                        <span>Cart</span>
+                        <span class="badge" id="cartCount">0</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -67,7 +94,7 @@
             <div class="logo">
                 <img src="/images/logo.svg" alt="ABC Books" class="logo-img">
                 <div class="logo-text">
-                    <span class="logo-sub">BOOKS</span>
+                    <span class="logo-sub">Publishing House</span>
                 </div>
             </div>
             <button class="close-mobile-nav" onclick="toggleMobileMenu()"><i class="fas fa-times"></i></button>
@@ -450,7 +477,73 @@
         });
 
     </script>
-    <script src="/js/mobile-menu.js?v=2.3"></script>
+    <!-- Sidebars and Modals -->
+    <div class="sidebar-overlay" id="cartOverlay" onclick="closeCart()"></div>
+    <div class="sidebar-panel cart-panel" id="cartPanel">
+        <div class="sidebar-header">
+            <h3><i class="fas fa-shopping-bag"></i> Shopping Cart</h3>
+            <button class="close-sidebar" onclick="closeCart()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="sidebar-content" id="cartContent">
+            <p class="empty-message"><i class="fas fa-shopping-cart"></i> Your cart is empty</p>
+        </div>
+        <div class="sidebar-footer cart-footer">
+            <div class="cart-total">
+                <span>Subtotal:</span>
+                <strong id="cartTotal">₹0</strong>
+            </div>
+            <button class="btn-primary btn-block" onclick="proceedToCheckout()">
+                <i class="fas fa-credit-card"></i> Proceed to Checkout
+            </button>
+        </div>
+    </div>
+
+    <div class="sidebar-overlay" id="wishlistOverlay" onclick="closeWishlist()"></div>
+    <div class="sidebar-panel wishlist-panel" id="wishlistPanel">
+        <div class="sidebar-header">
+            <h3><i class="fas fa-heart"></i> My Wishlist</h3>
+            <button class="close-sidebar" onclick="closeWishlist()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="sidebar-content" id="wishlistContent">
+            <p class="empty-message"><i class="fas fa-heart-broken"></i> Your wishlist is empty</p>
+        </div>
+    </div>
+
+    <!-- Login/Signup Modals will be injected by user-auth-api.js OR already in checkout/book-detail ... we'll add them here for consistency -->
+    <div class="auth-modal" id="loginModal">
+        <div class="auth-modal-content">
+            <button class="close-auth" onclick="closeLoginModal()"><i class="fas fa-times"></i></button>
+            <div class="auth-header">
+                <i class="fas fa-sign-in-alt"></i>
+                <h2>Welcome Back</h2>
+                <p>Login to your ABC Books account</p>
+            </div>
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="google-auth-container" style="margin-bottom: 25px;">
+                    <div id="googleSignInBtnLogin" style="display: flex; justify-content: center;"></div>
+                </div>
+                <div class="google-auth-separator" style="text-align: center; margin: 20px 0; position: relative;">
+                    <hr style="position: absolute; top: 50%; left: 0; right: 0; border-top: 1px solid #ddd;">
+                    <span style="background: white; padding: 0 10px; color: #666; font-size: 14px; position: relative;">or</span>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-envelope"></i> Email</label>
+                    <input type="email" id="loginEmail" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-lock"></i> Password</label>
+                    <input type="password" id="loginPassword" placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="btn-auth">Login</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="/js/services/api.js?v=2.8"></script>
+    <script src="/js/auth/user-auth-api.js?v=2.8"></script>
+    <script src="/js/script.js?v=2.8"></script>
+    <script src="/js/mobile-menu.js?v=2.8"></script>
 </body>
 
 </html>
+

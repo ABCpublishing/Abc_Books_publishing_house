@@ -236,15 +236,16 @@ router.get('/:id', async (req, res) => {
 router.post('/', authenticateAdmin, async (req, res) => {
     try {
         const db = req.sql;
-        const { title, author, publisher, price, original_price, image, description, category, language, subcategory, rating, sections } = req.body;
+        const { title, author, publisher, price, original_price, image, description, category, language, subcategory, rating, sections, weight, dimensions } = req.body;
 
         const bookResults = await db(`
-            INSERT INTO books (title, author, publisher, price, original_price, image, description, category, language, subcategory, rating)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            INSERT INTO books (title, author, publisher, price, original_price, image, description, category, language, subcategory, rating, weight, dimensions)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
             RETURNING *
         `, [
             title, author, publisher || 'ABC Publishing', price, original_price || null, image || null, 
-            description || '', category || language || 'General', language || 'Urdu', subcategory || '', rating || 4.5
+            description || '', category || language || 'General', language || 'Urdu', subcategory || '', rating || 4.5,
+            weight || null, dimensions || null
         ]);
 
         const book = bookResults[0];
@@ -268,17 +269,19 @@ router.put('/:id', authenticateAdmin, async (req, res) => {
     try {
         const db = req.sql;
         const { id } = req.params;
-        const { title, author, publisher, price, original_price, image, description, category, language, subcategory, rating, sections } = req.body;
+        const { title, author, publisher, price, original_price, image, description, category, language, subcategory, rating, sections, weight, dimensions } = req.body;
 
         const updateResult = await db(`
             UPDATE books SET
                 title = $1, author = $2, publisher = $3, price = $4, original_price = $5,
-                image = $6, description = $7, category = $8, language = $9, subcategory = $10, rating = $11, updated_at = NOW()
-            WHERE id = $12
+                image = $6, description = $7, category = $8, language = $9, subcategory = $10, rating = $11, 
+                weight = $12, dimensions = $13, updated_at = NOW()
+            WHERE id = $14
             RETURNING *
         `, [
             title, author, publisher || 'ABC Publishing', price, original_price || null,
-            image || null, description || '', category || language || 'General', language || 'Urdu', subcategory || '', rating || 4.5, id
+            image || null, description || '', category || language || 'General', language || 'Urdu', subcategory || '', rating || 4.5, 
+            weight || null, dimensions || null, id
         ]);
 
         if (updateResult.length === 0) {

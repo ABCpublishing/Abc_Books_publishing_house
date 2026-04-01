@@ -40,7 +40,7 @@ module.exports = {
                         </div>
                         <p style="color: #666; font-size: 14px;">If you didn't request this, you can safely ignore this email.</p>
                         <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-                        <p style="text-align: center; font-size: 12px; color: #999;">ABC Books & Publishing House</p>
+                        <p style="text-align: center; font-size: 12px; color: #999;">ABC Publishing House</p>
                     </div>
                 `
             });
@@ -125,7 +125,7 @@ module.exports = {
 
                         <div style="margin-top: 30px; text-align: center; color: #999; font-size: 12px;">
                             <p>For any queries, contact us at support@${DOMAIN || 'abcbooks.store'}</p>
-                            <p>© 2026 ABC Books & Publishing House. All rights reserved.</p>
+                            <p>© 2026 ABC Publishing House. All rights reserved.</p>
                         </div>
                     </div>
                 `

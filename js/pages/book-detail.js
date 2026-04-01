@@ -48,7 +48,9 @@ async function loadBookDetails() {
                     image: data.book.image,
                     description: data.book.description,
                     category: data.book.category,
-                    rating: data.book.rating || 4.5
+                    rating: data.book.rating || 4.5,
+                    weight: data.book.weight,
+                    dimensions: data.book.dimensions
                 };
                 populateBookDetails();
                 loadRelatedBooks();
@@ -171,6 +173,13 @@ function populateBookDetails() {
 
     const overallStarsElem = document.getElementById('overallStars');
     if (overallStarsElem) overallStarsElem.innerHTML = generateStars(rating);
+
+    // Weight and Dimensions (NEW)
+    const detailWeight = document.getElementById('detailWeight');
+    if (detailWeight) detailWeight.textContent = currentBook.weight || 'N/A';
+
+    const detailDimensions = document.getElementById('detailDimensions');
+    if (detailDimensions) detailDimensions.textContent = currentBook.dimensions || 'N/A';
 }
 
 // Generate star rating HTML
