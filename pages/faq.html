@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <title>Frequently Asked Questions | ABC Books</title>
+    <meta name="description" content="Answers to common questions about ABC Books ordering, shipping, and more.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/pages.css">
+    <link rel="stylesheet" href="/css/legal.css">
+</head>
+
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <a href="/index.html" class="logo">
+                    <img src="/images/logo.svg" alt="ABC Books" class="logo-img">
+                    <div class="logo-text">
+                        <span class="logo-sub">Publications</span>
+                    </div>
+                </a>
+                <div class="header-actions">
+                    <a href="/index.html" class="action-btn"><i class="fas fa-home"></i> Home</a>
+                    <a href="/pages/contact.html" class="action-btn"><i class="fas fa-envelope"></i> Contact</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="legal-hero">
+        <div class="container">
+            <h1>Frequently Asked Questions</h1>
+            <p class="last-updated">Everything you need to know about shopping with ABC Books</p>
+        </div>
+    </div>
+
+    <main class="legal-content">
+        <div class="container">
+            <div class="faq-container">
+                <div class="faq-item active">
+                    <div class="faq-question">
+                        <span>How can I track my order?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Once your order is shipped, you will receive an email with a tracking number and a link to the carrier's website. You can also view your order status in the "My Orders" section of your account.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>What payment methods do you accept?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>We accept all major credit and debit cards (Visa, Mastercard, Amex), UPI payments (GPay, PhonePe, Paytm), Wallets, and NetBanking through our secure payment partner, Razorpay.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>Do you offer free shipping?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Yes! We offer free standard shipping on all orders nationwide across India, regardless of the order value.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>Can I cancel my order?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>You can cancel your order within 2 hours of placing it. Please contact our support team or use the cancellation button in your order history if available.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>Are the books original copies?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Absolutely. Every book sold on ABC Books is 100% original and genuine. We source directly from publishers and authorized distributors.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>How do I return a book?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>If you're not satisfied with your purchase, you can initiate a return within 30 days of delivery. Please email us at abcpublishinghouse@gmail.com with your order number to start the process.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>Do you ship internationally?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Currently, we exclusively ship within India. We are working on expanding our services to international readers soon.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-bottom">
+            <div class="container">
+                <div class="footer-bottom-content">
+                    <p>&copy; 2026 ABC Books. All rights reserved.</p>
+                    <div class="footer-links" style="margin-left: 0;">
+                        <a href="/pages/privacy-policy.html">Privacy Policy</a>
+                        <a href="/pages/terms-of-service.html">Terms of Service</a>
+                        <a href="/pages/refund-policy.html">Refund Policy</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.querySelectorAll('.faq-question').forEach(question => {
+            question.addEventListener('click', () => {
+                const item = question.parentNode;
+                item.classList.toggle('active');
+            });
+        });
+    </script>
+</body>
+</html>

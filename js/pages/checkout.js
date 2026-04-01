@@ -423,30 +423,30 @@ async function placeOrder() {
     }
 
     // Get selected payment method
-    const paymentMethod = document.querySelector('input[name="payment"]:checked')?.value || 'cod';
+    const paymentMethod = document.querySelector('input[name="payment"]:checked')?.value || 'razorpay';
     console.log('💳 Payment method selected:', paymentMethod);
 
     try {
-        // If Razorpay is selected, initiate Razorpay payment
+        // Razorpay is now the primary method
         if (paymentMethod === 'razorpay') {
             // Razorpay does not accept 0 amount, process directly if free
-            if (grandTotal === 0) {
+            if (grandTotal <= 0) {
                 console.log('💳 Order is free, bypassing Razorpay...');
-                showNotification('Free order processed without payment gateway', 'success');
+                showNotification('Free order processed', 'success');
                 await processOrder('free');
                 return;
             }
             
             // Check if Razorpay SDK is actually loaded
             if (typeof Razorpay === 'undefined') {
-                throw new Error('Payment gateway (Razorpay) is currently unavailable. Please try Cash on Delivery or refresh the page.');
+                throw new Error('Payment gateway (Razorpay) is currently unavailable. Please check your internet connection and refresh the page.');
             }
 
             await initiateRazorpayPayment();
             return;
         }
 
-        // For COD, proceed with normal order
+        // Fallback for any other method (though only Razorpay should be available)
         await processOrder(paymentMethod);
     } catch (error) {
         console.error('❌ Order Placement Error:', error);
@@ -466,31 +466,25 @@ async function initiateRazorpayPayment() {
         console.log('💳 Initiating Razorpay payment... Total:', grandTotal);
         showNotification('Initializing Secure Payment...', 'info');
 
-        // Create Razorpay order via backend
-        const response = await fetch(`${CHECKOUT_API_BASE}/payment/create-order`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                amount: grandTotal,
-                currency: 'INR',
-                receipt: 'order_' + Date.now(),
-                notes: {
-                    customer_name: document.getElementById('firstName').value + ' ' + document.getElementById('lastName').value,
-                    customer_email: document.getElementById('email').value
-                }
-            })
-        });
-
-        // 🛡️ SECURITY CHECK: Validate response
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('❌ Server returned error for create-order:', errorText);
-            throw new Error('Payment server connection failed. Please try again or use Cash on Delivery.');
+        // Create Razorpay order via backend - Use window.API for consistent routing
+        let data;
+        try {
+            data = await window.API.fetch('/payment/create-order', {
+                method: 'POST',
+                body: JSON.stringify({
+                    amount: grandTotal,
+                    currency: 'INR',
+                    receipt: 'order_' + Date.now(),
+                    notes: {
+                        customer_name: document.getElementById('firstName').value + ' ' + document.getElementById('lastName').value,
+                        customer_email: document.getElementById('email').value
+                    }
+                })
+            });
+        } catch (apiError) {
+            console.error('❌ Payment order creation failed:', apiError);
+            throw new Error('Could not initialize payment: ' + (apiError.message || 'Server error'));
         }
-
-        const data = await response.json();
         console.log('📥 Razorpay order response:', data);
 
         if (!data.success) {
@@ -521,12 +515,9 @@ async function initiateRazorpayPayment() {
                 showNotification('Payment successful! Finalizing order...', 'success');
 
                 try {
-                    // Verify payment on backend
-                    const verifyResponse = await fetch(`${CHECKOUT_API_BASE}/payment/verify`, {
+                    // Verify payment on backend via window.API
+                    const verifyData = await window.API.fetch('/payment/verify', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
                         body: JSON.stringify({
                             razorpay_order_id: response.razorpay_order_id,
                             razorpay_payment_id: response.razorpay_payment_id,
@@ -534,7 +525,6 @@ async function initiateRazorpayPayment() {
                         })
                     });
 
-                    const verifyData = await verifyResponse.json();
                     if (verifyData.success) {
                         await processOrder('razorpay', response.razorpay_payment_id);
                     } else {
@@ -613,11 +603,10 @@ async function processOrder(paymentMethod, paymentId = null) {
         if (typeof API !== 'undefined' && jwtToken && currentUser && currentUser.id) {
             try {
                 console.log('📤 Sending order to API...');
-                console.log('📤 User ID:', currentUser.id);
-
-                // Format items for API - includes all book details for storage
+                
+                // Format items for API
                 const apiItems = cartItems.map(item => ({
-                    book_id: item.id,
+                    book_id: item.book_id || item.id,
                     quantity: item.quantity || 1,
                     price: item.price,
                     title: item.title,
@@ -625,53 +614,31 @@ async function processOrder(paymentMethod, paymentId = null) {
                     image: item.image
                 }));
 
-                console.log('📤 Items to save:', apiItems);
-
-                // Send to backend API
-                const response = await fetch(`${CHECKOUT_API_BASE}/orders`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${jwtToken}`
-                    },
-                    body: JSON.stringify({
-                        user_id: currentUser.id,
-                        items: apiItems,
-                        subtotal: orderData.subtotal,
-                        discount: orderData.discount,
-                        total: orderData.total,
-                        shipping_first_name: orderData.shipping.firstName,
-                        shipping_last_name: orderData.shipping.lastName,
-                        shipping_email: orderData.shipping.email,
-                        shipping_phone: orderData.shipping.phone,
-                        shipping_address1: orderData.shipping.address1,
-                        shipping_address2: orderData.shipping.address2,
-                        shipping_city: orderData.shipping.city,
-                        shipping_state: orderData.shipping.state,
-                        shipping_pincode: orderData.shipping.pincode,
-                        payment_method: orderData.paymentMethod,
-                        payment_id: orderData.paymentId,
-                        status: orderData.status
-                    })
+                // Use central API service for order creation
+                const result = await window.API.Orders.create({
+                    user_id: currentUser.id,
+                    items: apiItems,
+                    subtotal: orderData.subtotal,
+                    discount: orderData.discount,
+                    total: orderData.total,
+                    shipping_first_name: orderData.shipping.firstName,
+                    shipping_last_name: orderData.shipping.lastName,
+                    shipping_email: orderData.shipping.email,
+                    shipping_phone: orderData.shipping.phone,
+                    shipping_address1: orderData.shipping.address1,
+                    shipping_address2: orderData.shipping.address2,
+                    shipping_city: orderData.shipping.city,
+                    shipping_state: orderData.shipping.state,
+                    shipping_pincode: orderData.shipping.pincode,
+                    payment_method: orderData.paymentMethod,
+                    payment_id: orderData.paymentId,
+                    status: orderData.status
                 });
-
-                const result = await response.json();
-                console.log('📥 API Response:', result);
-                console.log('📥 Response status:', response.status);
-
-                if (response.ok) {
-                    console.log('✅ Order saved to database!');
-                    apiOrderSuccess = true;
-                    // Update order ID from API response
-                    if (result.order && result.order.order_id) {
-                        orderData.orderId = result.order.order_id;
-                    }
-                } else {
-                    console.error('❌ API returned error:', result.error || result);
-                    // Show user-friendly error
-                    if (typeof showNotification === 'function') {
-                        showNotification('Order saved locally. Database sync failed: ' + (result.error || 'Unknown error'), 'warning');
-                    }
+                console.log('✅ Order saved to database!');
+                apiOrderSuccess = true;
+                // Update order ID from API response
+                if (result.order && result.order.order_id) {
+                    orderData.orderId = result.order.order_id;
                 }
             } catch (apiError) {
                 console.error('❌ API Error:', apiError);
