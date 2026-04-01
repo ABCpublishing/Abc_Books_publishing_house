@@ -1372,128 +1372,255 @@ function printOrderInvoice() {
     const order = currentOrderForPrint;
     const printWindow = window.open('', '_blank');
     
-    // Formatting currency for professional look
     const formatPrice = (price) => `₹${Number(price || 0).toLocaleString('en-IN')}`;
     const dateStr = new Date(order.created_at).toLocaleDateString('en-IN', {
-        day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
+        day: 'numeric', month: 'long', year: 'numeric'
+    });
+    const timeStr = new Date(order.created_at).toLocaleTimeString('en-IN', {
+        hour: '2-digit', minute: '2-digit'
     });
 
     const itemsHtml = (order.items || []).map((item, index) => `
         <tr>
-            <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">${index + 1}</td>
-            <td style="padding: 10px; border-bottom: 1px solid #eee;">
-                <strong>${item.title || item.book_title}</strong><br>
-                <small style="color: #666;">By: ${item.author || item.book_author || 'N/A'}</small>
+            <td style="padding: 12px 8px; border-bottom: 1px solid #eee; text-align: center;">${index + 1}</td>
+            <td style="padding: 12px 8px; border-bottom: 1px solid #eee;">
+                <div style="font-weight: 600; color: #2d3436;">${item.title || item.book_title}</div>
+                <div style="font-size: 11px; color: #636e72;">Author: ${item.author || item.book_author || 'N/A'}</div>
             </td>
-            <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
-            <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">${formatPrice(item.price)}</td>
-            <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">
-                <strong>${formatPrice(item.price * item.quantity)}</strong>
-            </td>
+            <td style="padding: 12px 8px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
+            <td style="padding: 12px 8px; border-bottom: 1px solid #eee; text-align: right;">${formatPrice(item.price)}</td>
+            <td style="padding: 12px 8px; border-bottom: 1px solid #eee; text-align: right; font-weight: 600;">${formatPrice(item.price * item.quantity)}</td>
         </tr>
     `).join('');
 
     printWindow.document.write(`
         <!DOCTYPE html>
-        <html>
+        <html lang="en">
         <head>
-            <title>Invoice - ${order.order_id}</title>
+            <meta charset="UTF-8">
+            <title>Order Documents - ${order.order_id}</title>
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
             <style>
-                body { font-family: 'Segoe UI', Arial, sans-serif; padding: 40px; color: #333; line-height: 1.5; }
-                .invoice-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #667eea; padding-bottom: 20px; margin-bottom: 30px; }
-                .company-logo { font-size: 32px; font-weight: 800; color: #667eea; letter-spacing: -1px; display: flex; align-items: center; gap: 10px; margin: 0; }
-                .company-logo span { color: #f5576c; }
-                .invoice-tag { font-size: 24px; font-weight: bold; color: #999; text-transform: uppercase; }
-                .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 40px; }
-                .info-box h4 { margin: 0 0 10px 0; font-size: 14px; text-transform: uppercase; color: #888; border-bottom: 1px solid #eee; padding-bottom: 5px; }
-                .info-box p { margin: 2px 0; font-size: 15px; }
-                .order-summary { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-                .order-summary th { background: #f8fbff; padding: 12px 10px; text-align: left; font-size: 13px; text-transform: uppercase; color: #555; border-bottom: 2px solid #667eea; }
-                .totals-box { margin-left: auto; width: 250px; background: #fdfdfd; border: 1px solid #eee; padding: 15px; border-radius: 8px; }
-                .total-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 14px; }
-                .grand-total { border-top: 2px solid #667eea; margin-top: 10px; padding-top: 10px; font-weight: bold; font-size: 18px; color: #27ae60; }
-                .footer { margin-top: 60px; text-align: center; border-top: 1px solid #eee; padding-top: 20px; font-size: 13px; color: #999; }
-                .print-btn-float { position: fixed; top: 20px; right: 20px; padding: 10px 25px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-                @media print { .print-btn-float { display: none; } }
+                * { box-sizing: border-box; -webkit-print-color-adjust: exact; }
+                body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; color: #2d3436; background: #f5f6fa; }
+                .page { width: 210mm; min-height: 297mm; padding: 15mm; margin: 10mm auto; background: white; box-shadow: 0 0 20px rgba(0,0,0,0.1); position: relative; }
+                @media print {
+                    body { background: white; }
+                    .page { margin: 0; box-shadow: none; page-break-after: always; width: 100%; height: auto; }
+                    .print-btn { display: none; }
+                }
+                
+                .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 4px solid #8B0000; padding-bottom: 20px; margin-bottom: 30px; }
+                .logo-area h1 { font-family: 'Playfair Display', serif; color: #8B0000; margin: 0; font-size: 28px; letter-spacing: -0.5px; }
+                .logo-area h1 span { color: #333; font-weight: 400; }
+                .doc-type { font-size: 24px; font-weight: 800; color: #b2bec3; text-transform: uppercase; letter-spacing: 2px; }
+                
+                .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 40px; }
+                .box h4 { margin: 0 0 10px 0; font-size: 11px; text-transform: uppercase; color: #8B0000; letter-spacing: 1px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+                .box p { margin: 2px 0; font-size: 13px; line-height: 1.4; }
+                
+                .order-info-bar { background: #f8f9fa; padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; margin-bottom: 30px; border: 1px solid #eee; }
+                .info-item label { display: block; font-size: 10px; text-transform: uppercase; color: #636e72; margin-bottom: 2px; }
+                .info-item span { font-weight: 700; font-size: 14px; }
+                
+                table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+                th { background: #f8f9fa; padding: 12px 8px; text-align: left; font-size: 11px; text-transform: uppercase; color: #636e72; border-bottom: 2px solid #8B0000; }
+                
+                .totals { margin-left: auto; width: 250px; }
+                .total-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; }
+                .total-row.grand { border-top: 2px solid #8B0000; margin-top: 10px; padding-top: 10px; font-weight: 800; font-size: 18px; color: #8B0000; }
+                
+                .footer { margin-top: 50px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; font-size: 11px; color: #b2bec3; }
+                
+                /* Page 2 Specifics */
+                .manifest-box { border: 2px dashed #ddd; padding: 20px; border-radius: 12px; margin-bottom: 30px; }
+                .shipping-label { background: #000; color: #fff; padding: 10px; text-align: center; font-weight: 800; text-transform: uppercase; letter-spacing: 4px; margin-bottom: 20px; }
+                
+                .print-btn { position: fixed; top: 20px; right: 20px; z-index: 1000; padding: 12px 24px; background: #8B0000; color: white; border: none; border-radius: 50px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 15px rgba(139,0,0,0.3); transition: all 0.2s; }
+                .print-btn:hover { transform: scale(1.05); background: #a00000; }
             </style>
         </head>
         <body>
-            <button class="print-btn-float" onclick="window.print()">🖨️ Click to Print</button>
+            <button class="print-btn" onclick="window.print()">🖨️ PRINT DOCUMENTS</button>
 
-            <div class="invoice-header">
-                <div>
-                     <h1 class="company-logo">ABC<span>BOOKS</span></h1>
-                     <p style="margin: 0; font-size: 12px; color: #666;">ABC Books Publishing House</p>
+            <!-- PAGE 1: CUSTOMER INVOICE -->
+            <div class="page">
+                <div class="header">
+                    <div class="logo-area">
+                        <h1>ABC<span>BOOKS</span></h1>
+                        <p style="margin:2px 0 0; font-size: 10px; color: #636e72;">ABC Books Publishing House</p>
+                    </div>
+                    <div class="doc-type">INVOICE</div>
                 </div>
-                <div class="invoice-tag">Order Invoice</div>
+
+                <div class="order-info-bar">
+                    <div class="info-item">
+                        <label>Invoice Number</label>
+                        <span>#${order.order_id}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Invoice Date</label>
+                        <span>${dateStr}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Payment Method</label>
+                        <span style="text-transform: uppercase;">${order.payment_method}</span>
+                    </div>
+                </div>
+
+                <div class="grid">
+                    <div class="box">
+                        <h4>BILL FROM:</h4>
+                        <p><strong>ABC Books Publishing House</strong></p>
+                        <p>13 Custodian Building, Red Cross Road</p>
+                        <p>Srinagar, Jammu & Kashmir - 190001</p>
+                        <p>GSTIN: 01ABCDB1234F1Z5</p>
+                    </div>
+                    <div class="box">
+                        <h4>BILL TO:</h4>
+                        <p><strong>${order.shipping_first_name} ${order.shipping_last_name}</strong></p>
+                        <p>${order.shipping_address1}</p>
+                        ${order.shipping_address2 ? `<p>${order.shipping_address2}</p>` : ''}
+                        <p>${order.shipping_city}, ${order.shipping_state} - ${order.shipping_pincode}</p>
+                        <p>Email: ${order.shipping_email}</p>
+                    </div>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 40px; text-align: center;">#</th>
+                            <th>Description</th>
+                            <th style="width: 60px; text-align: center;">Qty</th>
+                            <th style="width: 100px; text-align: right;">Unit Price</th>
+                            <th style="width: 100px; text-align: right;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${itemsHtml}
+                    </tbody>
+                </table>
+
+                <div class="totals">
+                    <div class="total-row">
+                        <span>Items Subtotal</span>
+                        <span>${formatPrice(order.subtotal || order.total)}</span>
+                    </div>
+                    <div class="total-row">
+                        <span>Discount</span>
+                        <span>-₹${order.discount || 0}</span>
+                    </div>
+                    <div class="total-row">
+                        <span>Shipping</span>
+                        <span style="color: #27ae60; font-weight: 600;">FREE</span>
+                    </div>
+                    <div class="total-row grand">
+                        <span>TOTAL PAID</span>
+                        <span>${formatPrice(order.total)}</span>
+                    </div>
+                </div>
+
+                <div class="footer">
+                    <p>This is a computer generated invoice and does not require a physical signature.</p>
+                    <p>Thank you for choosing ABC Books. Visit us at www.abcbooks.store</p>
+                </div>
             </div>
 
-            <div class="info-grid">
-                <div class="info-box">
-                    <h4>FROM: STORE</h4>
-                    <p><strong>ABC Books Publishing House</strong></p>
-                    <p>Main Market Road, Batamaloo</p>
-                    <p>Srinagar, Jammu & Kashmir - 190011</p>
-                    <p>Contact: +91 1800 123 456</p>
-                    <p>Email: support@abcbooks.store</p>
+            <!-- PAGE 2: ORDER MANIFEST / LOGISTICS -->
+            <div class="page">
+                <div class="header">
+                    <div class="logo-area">
+                        <h1>ABC<span>BOOKS</span></h1>
+                        <p style="margin:2px 0 0; font-size: 10px; color: #636e72;">Logistics & Fulfillment</p>
+                    </div>
+                    <div class="doc-type">MANIFEST</div>
                 </div>
-                <div class="info-box">
-                    <h4>TO: CUSTOMER</h4>
-                    <p><strong>${order.shipping_first_name} ${order.shipping_last_name}</strong></p>
-                    <p>${order.shipping_address1}</p>
-                    ${order.shipping_address2 ? `<p>${order.shipping_address2}</p>` : ''}
-                    <p>${order.shipping_city}, ${order.shipping_state} - ${order.shipping_pincode}</p>
-                    <p>Tel: ${order.shipping_phone || 'N/A'}</p>
-                </div>
-            </div>
 
-            <div class="info-grid" style="grid-template-columns: 1.5fr 1fr; background: #f9f9f9; padding: 20px; border-radius: 8px; margin-top: -20px;">
-                <div>
-                    <h4 style="border:none; margin:0; padding: 0;">ORDER DETAILS</h4>
-                    <p style="font-size: 18px; color: #667eea; margin: 5px 0;"><strong>ID: #${order.order_id}</strong></p>
-                    <p style="margin: 0;">Placement Date: ${dateStr}</p>
-                </div>
-                <div style="text-align: right;">
-                    <h4 style="border:none; margin:0; text-align: right; padding: 0;">PAYMENT INFO</h4>
-                    <p style="margin: 5px 0;"><strong>Method:</strong> ${order.payment_method.toUpperCase()}</p>
-                    <p style="margin: 0;"><strong>Status:</strong> ${order.status.toUpperCase()}</p>
-                </div>
-            </div>
+                <div class="shipping-label">SHIPPING PACKAGE CONTENT</div>
 
-            <table class="order-summary" style="margin-top: 30px;">
-                <thead>
-                    <tr>
-                        <th style="text-align: center; width: 40px;">S.No</th>
-                        <th>Item Description</th>
-                        <th style="text-align: center; width: 60px;">Qty</th>
-                        <th style="text-align: right; width: 100px;">Price</th>
-                        <th style="text-align: right; width: 100px;">Subtotal</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${itemsHtml}
-                </tbody>
-            </table>
-
-            <div class="totals-box">
-                <div class="total-row"><span>Total Items Cost</span> <span>${formatPrice(order.subtotal || order.total)}</span></div>
-                <div class="total-row"><span>Promo Discount</span> <span>-₹${order.discount || 0}</span></div>
-                <div class="total-row"><span>Shipping & Handling</span> <span>FREE</span></div>
-                <div class="grand-total total-row">
-                    <span>FINAL TOTAL</span> 
-                    <span>${formatPrice(order.total)}</span>
+                <div class="manifest-box">
+                    <div class="grid">
+                        <div class="box">
+                            <h4>DELIVER TO (RECIPIENT):</h4>
+                            <p style="font-size: 18px; font-weight: 700;">${order.shipping_first_name} ${order.shipping_last_name}</p>
+                            <p style="font-size: 16px;">${order.shipping_address1}</p>
+                            ${order.shipping_address2 ? `<p style="font-size: 16px;">${order.shipping_address2}</p>` : ''}
+                            <p style="font-size: 18px; font-weight: 700;">${order.shipping_city}, ${order.shipping_state} - ${order.shipping_pincode}</p>
+                            <p style="margin-top: 10px;"><strong>Contact:</strong> ${order.shipping_phone || 'N/A'}</p>
+                        </div>
+                        <div class="box" style="border-left: 1px solid #eee; padding-left: 40px;">
+                            <h4>RETURN IF UNDELIVERED:</h4>
+                            <p><strong>ABC Books Warehouse</strong></p>
+                            <p>Peer Bagh Cooperative Colony</p>
+                            <p>Srinagar, J&K - 190014</p>
+                            <p>Phone: +91 9622827363</p>
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            <div class="footer">
-                <p>Thank you for shopping with ABC Books!</p>
-                <p>For support, please visit www.abcbooks.store/support</p>
-                <p style="font-size: 11px; margin-top: 15px;">&copy; 2026 ABC Books Publishing House. All rights reserved.</p>
+                <div class="order-info-bar" style="background: #000; color: #fff; border: none;">
+                    <div class="info-item">
+                        <label style="color: #bbb;">Order Reference</label>
+                        <span>${order.order_id}</span>
+                    </div>
+                    <div class="info-item">
+                        <label style="color: #bbb;">Fulfillment Date</label>
+                        <span>${dateStr} | ${timeStr}</span>
+                    </div>
+                    <div class="info-item">
+                        <label style="color: #bbb;">Package Value</label>
+                        <span>${formatPrice(order.total)}</span>
+                    </div>
+                </div>
+
+                <h4>PACKING LIST</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 40px; text-align: center;">QTY</th>
+                            <th>ITEM / BOOK TITLE</th>
+                            <th>SKU / ID</th>
+                            <th style="width: 80px; text-align: center;">CHECKED</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${(order.items || []).map(item => `
+                            <tr>
+                                <td style="padding: 15px 8px; border-bottom: 1px solid #eee; text-align: center; font-size: 18px; font-weight: 800;">${item.quantity}</td>
+                                <td style="padding: 15px 8px; border-bottom: 1px solid #eee;">
+                                    <strong>${item.title || item.book_title}</strong>
+                                </td>
+                                <td style="padding: 15px 8px; border-bottom: 1px solid #eee; font-family: monospace;">${item.book_id || 'N/A'}</td>
+                                <td style="padding: 15px 8px; border-bottom: 1px solid #eee; text-align: center;">
+                                    <div style="width: 20px; height: 20px; border: 2px solid #ddd; margin: 0 auto; border-radius: 4px;"></div>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px;">
+                    <div style="border: 1px solid #eee; padding: 15px; border-radius: 8px;">
+                        <h4>LOGISTICS NOTES</h4>
+                        <div style="height: 60px;"></div>
+                    </div>
+                    <div style="border: 1px solid #eee; padding: 15px; border-radius: 8px; text-align: center;">
+                        <h4 style="margin-bottom: 30px;">AUTHORISED SIGNATORY</h4>
+                        <p style="font-size: 10px; color: #aaa;">Warehouse Operations Manager</p>
+                    </div>
+                </div>
+
+                <div class="footer">
+                    <p>Internal Document - ABC Books Fulfillment Center</p>
+                </div>
             </div>
 
             <script>
-                // Show print dialog automatically when order is ready
-                // window.onload = () => { setTimeout(() => window.print(), 500); };
+                window.onload = () => { 
+                    setTimeout(() => {
+                        window.print();
+                    }, 500); 
+                };
             </script>
         </body>
         </html>
