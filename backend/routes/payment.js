@@ -4,40 +4,39 @@ const router = express.Router();
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
 
-// Initialize Razorpay only when keys are present (allows app to start without payment config)
-const hasRazorpayKeys = process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET;
+// Initialize Razorpay only when keys are present
+const RAZORPAY_KEY_ID = (process.env.RAZORPAY_KEY_ID || '').trim();
+const RAZORPAY_KEY_SECRET = (process.env.RAZORPAY_KEY_SECRET || '').trim();
+
+const hasRazorpayKeys = RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET;
 const razorpay = hasRazorpayKeys
-    ? new Razorpay({ key_id: process.env.RAZORPAY_KEY_ID, key_secret: process.env.RAZORPAY_KEY_SECRET })
+    ? new Razorpay({ key_id: RAZORPAY_KEY_ID, key_secret: RAZORPAY_KEY_SECRET })
     : null;
 
 // Create Razorpay Order
-// POST /api/payment/create-order
 router.post('/create-order', async (req, res) => {
     if (!razorpay) {
-        return res.status(503).json({ success: false, error: 'Payment gateway not configured' });
+        console.error('❌ Razorpay not initialized - missing or invalid keys');
+        return res.status(503).json({ success: false, error: 'Payment gateway not configured on server' });
     }
     try {
         const { amount, currency = 'INR', receipt, notes } = req.body;
 
-        console.log('========================================');
-        console.log('💳 RAZORPAY ORDER REQUEST');
-        console.log('========================================');
-        console.log('Amount:', amount);
-        console.log('Currency:', currency);
-        console.log('Receipt:', receipt);
-        console.log('========================================');
+        console.log('💳 Razorpay Order Request:', { amount, currency, receipt });
 
         // Validate amount
-        if (!amount || amount <= 0) {
+        const parsedAmount = parseFloat(amount);
+        if (isNaN(parsedAmount) || parsedAmount <= 0) {
             return res.status(400).json({
                 success: false,
-                error: 'Invalid amount'
+                error: 'Invalid amount',
+                details: `Amount provided: ${amount}`
             });
         }
 
         // Create order options
         const options = {
-            amount: Math.round(amount * 100), // Razorpay expects amount in paise
+            amount: Math.round(parsedAmount * 100), // Razorpay expects amount in paise
             currency: currency,
             receipt: receipt || `order_${Date.now()}`,
             notes: notes || {}
@@ -56,18 +55,20 @@ router.post('/create-order', async (req, res) => {
                 currency: order.currency,
                 receipt: order.receipt
             },
-            key_id: process.env.RAZORPAY_KEY_ID
+            key_id: RAZORPAY_KEY_ID
         });
 
     } catch (error) {
-        console.error('❌ Razorpay order creation failed:', error);
+        console.error('❌ Razorpay Error:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to create payment order',
-            details: error.message
+            error: 'Razorpay order creation failed',
+            details: error.description || error.message || 'Check keys and connectivity'
         });
     }
 });
+
+
 
 // Webhook Verification (Critical for ensuring orders are processed even if browser is closed)
 // POST /api/payment/webhook

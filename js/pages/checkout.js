@@ -488,8 +488,9 @@ async function initiateRazorpayPayment() {
         console.log('📥 Razorpay order response:', data);
 
         if (!data.success) {
-            throw new Error('Failed to create payment order: ' + (data.error || 'Check server configuration'));
+            throw new Error('Failed to create payment order: ' + (data.error || 'Check server configuration') + (data.details ? ' (' + data.details + ')' : ''));
         }
+
 
         // Razorpay checkout options
         const options = {

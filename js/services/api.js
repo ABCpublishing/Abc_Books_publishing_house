@@ -97,8 +97,11 @@ async function apiRequest(endpoint, options = {}) {
         const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(data.error || data.message || 'Request failed');
+            const errorMsg = data.error || data.message || 'Request failed';
+            const errorDetails = data.details ? ` (${data.details})` : '';
+            throw new Error(`${errorMsg}${errorDetails}`);
         }
+
 
         console.log(`✅ API Response: ${endpoint}`, data);
         return data;
