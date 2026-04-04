@@ -16,6 +16,8 @@ const cartRoutes = require('./routes/cart');
 const wishlistRoutes = require('./routes/wishlist');
 const paymentRoutes = require('./routes/payment');
 const categoriesRoutes = require('./routes/categories');
+const addressesRoutes = require('./routes/addresses');
+
 
 // Import security middleware
 const {
@@ -209,11 +211,20 @@ app.use('/api/cart', cartRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/categories', categoriesRoutes);
+app.use('/api/addresses', addressesRoutes);
+
 
 // --- Stats Endpoint (Efficient for Admin Dashboard) ---
 app.get('/api/stats', authenticateAdmin, async (req, res) => {
     try {
-        const stats = await req.sql('SELECT (SELECT COUNT(*) FROM books) as total_books, (SELECT COUNT(*) FROM users) as total_users, (SELECT COUNT(*) FROM orders) as total_orders, (SELECT COUNT(*) FROM wishlist) as total_wishlist');
+        const stats = await req.sql(`
+            SELECT 
+                (SELECT COUNT(*) FROM books) as total_books, 
+                (SELECT COUNT(*) FROM users) as total_users, 
+                (SELECT COUNT(*) FROM orders) as total_orders, 
+                (SELECT COUNT(*) FROM wishlist) as total_wishlist,
+                (SELECT COALESCE(SUM(total), 0) FROM orders WHERE status != 'cancelled') as total_revenue
+        `);
 
         // Get section counts from junction table
         const sectionStats = await req.sql('SELECT section_name as section, COUNT(*) as count FROM book_sections GROUP BY section_name');
@@ -224,7 +235,8 @@ app.get('/api/stats', authenticateAdmin, async (req, res) => {
                 total_books: parseInt(stats[0].total_books) || 0,
                 total_users: parseInt(stats[0].total_users) || 0,
                 total_orders: parseInt(stats[0].total_orders) || 0,
-                total_wishlist: parseInt(stats[0].total_wishlist) || 0
+                total_wishlist: parseInt(stats[0].total_wishlist) || 0,
+                total_revenue: parseFloat(stats[0].total_revenue) || 0
             },
             sections: sectionStats.reduce((acc, curr) => {
                 acc[curr.section] = parseInt(curr.count);
@@ -236,6 +248,7 @@ app.get('/api/stats', authenticateAdmin, async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch statistics' });
     }
 });
+
 
 // Error handling middleware
 app.use((err, req, res, next) => {

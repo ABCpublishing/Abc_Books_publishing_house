@@ -361,4 +361,40 @@ router.post('/google', async (req, res) => {
     }
 });
 
+// Change password (authenticated)
+router.put('/change-password', async (req, res) => {
+    try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ error: 'Authentication required' });
+        }
+
+        const token = authHeader.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const userId = decoded.userId;
+
+        const { currentPassword, newPassword } = req.body;
+        const db = req.sql;
+
+        const users = await db('SELECT password_hash FROM users WHERE id = $1', [userId]);
+        if (users.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const isValid = await bcrypt.compare(currentPassword, users[0].password_hash);
+        if (!isValid) {
+            return res.status(401).json({ error: 'Invalid current password' });
+        }
+
+        const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+        await db('UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2', [hashedNewPassword, userId]);
+
+        res.json({ message: 'Password updated successfully' });
+    } catch (error) {
+        console.error('Change password error:', error);
+        res.status(500).json({ error: 'Failed to change password' });
+    }
+});
+
 module.exports = router;
+

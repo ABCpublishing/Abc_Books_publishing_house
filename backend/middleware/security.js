@@ -58,42 +58,41 @@ const authenticateAdmin = async (req, res, next) => {
 
         const token = authHeader.split(' ')[1];
         
+        // 1. Verify JWT
         let decoded;
         try {
             decoded = jwt.verify(token, process.env.JWT_SECRET);
         } catch (jwtError) {
-            // FAIL-SAFE: If JWT fails but this is a forced offline mode session (ID 999)
-            // or if we want to allow the admin to recover their session
-            console.log('⚠️ JWT Verification failed, checking for offline recovery...');
-            if (token === 'mock-admin-token' || token.length < 50) {
-                 req.userId = 999;
-                 req.isAdmin = true;
-                 return next();
-            }
-            throw jwtError;
+            console.error('Admin JWT Error:', jwtError.message);
+            return res.status(401).json({ error: 'Invalid or expired admin session' });
         }
 
+        // 2. Define Whitelist
+        const adminWhitelist = ['maktabailmuadab@gmail.com', 'admin@abcbooks.store', 'admin@abcbooks.com'];
+        const isWhitelisted = adminWhitelist.includes(decoded.email);
+
+        // 3. Fast check (Whitelist or JWT payload)
         if (decoded.isAdmin === true || isWhitelisted) {
             req.userId = decoded.userId;
             req.isAdmin = true;
             req.userEmail = decoded.email;
-            return next(); // FAST PATH: Skip DB check
+            return next(); 
         }
 
-        // 2. SLOW PATH: Double check database (only if not already verified as admin)
+        // 4. Database fallback
         const db = req.sql;
         const users = await db(
-            'SELECT id, email, is_admin FROM users WHERE id = $1 OR email = $2',
-            [decoded.userId, decoded.email]
+            'SELECT id, is_admin FROM users WHERE id = $1',
+            [decoded.userId]
         );
 
         if (users.length > 0 && users[0].is_admin) {
             req.userId = users[0].id;
             req.isAdmin = true;
+            req.userEmail = decoded.email;
             return next();
         }
 
-        // If both checks fail
         return res.status(403).json({
             error: 'Access denied',
             message: 'Admin privileges required'
@@ -101,12 +100,10 @@ const authenticateAdmin = async (req, res, next) => {
 
     } catch (error) {
         console.error('Admin auth error:', error);
-        res.status(401).json({ 
-            error: 'Admin authentication failed',
-            message: 'Your session is invalid or you lack admin privileges. Please log in again.' 
-        });
+        res.status(500).json({ error: 'Internal server error during authentication' });
     }
 };
+
 
 // ===== Rate Limiting Middleware =====
 const rateLimit = (options = {}) => {

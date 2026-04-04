@@ -29,6 +29,8 @@ async function setupDatabase() {
                 name VARCHAR(100) NOT NULL,
                 email VARCHAR(100) UNIQUE NOT NULL,
                 phone VARCHAR(20),
+                dob DATE,
+                gender VARCHAR(20),
                 password_hash VARCHAR(255) NOT NULL,
                 verification_token VARCHAR(255),
                 is_verified BOOLEAN DEFAULT FALSE,
@@ -37,6 +39,7 @@ async function setupDatabase() {
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
             )
+
         `);
         console.log('✅ users table created');
 
@@ -57,9 +60,12 @@ async function setupDatabase() {
                 subcategory VARCHAR(100),
                 isbn VARCHAR(20),
                 publish_year INTEGER,
+                weight VARCHAR(50),
+                dimensions VARCHAR(100),
                 rating DECIMAL(2,1) DEFAULT 4.5,
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+
             )
         `);
         console.log('✅ books table created');
@@ -172,6 +178,31 @@ async function setupDatabase() {
             )
         `);
         console.log('✅ order_status_history table created');
+
+        // Addresses table
+        console.log('Creating addresses table...');
+        await sql(`
+            CREATE TABLE IF NOT EXISTS addresses (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                type VARCHAR(20) DEFAULT 'Home',
+                is_default BOOLEAN DEFAULT FALSE,
+                first_name VARCHAR(50),
+                last_name VARCHAR(50),
+                phone VARCHAR(20),
+                address_line1 TEXT NOT NULL,
+                address_line2 TEXT,
+                city VARCHAR(50) NOT NULL,
+                state VARCHAR(50) NOT NULL,
+                pincode VARCHAR(20) NOT NULL,
+                country VARCHAR(50) DEFAULT 'India',
+                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        `);
+        console.log('✅ addresses table created');
+
 
         // Categories table
         console.log('Creating categories table...');

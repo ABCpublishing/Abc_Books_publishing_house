@@ -177,10 +177,30 @@ const AuthAPI = {
         localStorage.removeItem('abc_books_current_user');
         localStorage.removeItem('abc_books_cart');
         localStorage.removeItem('abc_books_wishlist');
+        localStorage.removeItem('abc_books_orders');
+        localStorage.removeItem('abc_books_addresses');
         localStorage.removeItem('abc_books_pending_action');
         localStorage.removeItem('abc_books_pending_book');
+        localStorage.removeItem('abc_admin_user');
+        localStorage.removeItem('abc_admin_auth');
+    },
+
+
+    async updateProfile(profileData) {
+        return await apiRequest('/users/me', {
+            method: 'PATCH',
+            body: JSON.stringify(profileData)
+        });
+    },
+
+    async changePassword(passwordData) {
+        return await apiRequest('/auth/change-password', {
+            method: 'PUT',
+            body: JSON.stringify(passwordData)
+        });
     }
 };
+
 
 // ===== Books API =====
 const BooksAPI = {
@@ -383,12 +403,29 @@ const CategoriesAPI = {
     }
 };
 
-// ===== Contact API =====
-const ContactAPI = {
-    async sendMessage(contactData) {
-        return await apiRequest('/contact', {
+// ===== Addresses API =====
+const AddressesAPI = {
+    async getAll() {
+        return await apiRequest('/addresses');
+    },
+
+    async create(addressData) {
+        return await apiRequest('/addresses', {
             method: 'POST',
-            body: JSON.stringify(contactData)
+            body: JSON.stringify(addressData)
+        });
+    },
+
+    async update(id, addressData) {
+        return await apiRequest(`/addresses/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(addressData)
+        });
+    },
+
+    async delete(id) {
+        return await apiRequest(`/addresses/${id}`, {
+            method: 'DELETE'
         });
     }
 };
@@ -404,8 +441,10 @@ window.API = {
     Users: UsersAPI,
     Categories: CategoriesAPI,
     Contact: ContactAPI,
+    Addresses: AddressesAPI,
     Token: TokenManager
 };
+
 
 
 console.log('✅ API Service initialized');

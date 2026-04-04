@@ -176,10 +176,29 @@ function populateBookDetails() {
 
     // Weight and Dimensions (NEW)
     const detailWeight = document.getElementById('detailWeight');
-    if (detailWeight) detailWeight.textContent = currentBook.weight || 'N/A';
+    if (detailWeight) {
+        const weight = currentBook.weight && currentBook.weight !== 'N/A' ? currentBook.weight : '';
+        detailWeight.textContent = weight || '-';
+        // Hide row if empty
+        if (!weight) {
+            detailWeight.closest('tr').style.display = 'none';
+        } else {
+            detailWeight.closest('tr').style.display = 'table-row';
+        }
+    }
 
     const detailDimensions = document.getElementById('detailDimensions');
-    if (detailDimensions) detailDimensions.textContent = currentBook.dimensions || 'N/A';
+    if (detailDimensions) {
+        const dims = currentBook.dimensions && currentBook.dimensions !== 'N/A' ? currentBook.dimensions : '';
+        detailDimensions.textContent = dims || '-';
+        // Hide row if empty
+        if (!dims) {
+            detailDimensions.closest('tr').style.display = 'none';
+        } else {
+            detailDimensions.closest('tr').style.display = 'table-row';
+        }
+    }
+
 }
 
 // Generate star rating HTML

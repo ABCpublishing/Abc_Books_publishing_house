@@ -59,27 +59,34 @@ async function loadOrders(userId) {
     container.innerHTML = '<div class="loading-state"><i class="fas fa-spinner fa-spin"></i><p>Fetching your orders...</p></div>';
 
     try {
-        // First check local storage for newly placed orders (if any)
-        const localOrders = JSON.parse(localStorage.getItem('abc_books_orders') || '[]');
-
         // Fetch from API
         const response = await API.Orders.getByUser(userId);
         const apiOrders = response.orders || [];
 
-        // Merge and remove duplicates (prefer API data)
-        const apiOrderIds = new Set(apiOrders.map(o => o.order_id));
-        const mergedOrders = [
-            ...apiOrders,
-            ...localOrders.filter(lo => !apiOrderIds.has(lo.order_id || lo.orderId))
-        ];
+        // If logged in, we only care about API orders (properly scoped to user_id on server)
+        // If not logged in, we use local cache (if any)
+        const currentUser = JSON.parse(localStorage.getItem('abc_books_current_user'));
+        
+        if (currentUser) {
+            allOrders = apiOrders.map(o => ({
+                orderId: o.order_id || o.orderId,
+                orderDate: o.created_at || o.orderDate,
+                total: o.total,
+                status: o.status || 'confirmed',
+                items: o.items || []
+            }));
+        } else {
+            // Guest tracking mode
+            const localOrders = JSON.parse(localStorage.getItem('abc_books_orders') || '[]');
+            allOrders = localOrders.map(o => ({
+                orderId: o.order_id || o.orderId,
+                orderDate: o.created_at || o.orderDate,
+                total: o.total,
+                status: o.status || 'confirmed',
+                items: o.items || []
+            }));
+        }
 
-        allOrders = mergedOrders.map(o => ({
-            orderId: o.order_id || o.orderId,
-            orderDate: o.created_at || o.orderDate,
-            total: o.total,
-            status: o.status || 'confirmed',
-            items: o.items || []
-        }));
 
         // Sort by date (newest first)
         allOrders.sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate));

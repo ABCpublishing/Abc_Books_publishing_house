@@ -183,4 +183,57 @@ router.patch('/:id/role', authenticateAdmin, async (req, res) => {
     }
 });
 
+// Update current logged-in user's profile
+router.patch('/me', authenticate, async (req, res) => {
+    try {
+        const db = req.sql;
+        const userId = req.userId;
+        const { name, phone, dob, gender } = req.body;
+
+        if (!name && !phone && !dob && !gender) {
+            return res.status(400).json({ error: 'No fields to update' });
+        }
+
+        const updates = [];
+        const params = [];
+        let paramCount = 1;
+
+        if (name) {
+            updates.push(`name = $${paramCount++}`);
+            params.push(name);
+        }
+        if (phone) {
+            updates.push(`phone = $${paramCount++}`);
+            params.push(phone);
+        }
+        if (dob) {
+            updates.push(`dob = $${paramCount++}`);
+            params.push(dob);
+        }
+        if (gender) {
+            updates.push(`gender = $${paramCount++}`);
+            params.push(gender);
+        }
+
+        params.push(userId);
+        const query = `UPDATE users SET ${updates.join(', ')}, updated_at = NOW() WHERE id = $${paramCount} RETURNING id, name, email, phone, dob, gender`;
+
+
+        const result = await db(query, params);
+
+        if (result.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        res.json({
+            message: 'Profile updated successfully',
+            user: result[0]
+        });
+    } catch (error) {
+        console.error('Update profile error:', error);
+        res.status(500).json({ error: 'Failed to update profile' });
+    }
+});
+
 module.exports = router;
+

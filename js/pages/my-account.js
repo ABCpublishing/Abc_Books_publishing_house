@@ -334,33 +334,34 @@ async function saveProfile() {
             gender: gender
         };
 
+
         const user = await checkAuth();
         if (!user) return;
 
-        // Note: API doesn't have a direct profile update in AuthAPI currently, 
-        // usually it's a PUT /users/:id or PATCH /users/me
-        // For now, let's update local and simulate success
+        // Call backend API
+        const response = await API.Auth.updateProfile(updateData);
+        
+        if (response.user) {
+            // Update local storage with new info
+            const updatedUser = { ...user, ...response.user };
+            localStorage.setItem('abc_books_current_user', JSON.stringify(updatedUser));
 
-        user.name = updateData.name;
-        user.phone = updateData.phone;
-        user.dob = updateData.dob;
-        user.gender = updateData.gender;
+            // Update display
+            document.getElementById('userName').textContent = updatedUser.name || 'Welcome!';
+            document.getElementById('userEmail').textContent = updatedUser.email || '';
 
-        localStorage.setItem('abc_books_current_user', JSON.stringify(user));
-
-        // Update display
-        document.getElementById('userName').textContent = user.name || 'Welcome!';
-        document.getElementById('userEmail').textContent = user.email || '';
-
-        showNotification('Profile saved successfully!', 'success');
+            showNotification('Profile updated successfully!', 'success');
+        }
     } catch (error) {
         console.error('Error saving profile:', error);
-        showNotification('Error saving profile', 'error');
+        showNotification(error.message || 'Error saving profile', 'error');
     }
 }
 
+
 // Change password
-function changePassword() {
+async function changePassword() {
+
     const currentPassword = document.getElementById('currentPassword').value;
     const newPassword = document.getElementById('newPassword').value;
     const confirmPassword = document.getElementById('confirmPassword').value;
@@ -380,14 +381,21 @@ function changePassword() {
         return;
     }
 
-    // In a real app, verify current password with server
-    const user = JSON.parse(localStorage.getItem('abc_books_current_user') || '{}');
-    user.password = newPassword; // Note: Never store plain passwords in production!
-    localStorage.setItem('abc_books_current_user', JSON.stringify(user));
+    // Call backend API
+    try {
+        await API.Auth.changePassword({ 
+            currentPassword, 
+            newPassword 
+        });
 
-    document.getElementById('passwordForm').reset();
-    showNotification('Password changed successfully!', 'success');
+        document.getElementById('passwordForm').reset();
+        showNotification('Password changed successfully!', 'success');
+    } catch (error) {
+        console.error('Password change error:', error);
+        showNotification(error.message || 'Error changing password', 'error');
+    }
 }
+
 
 // Show add address modal
 function showAddAddressModal() {

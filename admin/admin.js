@@ -280,6 +280,11 @@ async function loadDashboardData() {
         if (document.getElementById('usersCount')) document.getElementById('usersCount').textContent = stats.total_users || 0;
         if (document.getElementById('ordersCount')) document.getElementById('ordersCount').textContent = stats.total_orders || 0;
         if (document.getElementById('wishlistCountStat')) document.getElementById('wishlistCountStat').textContent = stats.total_wishlist || 0;
+        if (document.getElementById('totalRevenue')) {
+            const revenue = parseFloat(stats.total_revenue) || 0;
+            document.getElementById('totalRevenue').textContent = '₹' + revenue.toLocaleString('en-IN');
+        }
+
 
         // Update section specific counts
         if (document.getElementById('heroCount')) document.getElementById('heroCount').textContent = sectionCounts.hero || 0;
@@ -959,10 +964,15 @@ async function handleBookFormSubmit(e) {
     const bookId = document.getElementById('bookId').value;
     const isEdit = !!bookId;
 
+    const capitalizeWords = (str) => {
+        if (!str) return '';
+        return str.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    };
+
     const book = {
-        title: document.getElementById('bookTitle').value,
-        author: document.getElementById('bookAuthor').value,
-        publisher: document.getElementById('bookPublisher')?.value || 'ABC Publishing',
+        title: capitalizeWords(document.getElementById('bookTitle').value),
+        author: capitalizeWords(document.getElementById('bookAuthor').value),
+        publisher: capitalizeWords(document.getElementById('bookPublisher')?.value || 'ABC Publishing'),
         price: parseInt(document.getElementById('bookPrice').value),
         original_price: parseInt(document.getElementById('bookOriginalPrice').value) || null,
         image: document.getElementById('bookImage').value,
@@ -974,6 +984,7 @@ async function handleBookFormSubmit(e) {
         rating: 4.5, // Default rating
         sections: Array.from(document.querySelectorAll('input[name="sections"]:checked')).map(cb => cb.value)
     };
+
 
     try {
         if (isEdit) {
