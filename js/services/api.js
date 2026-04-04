@@ -430,6 +430,17 @@ const AddressesAPI = {
     }
 };
 
+// ===== Contact API =====
+const ContactAPI = {
+    async send(contactData) {
+        return await apiRequest('/contact', {
+            method: 'POST',
+            body: JSON.stringify(contactData)
+        });
+    }
+};
+
+
 // Export all APIs
 window.API = {
     fetch: apiRequest,
