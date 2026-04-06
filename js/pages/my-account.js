@@ -273,35 +273,41 @@ async function loadProfileData() {
     }
 }
 
-// Load saved addresses
-function loadAddresses() {
-    const addresses = JSON.parse(localStorage.getItem('abc_books_addresses') || '[]');
-    const container = document.getElementById('addressesList');
+// Load saved addresses from API
+async function loadAddresses() {
+    try {
+        const container = document.getElementById('addressesList');
+        const response = await API.Addresses.getAll();
+        const addresses = response.addresses || [];
 
-    if (addresses.length === 0) {
-        container.innerHTML = '<p class="no-data"><i class="fas fa-map-marker-alt"></i> No saved addresses</p>';
-        return;
-    }
+        if (addresses.length === 0) {
+            container.innerHTML = '<p class="no-data"><i class="fas fa-map-marker-alt"></i> No saved addresses</p>';
+            return;
+        }
 
-    container.innerHTML = addresses.map((addr, index) => `
-        <div class="address-card ${addr.isDefault ? 'default' : ''}">
-            ${addr.isDefault ? '<span class="address-label"><i class="fas fa-check"></i> Default</span>' : ''}
-            <span class="address-label"><i class="fas fa-${addr.type === 'home' ? 'home' : 'briefcase'}"></i> ${addr.type || 'Home'}</span>
-            <h4>${addr.name}</h4>
-            <p>
-                ${addr.address1}<br>
-                ${addr.address2 ? addr.address2 + '<br>' : ''}
-                ${addr.city}, ${addr.state} - ${addr.pincode}<br>
-                Phone: ${addr.phone}
-            </p>
-            <div class="address-actions">
-                <button onclick="editAddress(${index})"><i class="fas fa-edit"></i> Edit</button>
-                <button onclick="deleteAddress(${index})"><i class="fas fa-trash"></i> Delete</button>
-                ${!addr.isDefault ? `<button onclick="setDefaultAddress(${index})"><i class="fas fa-check"></i> Set Default</button>` : ''}
+        container.innerHTML = addresses.map(addr => `
+            <div class="address-card ${addr.is_default ? 'default' : ''}">
+                ${addr.is_default ? '<span class="address-label"><i class="fas fa-check"></i> Default</span>' : ''}
+                <span class="address-label"><i class="fas fa-${addr.type.toLowerCase() === 'home' ? 'home' : 'briefcase'}"></i> ${addr.type}</span>
+                <h4>${addr.first_name} ${addr.last_name}</h4>
+                <p>
+                    ${addr.address_line1}<br>
+                    ${addr.address_line2 ? addr.address_line2 + '<br>' : ''}
+                    ${addr.city}, ${addr.state} - ${addr.pincode}<br>
+                    Phone: ${addr.phone}
+                </p>
+                <div class="address-actions">
+                    <button onclick="openAddressModal(${JSON.stringify(addr).replace(/"/g, '&quot;')})"><i class="fas fa-edit"></i> Edit</button>
+                    <button onclick="deleteAddress('${addr.id}')"><i class="fas fa-trash"></i> Delete</button>
+                    ${!addr.is_default ? `<button onclick="setDefaultAddress('${addr.id}')"><i class="fas fa-check"></i> Set Default</button>` : ''}
+                </div>
             </div>
-        </div>
-    `).join('');
+        `).join('');
+    } catch (error) {
+        console.error('Error loading addresses:', error);
+    }
 }
+
 
 // Initialize forms
 function initializeForms() {
@@ -316,7 +322,14 @@ function initializeForms() {
         e.preventDefault();
         changePassword();
     });
+
+    // Address form
+    document.getElementById('addressForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        saveAddress();
+    });
 }
+
 
 // Save profile
 async function saveProfile() {
@@ -397,62 +410,105 @@ async function changePassword() {
 }
 
 
-// Show add address modal
-function showAddAddressModal() {
-    // For now, just add a sample address
-    const address = {
-        name: 'Home Address',
-        type: 'home',
-        address1: 'Sample Street',
-        address2: 'Near Main Road',
-        city: 'Srinagar',
-        state: 'J&K',
-        pincode: '190001',
-        phone: '+91 9876543210',
-        isDefault: false
-    };
+// Address Modal Controls
+function openAddressModal(address = null) {
+    const modal = document.getElementById('addressModal');
+    const form = document.getElementById('addressForm');
+    const title = document.getElementById('addressModalTitle');
 
-    let addresses = JSON.parse(localStorage.getItem('abc_books_addresses') || '[]');
-    addresses.push(address);
-    localStorage.setItem('abc_books_addresses', JSON.stringify(addresses));
+    form.reset();
 
-    loadAddresses();
-    showNotification('Address added successfully!', 'success');
+    if (address) {
+        title.textContent = 'Edit Address';
+        document.getElementById('addressId').value = address.id;
+        document.querySelector(`input[name="addressType"][value="${address.type}"]`).checked = true;
+        document.getElementById('addrFirstName').value = address.first_name;
+        document.getElementById('addrLastName').value = address.last_name;
+        document.getElementById('addrPhone').value = address.phone;
+        document.getElementById('addrAddress1').value = address.address_line1;
+        document.getElementById('addrAddress2').value = address.address_line2 || '';
+        document.getElementById('addrCity').value = address.city;
+        document.getElementById('addrState').value = address.state;
+        document.getElementById('addrPincode').value = address.pincode;
+        document.getElementById('addrIsDefault').checked = address.is_default;
+    } else {
+        title.textContent = 'Add New Address';
+        document.getElementById('addressId').value = '';
+    }
+
+    modal.classList.add('active');
 }
 
-// Delete address
-function deleteAddress(index) {
+function closeAddressModal() {
+    document.getElementById('addressModal').classList.remove('active');
+}
+
+// Save Address to API
+async function saveAddress() {
+    try {
+        const id = document.getElementById('addressId').value;
+        const addressData = {
+            type: document.querySelector('input[name="addressType"]:checked').value,
+            first_name: document.getElementById('addrFirstName').value,
+            last_name: document.getElementById('addrLastName').value,
+            phone: document.getElementById('addrPhone').value,
+            address_line1: document.getElementById('addrAddress1').value,
+            address_line2: document.getElementById('addrAddress2').value,
+            city: document.getElementById('addrCity').value,
+            state: document.getElementById('addrState').value,
+            pincode: document.getElementById('addrPincode').value,
+            is_default: document.getElementById('addrIsDefault').checked
+        };
+
+        if (id) {
+            await API.Addresses.update(id, addressData);
+            showNotification('Address updated successfully!', 'success');
+        } else {
+            await API.Addresses.create(addressData);
+            showNotification('Address added successfully!', 'success');
+        }
+
+        closeAddressModal();
+        loadAddresses();
+    } catch (error) {
+        console.error('Error saving address:', error);
+        showNotification(error.message || 'Error saving address', 'error');
+    }
+}
+
+// Delete address from API
+async function deleteAddress(id) {
     if (!confirm('Are you sure you want to delete this address?')) return;
 
-    let addresses = JSON.parse(localStorage.getItem('abc_books_addresses') || '[]');
-    addresses.splice(index, 1);
-    localStorage.setItem('abc_books_addresses', JSON.stringify(addresses));
-
-    loadAddresses();
-    showNotification('Address deleted', 'success');
+    try {
+        await API.Addresses.delete(id);
+        loadAddresses();
+        showNotification('Address deleted', 'success');
+    } catch (error) {
+        console.error('Error deleting address:', error);
+        showNotification('Failed to delete address', 'error');
+    }
 }
 
-// Set default address
-function setDefaultAddress(index) {
-    let addresses = JSON.parse(localStorage.getItem('abc_books_addresses') || '[]');
-    addresses = addresses.map((addr, i) => ({
-        ...addr,
-        isDefault: i === index
-    }));
-    localStorage.setItem('abc_books_addresses', JSON.stringify(addresses));
-
-    loadAddresses();
-    showNotification('Default address updated', 'success');
+// Set default address via API
+async function setDefaultAddress(id) {
+    try {
+        await API.Addresses.update(id, { is_default: true });
+        loadAddresses();
+        showNotification('Default address updated', 'success');
+    } catch (error) {
+        console.error('Error setting default address:', error);
+        showNotification('Failed to update default address', 'error');
+    }
 }
+
 
 // Logout
 function logout() {
-    localStorage.removeItem('abc_books_current_user');
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('token');
-    localStorage.removeItem('jwt_token');
+    API.Auth.logout();
     window.location.href = '/index.html';
 }
+
 
 // Helper: Capitalize first letter
 function capitalizeFirst(str) {

@@ -256,10 +256,76 @@
                         <div id="addressesList" class="addresses-grid">
                             <p class="no-data"><i class="fas fa-map-marker-alt"></i> No saved addresses</p>
                         </div>
-                        <button class="btn-add-address" onclick="showAddAddressModal()">
+                        <button class="btn-add-address" onclick="openAddressModal()">
                             <i class="fas fa-plus"></i> Add New Address
                         </button>
                     </section>
+
+                    <!-- Address Modal -->
+                    <div id="addressModal" class="modal-overlay">
+                        <div class="modal-content address-modal">
+                            <div class="modal-header">
+                                <h3 id="addressModalTitle">Add New Address</h3>
+                                <button class="close-modal" onclick="closeAddressModal()">&times;</button>
+                            </div>
+                            <form id="addressForm" class="account-form">
+                                <input type="hidden" id="addressId">
+                                <div class="form-group">
+                                    <label>Address Type</label>
+                                    <div class="radio-group">
+                                        <label><input type="radio" name="addressType" value="Home" checked> Home</label>
+                                        <label><input type="radio" name="addressType" value="Work"> Work</label>
+                                        <label><input type="radio" name="addressType" value="Other"> Other</label>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="addrFirstName">First Name</label>
+                                        <input type="text" id="addrFirstName" required placeholder="First name">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="addrLastName">Last Name</label>
+                                        <input type="text" id="addrLastName" required placeholder="Last name">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="addrPhone">Phone Number</label>
+                                    <input type="tel" id="addrPhone" required placeholder="+91 XXXXX XXXXX">
+                                </div>
+                                <div class="form-group">
+                                    <label for="addrAddress1">Address Line 1</label>
+                                    <input type="text" id="addrAddress1" required placeholder="House No, Street, Area">
+                                </div>
+                                <div class="form-group">
+                                    <label for="addrAddress2">Address Line 2 (Optional)</label>
+                                    <input type="text" id="addrAddress2" placeholder="Landmark, Apartment">
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="addrCity">City</label>
+                                        <input type="text" id="addrCity" required placeholder="e.g. Srinagar">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="addrState">State</label>
+                                        <input type="text" id="addrState" required placeholder="e.g. J&K">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="addrPincode">PIN Code</label>
+                                    <input type="text" id="addrPincode" required placeholder="6-digit PIN code" maxlength="6">
+                                </div>
+                                <div class="form-group checkbox-group">
+                                    <input type="checkbox" id="addrIsDefault">
+                                    <label for="addrIsDefault">Set as default address</label>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn-secondary" onclick="closeAddressModal()">Cancel</button>
+                                    <button type="submit" class="btn-primary">Save Address</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
 
                     <!-- Change Password Section -->
                     <section id="passwordSection" class="content-section">

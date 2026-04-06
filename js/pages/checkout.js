@@ -310,48 +310,50 @@ function applyPromo() {
     }
 }
 
-// Load saved address
-function loadSavedAddress() {
+// Load saved address from API
+async function loadSavedAddress() {
     // Get current logged in user
     const user = JSON.parse(localStorage.getItem('abc_books_current_user') || 'null');
 
-    // If user is logged in, load their specific address
-    if (user && user.id) {
-        const userAddress = localStorage.getItem(`abc_books_user_${user.id}_address`);
+    // If user is logged in, load their addresses from the database
+    if (user && user.id && typeof API !== 'undefined' && API.Addresses) {
+        try {
+            const response = await API.Addresses.getAll();
+            const addresses = response.addresses || [];
 
-        if (userAddress) {
-            const address = JSON.parse(userAddress);
-            document.getElementById('firstName').value = address.firstName || '';
-            document.getElementById('lastName').value = address.lastName || '';
-            document.getElementById('email').value = address.email || '';
-            document.getElementById('phone').value = address.phone || '';
-            document.getElementById('address1').value = address.address1 || '';
-            document.getElementById('address2').value = address.address2 || '';
-            document.getElementById('city').value = address.city || '';
-            document.getElementById('state').value = address.state || '';
-            document.getElementById('pincode').value = address.pincode || '';
-        } else {
-            // Clear all address fields for logged-in user without saved address
-            clearAddressForm();
+            // Find default address or use first available
+            const defaultAddr = addresses.find(a => a.is_default) || addresses[0];
 
-            // Pre-fill from user profile
-            if (user.email) {
-                document.getElementById('email').value = user.email;
+            if (defaultAddr) {
+                document.getElementById('firstName').value = defaultAddr.first_name || '';
+                document.getElementById('lastName').value = defaultAddr.last_name || '';
+                document.getElementById('email').value = user.email || '';
+                document.getElementById('phone').value = defaultAddr.phone || '';
+                document.getElementById('address1').value = defaultAddr.address_line1 || '';
+                document.getElementById('address2').value = defaultAddr.address_line2 || '';
+                document.getElementById('city').value = defaultAddr.city || '';
+                document.getElementById('state').value = defaultAddr.state || '';
+                document.getElementById('pincode').value = defaultAddr.pincode || '';
+                console.log('✅ Pre-filled address from database');
+            } else {
+                // Pre-fill from user profile only
+                if (user.email) document.getElementById('email').value = user.email;
+                if (user.name) {
+                    const names = user.name.split(' ');
+                    document.getElementById('firstName').value = names[0] || '';
+                    document.getElementById('lastName').value = names.slice(1).join(' ') || '';
+                }
+                if (user.phone) document.getElementById('phone').value = user.phone;
             }
-            if (user.name) {
-                const names = user.name.split(' ');
-                document.getElementById('firstName').value = names[0] || '';
-                document.getElementById('lastName').value = names.slice(1).join(' ') || '';
-            }
-            if (user.phone) {
-                document.getElementById('phone').value = user.phone;
-            }
+        } catch (error) {
+            console.error('❌ Failed to load addresses from API:', error);
         }
     } else {
         // Guest user - clear the form
         clearAddressForm();
     }
 }
+
 
 // Clear address form fields
 function clearAddressForm() {
@@ -588,11 +590,39 @@ async function processOrder(paymentMethod, paymentId = null) {
 
         console.log('📦 Order data:', orderData);
 
-        // Save address for future (user-specific)
+        // Save address for future (database-backed)
         const currentUser = JSON.parse(localStorage.getItem('abc_books_current_user') || 'null');
-        if (currentUser && currentUser.id) {
-            localStorage.setItem(`abc_books_user_${currentUser.id}_address`, JSON.stringify(orderData.shipping));
+        if (currentUser && currentUser.id && typeof API !== 'undefined' && API.Addresses) {
+            try {
+                // Check if this address already exists (simple check: does any address match this one?)
+                const response = await API.Addresses.getAll();
+                const addresses = response.addresses || [];
+                
+                const exists = addresses.some(a => 
+                    a.address_line1 === orderData.shipping.address1 && 
+                    a.pincode === orderData.shipping.pincode
+                );
+
+                if (!exists) {
+                    await API.Addresses.create({
+                        type: 'Home',
+                        first_name: orderData.shipping.firstName,
+                        last_name: orderData.shipping.lastName,
+                        phone: orderData.shipping.phone,
+                        address_line1: orderData.shipping.address1,
+                        address_line2: orderData.shipping.address2,
+                        city: orderData.shipping.city,
+                        state: orderData.shipping.state,
+                        pincode: orderData.shipping.pincode,
+                        is_default: addresses.length === 0 // Make default if first address
+                    });
+                    console.log('✅ New address saved to database');
+                }
+            } catch (addrError) {
+                console.warn('⚠️ Could not save address to database:', addrError);
+            }
         }
+
 
         // Try to save order to API (if available)
         let apiOrderSuccess = false;
