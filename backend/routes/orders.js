@@ -161,7 +161,8 @@ router.post('/', async (req, res) => {
             shipping_city,
             shipping_state,
             shipping_pincode,
-            payment_method
+            payment_method,
+            payment_id
         } = req.body;
 
         console.log('\n========================================');
@@ -189,18 +190,18 @@ router.post('/', async (req, res) => {
                 order_id, user_id, subtotal, discount, total,
                 shipping_first_name, shipping_last_name, shipping_email, shipping_phone,
                 shipping_address1, shipping_address2, shipping_city, shipping_state, shipping_pincode,
-                payment_method, status
+                payment_method, payment_id, status
             ) VALUES (
                 $1, $2, $3, $4, $5,
                 $6, $7, $8, $9,
                 $10, $11, $12, $13, $14,
-                $15, $16
+                $15, $16, $17
             ) RETURNING *
         `, [
             orderId, actualUserId || null, subtotal || 0, discount || 0, total || 0,
             shipping_first_name || '', shipping_last_name || '', shipping_email || '', shipping_phone || '',
             shipping_address1 || '', shipping_address2 || '', shipping_city || '', shipping_state || '', shipping_pincode || '',
-            payment_method || 'COD', initialStatus
+            payment_method || 'COD', payment_id || null, initialStatus
         ]);
 
         const order = orderResult && orderResult[0];

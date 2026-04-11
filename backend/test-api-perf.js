@@ -1,6 +1,6 @@
 const https = require('https');
 
-const API_BASE = 'https://abcbooks.store/api';
+const API_BASE = 'https://www.abcbooks.store/api';
 const endpoints = [
     '/books',
     '/categories',

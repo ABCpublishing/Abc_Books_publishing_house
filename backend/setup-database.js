@@ -135,6 +135,7 @@ async function setupDatabase() {
                 shipping_state VARCHAR(50),
                 shipping_pincode VARCHAR(10),
                 payment_method VARCHAR(20) DEFAULT 'COD',
+                payment_id VARCHAR(100),
                 status VARCHAR(20) DEFAULT 'confirmed',
                 tracking_id VARCHAR(100),
                 courier_name VARCHAR(100),
@@ -242,9 +243,6 @@ async function setupDatabase() {
         process.exit(1);
     }
 }
-
-// Run setup
-setupDatabase();
 
 // Run setup
 setupDatabase();
