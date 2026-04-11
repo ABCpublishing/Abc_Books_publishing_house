@@ -237,6 +237,7 @@ function navigateToSection(section) {
     const titles = {
         overview: 'Dashboard Overview',
         books: 'All Books',
+        categories: 'Category Management',
         users: 'Users Management',
         orders: 'Orders Management',
         pages: 'Pages Management',
@@ -244,10 +245,15 @@ function navigateToSection(section) {
         editors: "Editor's Choice",
         featured: 'Featured Books',
         trending: 'Trending Now',
+        newReleases: 'New Releases',
+        children: "Children's Corner",
         bestseller: 'Bestsellers',
+        indianAuthors: 'Popular Urdu Books',
         boxSets: 'Box Sets Collections',
         islamicBooks: 'Islamic Books Section',
         fiction: 'Fiction Favorites Section',
+        academic: 'Academic Books',
+        exam: 'Exam Mastery',
         urdu: 'Urdu Books',
         english: 'English Books',
         arabic: 'Arabic Books',
@@ -338,12 +344,15 @@ async function loadSectionData(section) {
         case 'boxSets':
         case 'islamicBooks':
         case 'fiction':
+        case 'academic':
+        case 'exam':
             try {
                 const response = await API.Books.getBySection(section);
                 renderSectionBooks(section, response.books || []);
             } catch (error) {
                 console.error(`Error loading ${section} books:`, error);
-                document.getElementById(`${section}Books`).innerHTML = '<p class="no-data">Error loading books</p>';
+                const container = document.getElementById(`${section}Books`);
+                if (container) container.innerHTML = '<p class="no-data">Error loading books</p>';
             }
             break;
         case 'categories':
@@ -526,7 +535,6 @@ function renderPagesTable() {
     tbody.innerHTML = '<tr><td colspan="6" class="no-data">Dynamic pages management coming in the next update!</td></tr>';
 }
 
-// ===== RENDER ORDERS TABLE (Existing Logic Preserved) =====
 // ===== RENDER ORDERS TABLE =====
 async function renderOrdersTable() {
     const tbody = document.getElementById('ordersTableBody');
@@ -832,9 +840,11 @@ function renderSectionBooks(section, books) {
         return;
     }
 
-    container.innerHTML = books.map(book => `
+    container.innerHTML = books.map(book => {
+        const displayImage = fixImageUrl(book.image);
+        return `
         <div class="book-card">
-            <img src="${book.image}" alt="${book.title}" onerror="this.src='/images/placeholder.jpg'">
+            <img src="${displayImage}" alt="${book.title}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 200 300%22%3E%3Crect fill=%22%23fef3f2%22 width=%22200%22 height=%22300%22/%3E%3Ctext x=%22100%22 y=%22165%22 text-anchor=%22middle%22 font-family=%22serif%22 font-size=%2264%22 fill=%22%23e44d32%22%3EB%3C/text%3E%3C/svg%3E'">
             <div class="book-card-content">
                 <h3 title="${book.title}">${book.title}</h3>
                 <p>${book.author}</p>
@@ -849,7 +859,8 @@ function renderSectionBooks(section, books) {
                 </div>
             </div>
         </div>
-    `).join('');
+    `;
+    }).join('');
 }
 
 // ===== RENDER CATEGORY BOOKS (New Function) =====
@@ -861,9 +872,11 @@ function renderCategoryBooks(section, books) {
         return;
     }
 
-    container.innerHTML = books.map(book => `
+    container.innerHTML = books.map(book => {
+        const displayImage = fixImageUrl(book.image);
+        return `
         <div class="book-card">
-            <img src="${book.image}" alt="${book.title}" onerror="this.src='/images/placeholder.jpg'">
+            <img src="${displayImage}" alt="${book.title}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 200 300%22%3E%3Crect fill=%22%23fef3f2%22 width=%22200%22 height=%22300%22/%3E%3Ctext x=%22100%22 y=%22165%22 text-anchor=%22middle%22 font-family=%22serif%22 font-size=%2264%22 fill=%22%23e44d32%22%3EB%3C/text%3E%3C/svg%3E'">
             <div class="book-card-content">
                 <h3 title="${book.title}">${book.title}</h3>
                 <p>${book.author}</p>
@@ -878,7 +891,8 @@ function renderCategoryBooks(section, books) {
                 </div>
             </div>
         </div>
-    `).join('');
+    `;
+    }).join('');
 }
 
 // ===== BOOK MODAL FUNCTIONS =====
@@ -1181,6 +1195,54 @@ function resetToDefault() {
 
 function showChangePasswordModal() {
     alert('Feature coming soon');
+}
+
+// ===== NOTIFICATION SYSTEM =====
+function showNotification(message, type = 'info') {
+    // Remove existing notification if any
+    const existing = document.querySelector('.admin-notification');
+    if (existing) existing.remove();
+
+    const colors = {
+        success: { bg: '#d4edda', border: '#28a745', text: '#155724', icon: 'fa-check-circle' },
+        error: { bg: '#f8d7da', border: '#dc3545', text: '#721c24', icon: 'fa-exclamation-circle' },
+        warning: { bg: '#fff3cd', border: '#ffc107', text: '#856404', icon: 'fa-exclamation-triangle' },
+        info: { bg: '#d1ecf1', border: '#17a2b8', text: '#0c5460', icon: 'fa-info-circle' }
+    };
+    const c = colors[type] || colors.info;
+
+    const notification = document.createElement('div');
+    notification.className = 'admin-notification';
+    notification.innerHTML = `<i class="fas ${c.icon}"></i> ${message}`;
+    Object.assign(notification.style, {
+        position: 'fixed',
+        top: '20px',
+        right: '20px',
+        zIndex: '10000',
+        padding: '14px 24px',
+        borderRadius: '8px',
+        background: c.bg,
+        color: c.text,
+        border: `1px solid ${c.border}`,
+        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+        fontSize: '14px',
+        fontWeight: '600',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        animation: 'slideInRight 0.3s ease',
+        maxWidth: '400px'
+    });
+
+    document.body.appendChild(notification);
+
+    // Auto-remove after 4 seconds
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateX(100%)';
+        notification.style.transition = 'all 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 4000);
 }
 
 // ===== RESPONSIVE SIDEBAR =====

@@ -1,6 +1,7 @@
 // ===== Categories Routes =====
 const express = require('express');
 const router = express.Router();
+const { authenticateAdmin } = require('../middleware/security');
 
 // Get all categories (organized by language)
 router.get('/', async (req, res) => {
@@ -106,7 +107,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Add new category (admin only)
-router.post('/', async (req, res) => {
+router.post('/', authenticateAdmin, async (req, res) => {
     try {
         const db = req.sql;
         const { name, slug, icon, parent_id, is_language, display_order, visible } = req.body;
@@ -137,7 +138,7 @@ router.post('/', async (req, res) => {
 });
 
 // Update category (admin only)
-router.put('/:id', async (req, res) => {
+router.put('/:id', authenticateAdmin, async (req, res) => {
     try {
         const db = req.sql;
         const { id } = req.params;
@@ -169,7 +170,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Delete category (admin only)
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authenticateAdmin, async (req, res) => {
     try {
         const db = req.sql;
         const { id } = req.params;

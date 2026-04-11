@@ -32,6 +32,7 @@ async function setupDatabase() {
                 dob DATE,
                 gender VARCHAR(20),
                 password_hash VARCHAR(255) NOT NULL,
+                is_admin BOOLEAN DEFAULT FALSE,
                 verification_token VARCHAR(255),
                 is_verified BOOLEAN DEFAULT FALSE,
                 reset_password_token VARCHAR(255),
@@ -220,6 +221,7 @@ async function setupDatabase() {
                 is_language BOOLEAN DEFAULT FALSE,
                 description TEXT,
                 created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (parent_id) REFERENCES categories(id)
             )
         `);
