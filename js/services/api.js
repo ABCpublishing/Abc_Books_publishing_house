@@ -440,6 +440,10 @@ const ContactAPI = {
             method: 'POST',
             body: JSON.stringify(contactData)
         });
+    },
+    // Alias for backward compatibility
+    async sendMessage(contactData) {
+        return this.send(contactData);
     }
 };
 

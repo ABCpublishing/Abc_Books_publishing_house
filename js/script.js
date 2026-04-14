@@ -726,6 +726,10 @@ function initializeSearch() {
     const searchBtn = document.querySelector('.search-btn');
 
     if (!searchInput || !searchBtn) return;
+    
+    // Guard against double-initialization (called from both initializeWebsite and global DOMContentLoaded)
+    if (searchBtn.dataset.searchInitialized) return;
+    searchBtn.dataset.searchInitialized = 'true';
 
     function handleSearch() {
         const query = searchInput.value.trim();
@@ -743,6 +747,8 @@ function initializeSearch() {
             handleSearch();
         }
     });
+    
+    console.log('🔍 Search initialized on', window.location.pathname);
 }
 
 // ===== Wishlist & Cart Functionality =====
@@ -973,7 +979,9 @@ async function initializeWebsite() {
     } catch (error) {
         console.error('Error initializing website:', error);
         hideLoading();
-        // Fallback to old individual loading if batch fails
+        // CRITICAL: Always initialize search even if homepage data fails
+        initializeSearch();
+        initializeInteractions();
         console.warn('⚠️ Batch load failed, falling back to lazy loading...');
     }
 }
@@ -985,15 +993,17 @@ if (document.readyState === 'loading') {
     initializeWebsite();
 }
 
-// Add pulse animation for loading
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes pulse {
-        0%, 100% { transform: scale(1); opacity: 1; }
-        50% { transform: scale(1.1); opacity: 0.8; }
-    }
-`;
-document.head.appendChild(style);
+// Add pulse animation for loading (wrapped in IIFE to avoid const redeclaration with page scripts)
+(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+    `;
+    document.head.appendChild(style);
+})();
 
 // ===== Global UI Utilities =====
 
@@ -1077,9 +1087,22 @@ function showSkeletons(containerId, count = 8) {
 // Initialize Live Search Autocomplete
 function initializeSearchAutocomplete() {
     const searchInput = document.querySelector('.search-bar input');
-    const dropdown = document.getElementById('searchResultsDropdown');
+    let dropdown = document.getElementById('searchResultsDropdown');
     
-    if (!searchInput || !dropdown) return;
+    if (!searchInput) return;
+
+    // Dynamically create the dropdown if it doesn't exist (for non-homepage pages)
+    if (!dropdown) {
+        dropdown = document.createElement('div');
+        dropdown.id = 'searchResultsDropdown';
+        dropdown.className = 'search-results-dropdown';
+        const searchWrapper = searchInput.closest('.search-wrapper');
+        if (searchWrapper) {
+            searchWrapper.appendChild(dropdown);
+        } else {
+            searchInput.closest('.search-bar').parentElement.appendChild(dropdown);
+        }
+    }
 
     let debounceTimer;
 
@@ -1149,8 +1172,17 @@ function renderSearchDropdown(books) {
     dropdown.innerHTML = html;
 }
 
-// Global initialization
-document.addEventListener('DOMContentLoaded', () => {
+// Global initialization - runs on ALL pages (not just homepage)
+// Must use readyState check because scripts at bottom of <body> run after DOMContentLoaded
+function initGlobalFeatures() {
+    // Initialize search functionality on every page that has a search bar
+    initializeSearch();
     initializeSearchAutocomplete();
-});
+}
 
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initGlobalFeatures);
+} else {
+    // DOM already loaded (common for scripts at bottom of body)
+    initGlobalFeatures();
+}

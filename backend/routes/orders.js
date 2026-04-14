@@ -181,9 +181,12 @@ router.post('/', async (req, res) => {
         // Generate order ID
         const orderId = 'ABC-' + Date.now().toString(36).toUpperCase();
 
-        // Create order
-        const actualUserId = user_id || req.userId;
+        // Create order — ALWAYS use authenticated user from JWT (req.userId) as primary
+        // This ensures orders are tied to the correct user even if frontend doesn't send user_id
+        const actualUserId = req.userId || user_id || null;
         const initialStatus = payment_method === 'razorpay' ? 'paid' : 'confirmed';
+        
+        console.log('🔑 Using user ID for order:', actualUserId, '(JWT:', req.userId, ', Body:', user_id, ')');
 
         const orderResult = await db(`
             INSERT INTO orders (
