@@ -302,46 +302,39 @@ function decreaseQty() {
     }
 }
 
-// Add to cart from detail page
+// Add to cart from detail page — NO LOGIN REQUIRED
 async function addToCartDetail() {
     if (!currentBook) return;
 
     const qty = parseInt(document.getElementById('quantity').value) || 1;
 
-    // Use unified login check with token isolation
-    const loggedIn = await isUserLoggedIn();
-
-    if (!loggedIn) {
-        // Save pending action
-        localStorage.setItem('abc_books_pending_action', 'add_to_cart');
-        localStorage.setItem('abc_books_pending_book', JSON.stringify({
-            bookId: currentBook.id,
-            bookData: currentBook,
-            quantity: qty,
-            source: 'book-detail'
-        }));
-
-        if (typeof showNotification === 'function') {
-            showNotification('🔐 Please sign in with Google to add to cart', 'info');
-        }
-
-        if (typeof showLoginModal === 'function') {
-            showLoginModal();
-            // Force Google button refresh
-            if (typeof renderGoogleButtons === 'function') {
-                setTimeout(renderGoogleButtons, 300);
-            }
-        }
-        return;
-    }
-
+    // Add to cart directly — no login needed
     if (typeof addToCart === 'function') {
         for (let i = 0; i < qty; i++) {
             await addToCart(currentBook.id, currentBook);
         }
     } else {
-        console.error('addToCart function not found');
-        showNotification('Error: Shop services not ready', 'error');
+        // Fallback: save directly to localStorage
+        let localCart = JSON.parse(localStorage.getItem('abc_books_cart') || '[]');
+        const existingIndex = localCart.findIndex(item => String(item.id) === String(currentBook.id));
+
+        if (existingIndex >= 0) {
+            localCart[existingIndex].quantity = (localCart[existingIndex].quantity || 1) + qty;
+        } else {
+            localCart.push({
+                id: currentBook.id,
+                title: currentBook.title,
+                author: currentBook.author,
+                price: currentBook.price,
+                image: currentBook.image,
+                quantity: qty
+            });
+        }
+        localStorage.setItem('abc_books_cart', JSON.stringify(localCart));
+        
+        if (typeof showNotification === 'function') {
+            showNotification(`${currentBook.title} added to cart!`, 'success');
+        }
     }
 }
 

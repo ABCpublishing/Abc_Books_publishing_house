@@ -179,10 +179,10 @@ function createBookCard(book, index = null) {
                 </div>
             </div>
             <div class="book-actions">
-                <button class="btn-wishlist" onclick="event.stopPropagation(); addToWishlist('${book.id}')">
+                <button class="btn-wishlist" onclick="event.stopPropagation(); addToWishlist('${book.id}', {title:'${escapedTitle}', author:'${(book.author || 'ABC Publishing').replace(/'/g, "\\'")}', price:${price}, image:'${bookImage}'})">
                     <i class="far fa-heart"></i>
                 </button>
-                <button class="btn-cart" onclick="event.stopPropagation(); addToCart('${book.id}')">
+                <button class="btn-cart" onclick="event.stopPropagation(); addToCart('${book.id}', {title:'${escapedTitle}', author:'${(book.author || 'ABC Publishing').replace(/'/g, "\\'")}', price:${price}, image:'${bookImage}'})">
                     <i class="fas fa-shopping-cart"></i>
                 </button>
             </div>
