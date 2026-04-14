@@ -284,7 +284,9 @@ const WishlistAPI = {
         return await apiRequest('/wishlist');
     },
 
-    async add(book_id) {
+    async add(data) {
+        // Accept either a raw book_id or an object with book_id property
+        const book_id = typeof data === 'object' ? data.book_id : data;
         return await apiRequest('/wishlist', {
             method: 'POST',
             body: JSON.stringify({ book_id })
