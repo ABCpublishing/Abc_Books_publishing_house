@@ -609,6 +609,42 @@
         </div>
     </div>
 
+    <!-- Review Modal -->
+    <div class="auth-modal" id="reviewModal">
+        <div class="auth-modal-content">
+            <button class="close-auth" onclick="closeReviewModal()"><i class="fas fa-times"></i></button>
+            <div class="auth-header">
+                <i class="fas fa-star" style="color: #f39c12;"></i>
+                <h2>Write a Review</h2>
+                <p>Share your thoughts about this book</p>
+            </div>
+            <form id="reviewForm" onsubmit="submitReview(event)">
+                <div class="form-group">
+                    <label>Overall Rating</label>
+                    <div class="rating-input" id="reviewRatingInput" style="font-size: 28px; color: #f39c12; cursor: pointer; text-align: center; margin: 15px 0;">
+                        <i class="far fa-star" data-rating="1"></i>
+                        <i class="far fa-star" data-rating="2"></i>
+                        <i class="far fa-star" data-rating="3"></i>
+                        <i class="far fa-star" data-rating="4"></i>
+                        <i class="far fa-star" data-rating="5"></i>
+                    </div>
+                    <input type="hidden" id="reviewRating" value="0">
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-heading"></i> Review Headline</label>
+                    <input type="text" id="reviewHeadline" placeholder="Sum up your review" required style="width: 100%; border-radius: 6px; border: 1px solid #e1e8ed; padding: 10px;">
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-comment-alt"></i> Your Review</label>
+                    <textarea id="reviewText" placeholder="What did you like or dislike?" rows="4" required style="width: 100%; border-radius: 6px; border: 1px solid #e1e8ed; padding: 10px; font-family: inherit; resize: vertical;"></textarea>
+                </div>
+                <button type="submit" class="btn-auth">
+                    <i class="fas fa-paper-plane"></i> Submit Review
+                </button>
+            </form>
+        </div>
+    </div>
+
     <script src="/js/services/api.js?v=2.3"></script>
     <script src="/js/auth/user-auth-api.js?v=2.3"></script>
     <script src="/js/data/books-data.js?v=2.3"></script>

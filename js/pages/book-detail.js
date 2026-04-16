@@ -493,11 +493,89 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
+// Review Modal Logic
+let selectedRating = 0;
+
+function showReviewForm() {
+    const modal = document.getElementById('reviewModal');
+    if (modal) {
+        modal.classList.add('active');
+        const reviewForm = document.getElementById('reviewForm');
+        if (reviewForm) reviewForm.reset();
+        const reviewRating = document.getElementById('reviewRating');
+        if (reviewRating) reviewRating.value = 0;
+        selectedRating = 0;
+        updateStarUI(0);
+    }
+}
+
+function closeReviewModal() {
+    const modal = document.getElementById('reviewModal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+}
+
+function updateStarUI(rating) {
+    const starContainer = document.getElementById('reviewRatingInput');
+    if (!starContainer) return;
+    const stars = starContainer.querySelectorAll('i');
+    stars.forEach((star, index) => {
+        if (index < rating) {
+            star.className = 'fas fa-star';
+        } else {
+            star.className = 'far fa-star';
+        }
+    });
+}
+
+function submitReview(e) {
+    e.preventDefault();
+    if(selectedRating === 0 || selectedRating === '0') {
+        showNotification('Please select a rating parameter', 'error');
+        return;
+    }
+    
+    // Disable submit button temporarily
+    const btn = e.target.querySelector('button[type="submit"]');
+    const originalContent = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+    btn.disabled = true;
+    
+    // Simulate API call for review submission
+    setTimeout(() => {
+        showNotification('Your review has been submitted for approval!', 'success');
+        closeReviewModal();
+        btn.innerHTML = originalContent;
+        btn.disabled = false;
+    }, 800);
+}
+
 // Initialize page
 document.addEventListener('DOMContentLoaded', async () => {
     // Initial UI update to reflect login state from the start
     if (typeof updateUserUI === 'function') {
         await updateUserUI();
+    }
+
+    // Set up review star interactions
+    const starContainer = document.getElementById('reviewRatingInput');
+    if (starContainer) {
+        const stars = starContainer.querySelectorAll('i');
+        stars.forEach(star => {
+            star.addEventListener('mouseover', function() {
+                const rating = parseInt(this.getAttribute('data-rating'));
+                updateStarUI(rating);
+            });
+            star.addEventListener('mouseout', function() {
+                updateStarUI(selectedRating);
+            });
+            star.addEventListener('click', function() {
+                selectedRating = parseInt(this.getAttribute('data-rating'));
+                document.getElementById('reviewRating').value = selectedRating;
+                updateStarUI(selectedRating);
+            });
+        });
     }
 
     loadBookDetails();
