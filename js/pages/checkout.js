@@ -645,45 +645,43 @@ async function processOrder(paymentMethod, paymentId = null) {
 
         // Try to save order to API (if available)
         let apiOrderSuccess = false;
-        const jwtToken = (typeof API !== 'undefined' && API.Token) ? API.Token.get() : (localStorage.getItem('accessToken') || localStorage.getItem('token') || localStorage.getItem('jwt_token'));
+        
+        // Use the centralized TokenManager if available, fallback only if necessary
+        const jwtToken = (typeof window.API !== 'undefined' && window.API.Token) 
+            ? window.API.Token.get() 
+            : (localStorage.getItem('accessToken') || localStorage.getItem('token') || localStorage.getItem('adminToken'));
 
-        console.log('🔐 Token exists:', !!jwtToken);
+        console.log('🔐 Order submission check - Token exists:', !!jwtToken);
         console.log('👤 Current user:', currentUser);
-        console.log('👤 Current user ID:', currentUser?.id);
 
-        // ALWAYS try to save to API if we have a token — the backend extracts user_id from JWT
-        if (typeof API !== 'undefined' && jwtToken) {
+        // ALWAYS try to save to API if we have a token - the backend extracts user_id from JWT
+        // We've removed the overly strict token requirement to allow wider compatibility
+        if (typeof window.API !== 'undefined' && window.API.Orders) {
             try {
                 console.log('📤 Sending order to API...');
                 
                 // Format items for API — ensure book_id is always a number or null
                 const apiItems = cartItems.map(item => {
-                    let bookId = item.book_id || item.id;
-                    // Ensure book_id is a valid integer, otherwise pass the raw value
-                    // The backend will handle invalid book_ids with try/catch
-                    if (typeof bookId === 'string' && !isNaN(parseInt(bookId))) {
-                        bookId = parseInt(bookId);
-                    }
+                    let bId = item.book_id || item.id;
+                    // Ensure book_id is a valid integer, otherwise pass null (it will be saved by title/author)
+                    const parsedBId = parseInt(bId);
                     return {
-                        book_id: bookId,
-                        quantity: item.quantity || 1,
-                        price: item.price,
+                        book_id: !isNaN(parsedBId) ? parsedBId : null,
+                        quantity: parseInt(item.quantity) || 1,
+                        price: parseFloat(item.price) || 0,
                         title: item.title,
                         author: item.author,
                         image: item.image
                     };
                 });
 
-                console.log('📦 Formatted API items:', apiItems);
-
-                // Use central API service for order creation
-                // user_id is optional — backend extracts from JWT via req.userId
+                // Prepare order payload
                 const orderPayload = {
                     user_id: currentUser?.id || null,
                     items: apiItems,
-                    subtotal: orderData.subtotal,
-                    discount: orderData.discount,
-                    total: orderData.total,
+                    subtotal: parseFloat(orderData.subtotal) || 0,
+                    discount: parseFloat(orderData.discount) || 0,
+                    total: parseFloat(orderData.total) || 0,
                     shipping_first_name: orderData.shipping.firstName,
                     shipping_last_name: orderData.shipping.lastName,
                     shipping_email: orderData.shipping.email,
@@ -698,32 +696,21 @@ async function processOrder(paymentMethod, paymentId = null) {
                     status: orderData.status
                 };
 
-                console.log('📤 Order payload:', JSON.stringify(orderPayload).substring(0, 500));
-
                 const result = await window.API.Orders.create(orderPayload);
-                console.log('✅ Order saved to database!', result);
+                console.log('✅ Order saved to database successfully:', result);
                 apiOrderSuccess = true;
-                // Update order ID from API response
+                
                 if (result.order && result.order.order_id) {
                     orderData.orderId = result.order.order_id;
                 }
             } catch (apiError) {
                 console.error('❌ API Order Creation Error:', apiError);
-                console.error('❌ Error message:', apiError.message);
-                console.error('❌ This could be a network error, auth issue, or server error');
-                // Show user notification but don't block order completion
                 if (typeof showNotification === 'function') {
-                    showNotification('Order saved locally. Server sync issue: ' + apiError.message, 'warning');
+                    showNotification('Server sync issue: ' + (apiError.message || 'Check database connection'), 'warning');
                 }
             }
         } else {
-            // Log exactly why we're not calling the API
-            if (typeof API === 'undefined') {
-                console.warn('⚠️ API object not available — script not loaded');
-            } else if (!jwtToken) {
-                console.warn('⚠️ No JWT token found — user not authenticated with backend');
-            }
-            console.log('ℹ️ Order will be saved to localStorage only');
+            console.warn('⚠️ API service not available. Order will only be saved locally.');
         }
 
         // Save order to localStorage

@@ -269,19 +269,26 @@ function navigateToSection(section) {
         window.location.hash = section;
     }
 
-    // Handle real-time orders interval
-    if (window.orderRefreshInterval) {
-        clearInterval(window.orderRefreshInterval);
-        window.orderRefreshInterval = null;
-    }
     if (section === 'orders') {
+        renderOrdersTable(); // Initial load
         window.orderRefreshInterval = setInterval(() => {
             // Only refresh if order details modal is not open
             const modal = document.getElementById('orderModal');
             if (modal && !modal.classList.contains('active')) {
                 renderOrdersTable(true);
+                loadDashboardData(); // Also refresh stats for real-time overview
             }
-        }, 15000); // Poll every 15 seconds
+        }, 10000); // Poll every 10 seconds for more "real-time" feel
+        
+        // Add visual indicator for live updates if it doesn't exist
+        const sectionHeader = document.querySelector('#ordersSection .section-header');
+        if (sectionHeader && !document.getElementById('liveOrderBadge')) {
+            const badge = document.createElement('span');
+            badge.id = 'liveOrderBadge';
+            badge.innerHTML = '<span class="pulse-dot"></span> Live Sync Active';
+            badge.className = 'live-badge';
+            sectionHeader.appendChild(badge);
+        }
     }
 
     // Load section data
@@ -552,15 +559,18 @@ function renderPagesTable() {
 
 // ===== RENDER ORDERS TABLE =====
 async function renderOrdersTable(isSilent = false) {
-    const tbody = document.getElementById('ordersTableBody');
-    if (!tbody) return;
-    if (!isSilent) {
-        tbody.innerHTML = '<tr><td colspan="7" class="no-data"><i class="fas fa-spinner fa-spin"></i> Loading orders...</td></tr>';
+    const refreshBtn = document.querySelector('#ordersSection .btn-secondary');
+    if (!isSilent && refreshBtn) {
+        refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing...';
     }
 
     try {
         const data = await API.Orders.getAll();
         const orders = data.orders || [];
+
+        if (refreshBtn) {
+            refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh Orders';
+        }
 
         // Update counts
         const orderCountStat = document.getElementById('ordersCount');
@@ -571,6 +581,7 @@ async function renderOrdersTable(isSilent = false) {
             return;
         }
 
+        // Sort by date (descending)
         orders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
         tbody.innerHTML = orders.map(order => {
@@ -583,12 +594,16 @@ async function renderOrdersTable(isSilent = false) {
             const itemCount = order.items ? order.items.length : 0;
             const status = order.status || 'confirmed';
 
+            // Pulse class for very new orders (last 5 minutes)
+            const isNew = (new Date() - new Date(order.created_at)) < 300000;
+            const rowClass = isNew ? 'row-new' : '';
+
             return `
-                <tr>
-                    <td><strong>${order.order_id}</strong></td>
+                <tr class="${rowClass}">
+                    <td><strong>${order.order_id}</strong> ${isNew ? '<span class="new-dot"></span>' : ''}</td>
                     <td>
-                        <div>${customerName}</div>
-                        <small style="color: #888;">${order.shipping_email || order.customer_email || 'N/A'}</small>
+                        <div style="font-weight: 500;">${customerName}</div>
+                        <small style="color: #666;">${order.shipping_email || order.customer_email || 'N/A'}</small>
                     </td>
                     <td>${itemCount} item(s)</td>
                     <td style="font-weight: 600; color: #27ae60;">₹${order.total || 0}</td>

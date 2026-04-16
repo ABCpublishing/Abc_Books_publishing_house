@@ -4,11 +4,12 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
 const emailService = require('../services/email');
+const { sendOTP, generateOTP } = require('../services/zavu-otp');
 
 const router = express.Router();
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-// Register new user
+// Register new user (OTP based)
 router.post('/register', async (req, res) => {
     try {
         const { name, email, password, phone = null } = req.body;
@@ -24,14 +25,13 @@ router.post('/register', async (req, res) => {
             return res.status(400).json({ error: 'Email already registered' });
         }
 
-        // Generate verification token
-        const crypto = require('crypto');
-        const verificationToken = crypto.randomBytes(32).toString('hex');
+        // Generate verification OTP (numeric)
+        const verificationToken = generateOTP();
 
-        // Hash password with a secure salt (cost factor 10 is standard, 12 is extra secure)
+        // Hash password with a secure salt
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Insert new user - is_verified starts as FALSE for security
+        // Insert new user - is_verified starts as FALSE
         const result = await db(
             'INSERT INTO users (name, email, phone, password_hash, verification_token, is_verified) VALUES ($1, $2, $3, $4, $5, FALSE) RETURNING id, name, email, phone, created_at',
             [name, email, phone, hashedPassword, verificationToken]
@@ -39,20 +39,18 @@ router.post('/register', async (req, res) => {
         
         const user = result[0];
 
-        // Send actual verification email
-        const frontendUrl = process.env.FRONTEND_URL || 'https://abcbooks.store';
-        const verifyLink = `${frontendUrl}/verify.html?token=${verificationToken}`;
-        await emailService.sendVerificationEmail(email, verifyLink);
-
-        // Generate JWT token (still allow auto-login but marked as unverified)
-        const token = jwt.sign(
-            { userId: user.id, email: user.email, isAdmin: false },
-            process.env.JWT_SECRET,
-            { expiresIn: '7d' }
-        );
+        // Send OTP via Zavu
+        if (phone) {
+            try {
+                await sendOTP(phone, verificationToken);
+            } catch (e) {
+                console.error('Failed to send OTP:', e);
+            }
+        }
 
         res.status(201).json({
-            message: 'Registration successful! Please check your email to verify your account.',
+            message: 'Registration initiated. Please verify your phone with the OTP sent.',
+            requiresOtp: true,
             user: {
                 id: user.id,
                 name: user.name,
@@ -61,9 +59,7 @@ router.post('/register', async (req, res) => {
                 createdAt: user.created_at,
                 isVerified: false,
                 isAdmin: false
-            },
-            token,
-            accessToken: token
+            }
         });
 
     } catch (error) {
@@ -99,6 +95,40 @@ router.get('/verify', async (req, res) => {
     }
 });
 
+// Verify Phone OTP
+router.post('/verify-otp', async (req, res) => {
+    try {
+        const { phone, otp } = req.body;
+        const db = req.sql;
+
+        const users = await db('SELECT id, is_verified FROM users WHERE phone = $1 AND verification_token = $2', [phone, otp]);
+        
+        if (users.length === 0) {
+            return res.status(400).json({ error: 'Invalid OTP or phone number' });
+        }
+
+        const user = users[0];
+        if (user.is_verified) {
+            return res.json({ message: 'Already verified' });
+        }
+
+        await db('UPDATE users SET is_verified = TRUE, verification_token = NULL WHERE id = $1', [user.id]);
+        
+        const freshUser = await db('SELECT id, name, email, phone, created_at, is_admin FROM users WHERE id = $1', [user.id]);
+        
+        const token = jwt.sign(
+            { userId: freshUser[0].id, email: freshUser[0].email, isAdmin: !!freshUser[0].is_admin },
+            process.env.JWT_SECRET,
+            { expiresIn: '7d' }
+        );
+
+        res.json({ message: 'Phone verified successfully!', user: freshUser[0], token, accessToken: token });
+    } catch (error) {
+        console.error('Verify OTP error:', error);
+        res.status(500).json({ error: 'Verification failed' });
+    }
+});
+
 // Login user
 router.post('/login', async (req, res) => {
     try {
@@ -119,9 +149,13 @@ router.post('/login', async (req, res) => {
 
         const user = users[0];
 
-        // Check verification (Warning only for now to not block users)
+        // Check verification - hard block for phone OTP verification
         if (user.is_verified === false) {
-            console.log(`⚠️ Unverified user logging in: ${identifier}`);
+            return res.status(403).json({ 
+                error: 'Account not verified. Please verify your phone number.', 
+                requiresOtp: true, 
+                phone: user.phone 
+            });
         }
 
         // Verify password
@@ -193,56 +227,40 @@ router.get('/me', async (req, res) => {
     }
 });
 
-// Forgot password
+// Forgot password (OTP based)
 router.post('/forgot-password', async (req, res) => {
     try {
-        const { email } = req.body;
+        const { phone } = req.body;
         const db = req.sql;
 
-        const users = await db(
-            'SELECT id, name FROM users WHERE email = $1',
-            [email]
-        );
+        const users = await db('SELECT id, name FROM users WHERE phone = $1', [phone]);
 
         if (users.length === 0) {
-            // Security: To prevent account enumeration, we return success even if email doesn't exist
-            console.log(`[Security Audit] Prevented account enumeration for: ${email}`);
+            // Security: Return same response if phone doesn't exist
             return res.json({ 
-                message: 'If an account exists with this email, reset instructions have been sent.',
-                emailSent: true 
+                message: 'If an account exists with this phone, an OTP has been sent.', 
+                otpSent: true 
             });
         }
 
-
         const user = users[0];
-
-        // Generate reset token and store its HASH (safer in case of DB leak)
-        const crypto = require('crypto');
-        const resetToken = crypto.randomBytes(32).toString('hex');
-        const tokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
-        const expiry = new Date(Date.now() + 3600000); // 1 hour (Strict)
+        const resetOtp = generateOTP();
+        const expiry = new Date(Date.now() + 600000); // 10 mins
 
         await db(
             'UPDATE users SET reset_password_token = $1, reset_password_expires = $2 WHERE id = $3',
-            [tokenHash, expiry, user.id]
+            [resetOtp, expiry, user.id]
         );
 
-        // Build reset link for direct use
-        const frontendUrl = process.env.FRONTEND_URL || 'https://abcbooks.store';
-        const resetLink = `${frontendUrl}/reset-password.html?token=${resetToken}`;
-
-        // Attempt to send via Resend if configured
-        const emailSent = await emailService.sendPasswordResetEmail(email, resetLink);
-
-        // Security: Remove resetLink from response so it's only available via email
-        // In local development, we'll log it to console for testing
-        if (process.env.NODE_ENV !== 'production') {
-            console.log(`[DEV] Reset Link: ${resetLink}`);
+        try {
+            await sendOTP(phone, resetOtp);
+        } catch (e) {
+            console.error('OTP Send error:', e);
         }
 
         res.json({
-            message: 'If an account exists with this email, reset instructions have been sent.',
-            emailSent
+            message: 'OTP sent to your phone number.',
+            otpSent: true
         });
     } catch (error) {
         console.error('Forgot password error:', error);
@@ -250,42 +268,34 @@ router.post('/forgot-password', async (req, res) => {
     }
 });
 
-// Reset password
+// Reset password (OTP based)
 router.post('/reset-password', async (req, res) => {
     try {
-        const { token, password } = req.body;
+        const { phone, otp, newPassword } = req.body;
         const db = req.sql;
 
-        if (!token || !password) {
-            return res.status(400).json({ error: 'Missing token or password' });
+        if (!phone || !otp || !newPassword) {
+            return res.status(400).json({ error: 'Missing phone, OTP, or new password' });
         }
 
-        // Hash the incoming token to compare with DB hash
-        const crypto = require('crypto');
-        const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-
-        // Find user by token hash and check expiry
         const users = await db(
-            'SELECT id FROM users WHERE reset_password_token = $1 AND reset_password_expires > NOW()',
-            [tokenHash]
+            'SELECT id FROM users WHERE phone = $1 AND reset_password_token = $2 AND reset_password_expires > NOW()',
+            [phone, otp]
         );
 
         if (users.length === 0) {
-            return res.status(400).json({ error: 'Invalid or expired reset token. Please request a new one.' });
+            return res.status(400).json({ error: 'Invalid or expired OTP.' });
         }
 
         const user = users[0];
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-        // Hash new password
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        // Update user
         await db(
             'UPDATE users SET password_hash = $1, reset_password_token = NULL, reset_password_expires = NULL, is_verified = TRUE WHERE id = $2',
             [hashedPassword, user.id]
         );
 
-        res.json({ message: 'Password reset successful! You can now login with your new password.' });
+        res.json({ message: 'Password reset successful! You can now login.' });
     } catch (error) {
         console.error('Reset password error:', error);
         res.status(500).json({ error: 'Failed to reset password' });

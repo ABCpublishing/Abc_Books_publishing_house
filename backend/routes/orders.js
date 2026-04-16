@@ -147,7 +147,6 @@ router.post('/', async (req, res) => {
 
         const {
             user_id,
-
             items,
             subtotal,
             discount,
@@ -166,16 +165,12 @@ router.post('/', async (req, res) => {
         } = req.body;
 
         console.log('\n========================================');
-        console.log('📦 NEW ORDER REQUEST RECEIVED');
+        console.log('📦 NEW ORDER REQUEST');
         console.log('========================================');
-        console.log('User ID:', user_id);
-        console.log('Items count:', Array.isArray(items) ? items.length : (typeof items === 'string' ? 'JSON string' : 'unknown'));
-        console.log('Subtotal:', subtotal);
-        console.log('Discount:', discount);
-        console.log('Total:', total);
-        console.log('Customer:', shipping_first_name, shipping_last_name);
-        console.log('Email:', shipping_email);
-        console.log('Payment:', payment_method);
+        console.log('Raw Payload Sample:', JSON.stringify({ items_count: items?.length, total, email: shipping_email }));
+        console.log('Authenticated User (JWT):', req.userId);
+        console.log('Body User ID:', user_id);
+        console.log('Payment:', payment_method, '| ID:', payment_id);
         console.log('========================================\n');
 
         // Generate order ID
@@ -183,11 +178,15 @@ router.post('/', async (req, res) => {
 
         // Create order — ALWAYS use authenticated user from JWT (req.userId) as primary
         // This ensures orders are tied to the correct user even if frontend doesn't send user_id
-        const actualUserId = req.userId || user_id || null;
+        const actualUserId = req.userId || (isNaN(parseInt(user_id)) ? null : parseInt(user_id));
         const initialStatus = payment_method === 'razorpay' ? 'paid' : 'confirmed';
         
-        console.log('🔑 Using user ID for order:', actualUserId, '(JWT:', req.userId, ', Body:', user_id, ')');
+        // Ensure numeric types are correctly formatted for DECIMAL columns
+        const parsedSubtotal = parseFloat(subtotal) || 0;
+        const parsedDiscount = parseFloat(discount) || 0;
+        const parsedTotal = parseFloat(total) || 0;
 
+        console.log('💾 Inserting order into database...');
         const orderResult = await db(`
             INSERT INTO orders (
                 order_id, user_id, subtotal, discount, total,
@@ -201,7 +200,7 @@ router.post('/', async (req, res) => {
                 $15, $16, $17
             ) RETURNING *
         `, [
-            orderId, actualUserId || null, subtotal || 0, discount || 0, total || 0,
+            orderId, actualUserId, parsedSubtotal, parsedDiscount, parsedTotal,
             shipping_first_name || '', shipping_last_name || '', shipping_email || '', shipping_phone || '',
             shipping_address1 || '', shipping_address2 || '', shipping_city || '', shipping_state || '', shipping_pincode || '',
             payment_method || 'COD', payment_id || null, initialStatus

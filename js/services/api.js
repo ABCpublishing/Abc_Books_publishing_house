@@ -167,10 +167,24 @@ const AuthAPI = {
         return await apiRequest('/auth/me');
     },
 
-    async forgotPassword(email) {
+    async forgotPassword(data) {
         return await apiRequest('/auth/forgot-password', {
             method: 'POST',
-            body: JSON.stringify({ email })
+            body: JSON.stringify(typeof data === 'string' ? { phone: data } : data)
+        });
+    },
+    
+    async verifyOTP(phone, otp) {
+        return await apiRequest('/auth/verify-otp', {
+            method: 'POST',
+            body: JSON.stringify({ phone, otp })
+        });
+    },
+
+    async resetPassword(data) {
+        return await apiRequest('/auth/reset-password', {
+            method: 'POST',
+            body: JSON.stringify(data)
         });
     },
 
