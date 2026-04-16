@@ -75,7 +75,46 @@
         <div class="leaf leaf-5"></div>
     </div>
 
-    <!-- Header -->
+    <!-- OTP Verification Modal -->
+    <div class="auth-modal" id="otpModal">
+        <div class="auth-modal-content">
+            <button class="close-auth" onclick="closeOTPModal()"><i class="fas fa-times"></i></button>
+            <div class="auth-header">
+                <i class="fas fa-shield-alt"></i>
+                <h2>Verify Phone Number</h2>
+                <p>We've sent a 6-digit code to your phone</p>
+            </div>
+            <form id="otpForm" onsubmit="handleOTPVerification(event)">
+                <div class="form-error-banner" id="otpFormError" style="display: none;">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span></span>
+                </div>
+                <input type="hidden" id="otpPhone">
+                <input type="hidden" id="otpContext">
+                
+                <div class="form-group">
+                    <label>Enter 6-digit Code</label>
+                    <input type="text" id="otpCode" placeholder="000000" maxlength="6" required 
+                           style="letter-spacing: 12px; text-align: center; font-size: 24px; font-weight: bold;">
+                </div>
+
+                <div class="form-group" id="otpNewPasswordGroup" style="display: none;">
+                    <label>New Password</label>
+                    <input type="password" id="otpNewPassword" placeholder="Create new password" minlength="6">
+                </div>
+
+                <button type="submit" class="btn-auth">
+                    <i class="fas fa-check-circle"></i> Verify & Continue
+                </button>
+                <div class="resend-container" style="text-align: center; margin-top: 15px;">
+                    <p style="font-size: 13px; color: #666;">Didn't receive the code? 
+                    <a href="#" onclick="resendOTP()" style="color: var(--primary); font-weight: 600;">Resend OTP</a></p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modals Overlay -->
     <header class="header">
         <div class="container">
             <div class="header-content">
@@ -919,6 +958,11 @@
                     <label><i class="fas fa-envelope"></i> Email</label>
                     <input type="email" id="signupEmail" placeholder="Enter your email" required autocomplete="email">
                     <span class="error-message" id="signupEmailError"></span>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-phone"></i> Phone Number</label>
+                    <input type="tel" id="signupPhone" placeholder="10-digit phone number" required autocomplete="tel">
+                    <span class="error-message" id="signupPhoneError"></span>
                 </div>
 
                 <div class="form-group">

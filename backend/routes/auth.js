@@ -129,7 +129,27 @@ router.post('/verify-otp', async (req, res) => {
     }
 });
 
-// Login user
+// Resend OTP
+router.post('/resend-otp', async (req, res) => {
+    try {
+        const { phone } = req.body;
+        const db = req.sql;
+
+        const users = await db('SELECT id, is_verified FROM users WHERE phone = $1', [phone]);
+        if (users.length === 0) {
+            return res.status(404).json({ error: 'No account found with this phone number' });
+        }
+
+        const otp = generateOTP();
+        await db('UPDATE users SET verification_token = $1 WHERE id = $2', [otp, users[0].id]);
+        
+        await sendOTP(phone, otp);
+        res.json({ message: 'New OTP sent' });
+    } catch (error) {
+        console.error('Resend OTP error:', error);
+        res.status(500).json({ error: 'Failed to resend OTP' });
+    }
+});
 router.post('/login', async (req, res) => {
     try {
         const { phone, password, email } = req.body;
@@ -227,80 +247,50 @@ router.get('/me', async (req, res) => {
     }
 });
 
-// Forgot password (OTP based)
+// Forgot Password (OTP)
 router.post('/forgot-password', async (req, res) => {
     try {
         const { phone } = req.body;
         const db = req.sql;
 
-        const users = await db('SELECT id, name FROM users WHERE phone = $1', [phone]);
-
+        const users = await db('SELECT id FROM users WHERE phone = $1', [phone]);
         if (users.length === 0) {
-            // Security: Return same response if phone doesn't exist
-            return res.json({ 
-                message: 'If an account exists with this phone, an OTP has been sent.', 
-                otpSent: true 
-            });
+            return res.status(404).json({ error: 'No account with this phone number exists' });
         }
 
-        const user = users[0];
-        const resetOtp = generateOTP();
+        const otp = generateOTP();
         const expiry = new Date(Date.now() + 600000); // 10 mins
-
-        await db(
-            'UPDATE users SET reset_password_token = $1, reset_password_expires = $2 WHERE id = $3',
-            [resetOtp, expiry, user.id]
-        );
-
-        try {
-            await sendOTP(phone, resetOtp);
-        } catch (e) {
-            console.error('OTP Send error:', e);
-        }
-
-        res.json({
-            message: 'OTP sent to your phone number.',
-            otpSent: true
-        });
+        await db('UPDATE users SET verification_token = $1, reset_password_expires = $2 WHERE id = $3', [otp, expiry, users[0].id]);
+        
+        await sendOTP(phone, otp);
+        res.json({ message: 'Password reset OTP sent' });
     } catch (error) {
         console.error('Forgot password error:', error);
         res.status(500).json({ error: 'Failed to process request' });
     }
 });
 
-// Reset password (OTP based)
+// Reset Password with OTP
 router.post('/reset-password', async (req, res) => {
     try {
         const { phone, otp, newPassword } = req.body;
         const db = req.sql;
 
-        if (!phone || !otp || !newPassword) {
-            return res.status(400).json({ error: 'Missing phone, OTP, or new password' });
-        }
-
-        const users = await db(
-            'SELECT id FROM users WHERE phone = $1 AND reset_password_token = $2 AND reset_password_expires > NOW()',
-            [phone, otp]
-        );
-
+        const users = await db('SELECT id FROM users WHERE phone = $1 AND verification_token = $2 AND reset_password_expires > NOW()', [phone, otp]);
         if (users.length === 0) {
-            return res.status(400).json({ error: 'Invalid or expired OTP.' });
+            return res.status(400).json({ error: 'Invalid or expired OTP' });
         }
 
-        const user = users[0];
         const hashedPassword = await bcrypt.hash(newPassword, 10);
+        await db('UPDATE users SET password_hash = $1, verification_token = NULL, reset_password_expires = NULL WHERE id = $2', [hashedPassword, users[0].id]);
 
-        await db(
-            'UPDATE users SET password_hash = $1, reset_password_token = NULL, reset_password_expires = NULL, is_verified = TRUE WHERE id = $2',
-            [hashedPassword, user.id]
-        );
-
-        res.json({ message: 'Password reset successful! You can now login.' });
+        res.json({ message: 'Password reset successfully' });
     } catch (error) {
         console.error('Reset password error:', error);
         res.status(500).json({ error: 'Failed to reset password' });
     }
 });
+
 
 // Google Sign-In / Sign-Up
 router.post('/google', async (req, res) => {

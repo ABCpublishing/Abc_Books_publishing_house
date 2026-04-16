@@ -345,6 +345,201 @@ function renderGoogleButtons() {
     }, 400);
 }
 
+    if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+
+        // Force Google render for signup
+        if (typeof renderGoogleButtons === 'function') {
+            setTimeout(renderGoogleButtons, 100);
+            setTimeout(renderGoogleButtons, 500);
+        }
+    }
+}
+
+function closeSignupModal() {
+    document.getElementById('signupModal').classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+function switchToSignup() {
+    closeLoginModal();
+    showSignupModal();
+}
+
+function switchToLogin() {
+    closeSignupModal();
+    showLoginModal();
+}
+
+// ----- Forgot Password Modal Functions -----
+function showForgotModal(event) {
+    if (event) event.preventDefault();
+    closeLoginModal();
+    if (typeof resetFormErrors === 'function') resetFormErrors('forgotForm');
+
+    // Reset borders and success messages
+    const successBanner = document.getElementById('forgotFormSuccess');
+    if (successBanner) successBanner.style.display = 'none';
+
+    document.getElementById('forgotModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeForgotModal() {
+    document.getElementById('forgotModal').classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+function switchToLoginReset() {
+    closeForgotModal();
+    showLoginModal();
+}
+
+// ===== AUTHENTICATION FUNCTIONS =====
+// ===== VALIDATION HELPERS =====
+function showInputError(inputId, message) {
+    const input = document.getElementById(inputId);
+    const errorSpan = document.getElementById(inputId + 'Error');
+    if (input && errorSpan) {
+        input.parentElement.classList.add('error');
+        errorSpan.textContent = message;
+        errorSpan.style.display = 'block';
+    }
+}
+
+function showFormBannerError(formId, message) {
+    const banner = document.getElementById(formId + 'Error');
+    if (banner) {
+        banner.querySelector('span').textContent = message;
+        banner.style.display = 'flex';
+    }
+}
+
+function resetFormErrors(formId) {
+    const banner = document.getElementById(formId + 'Error');
+    if (banner) banner.style.display = 'none';
+
+    const form = document.getElementById(formId);
+    if (form) {
+        form.querySelectorAll('.form-group').forEach(group => group.classList.remove('error'));
+        form.querySelectorAll('.error-message').forEach(span => {
+            span.textContent = '';
+            span.style.display = 'none';
+        });
+    }
+}
+
+function setLoadingState(btn, isLoading) {
+    if (!btn) return;
+    if (isLoading) {
+        btn.classList.add('loading');
+        btn.dataset.originalText = btn.innerHTML;
+        btn.style.width = btn.offsetWidth + 'px'; // Maintain width
+    } else {
+        btn.classList.remove('loading');
+        if (btn.dataset.originalText) btn.innerHTML = btn.dataset.originalText;
+        btn.style.width = '';
+    }
+}
+
+// ===== GOOGLE SIGN IN =====
+// Google Authentication Configuration - Move Static ID to Config Object
+const GOOGLE_CONFIG = {
+    CLIENT_ID: window.GOOGLE_CLIENT_ID || '610549250942-ahs2hiqdbdanl8shps8r7c1mgb9odv90.apps.googleusercontent.com'
+};
+const GOOGLE_CLIENT_ID = GOOGLE_CONFIG.CLIENT_ID;
+
+let googleInitialized = false;
+let googleInitRetries = 0;
+function initGoogleSignIn() {
+    if (typeof google === 'undefined' || !google.accounts) {
+        if (googleInitRetries < 20) {
+            googleInitRetries++;
+            setTimeout(initGoogleSignIn, 500);
+        } else {
+            console.warn('⚠️ Google Sign-In script failed to load. This might be due to an adblocker or network issues.');
+        }
+        return;
+    }
+
+    // CRITICAL: Check if Client ID is still the placeholder
+    if (GOOGLE_CLIENT_ID.includes('your-google-client-id')) {
+        console.error('❌ GOOGLE_CLIENT_ID is not configured! Please set it up in the Google Cloud Console and update your .env and JS config.');
+        return;
+    }
+
+    if (!googleInitialized) {
+        try {
+            google.accounts.id.initialize({
+                client_id: GOOGLE_CLIENT_ID,
+                callback: handleGoogleSignIn,
+                auto_select: false,
+                cancel_on_tap_outside: true,
+                itp_support: true,
+                context: 'signup' // Higher priority for FedCM
+            });
+            googleInitialized = true;
+            console.log('✅ Google GSI initialized with Client ID:', GOOGLE_CLIENT_ID.substring(0, 15) + '...');
+        } catch (error) {
+            console.error('Error initializing Google Sign-In:', error);
+            // If we get a 403 here or similar, it's usually an origin issue
+            if (error.message && error.message.includes('403')) {
+                console.error('🛑 GOOGLE AUTH 403: This origin is not authorized. Add ' + window.location.origin + ' to your Authorized JavaScript Origins in Google Cloud Console.');
+            }
+            if (googleInitRetries < 10) {
+                googleInitRetries++;
+                setTimeout(initGoogleSignIn, 1000);
+            }
+            return;
+        }
+    }
+
+    renderGoogleButtons();
+}
+
+function renderGoogleButtons() {
+    if (typeof google === 'undefined' || !google.accounts || !googleInitialized) return;
+
+    const render = () => {
+        try {
+            const loginBtn = document.getElementById("googleSignInBtnLogin");
+            if (loginBtn) {
+                google.accounts.id.renderButton(loginBtn, {
+                    theme: "outline",
+                    size: "large",
+                    width: 320,
+                    text: "continue_with",
+                    shape: "pill"
+                });
+            }
+
+            const signupBtn = document.getElementById("googleSignInBtnSignup");
+            if (signupBtn) {
+                google.accounts.id.renderButton(signupBtn, {
+                    theme: "outline",
+                    size: "large",
+                    width: 320,
+                    text: "signup_with",
+                    shape: "pill"
+                });
+            }
+        } catch (err) {
+            console.warn('Google button rendering failed, retrying...', err);
+        }
+    };
+
+    // Immediate attempt
+    render();
+
+    // Fallback retries if modal animation is slow
+    let retries = 0;
+    const interval = setInterval(() => {
+        render();
+        if (++retries >= 5) clearInterval(interval);
+    }, 400);
+}
+
 // Multi-method initialization to ensure it runs
 if (document.readyState === 'complete') {
     initGoogleSignIn();
@@ -352,7 +547,6 @@ if (document.readyState === 'complete') {
     window.addEventListener('load', initGoogleSignIn);
     document.addEventListener('DOMContentLoaded', initGoogleSignIn);
 }
-
 
 async function handleGoogleSignIn(response) {
     if (!response.credential) return;
@@ -363,11 +557,13 @@ async function handleGoogleSignIn(response) {
         if (result.user) {
             currentUserCache = result.user;
 
-            if (result.token || result.accessToken) {
-                const finalToken = result.accessToken || result.token;
-                localStorage.setItem('accessToken', finalToken);
-                localStorage.setItem('token', finalToken);
-                localStorage.setItem('jwt_token', finalToken);
+            const finalToken = result.accessToken || result.token;
+            if (finalToken) {
+                if (typeof API !== 'undefined' && API.Token) {
+                    API.Token.set(finalToken);
+                } else {
+                    localStorage.setItem('accessToken', finalToken);
+                }
             }
 
             localStorage.setItem('abc_books_current_user', JSON.stringify(result.user));
@@ -375,28 +571,22 @@ async function handleGoogleSignIn(response) {
             closeLoginModal();
             closeSignupModal();
             if (typeof updateUserUI === 'function') await updateUserUI();
-            if (typeof loadUserData === 'function') await loadUserData();
-
+            
             if (typeof showNotification === 'function') {
                 showNotification(`Welcome, ${result.user.name}!`, 'success');
             }
 
-            // ✅ SYNC GUEST CART
             await syncGuestCart(result.user.id);
-
             await processPendingAction();
         }
     } catch (error) {
         console.error('Google login error:', error);
         if (typeof showNotification === 'function') {
             showNotification('Google Sign-In failed: ' + error.message, 'error');
-        } else {
-            alert('Google Sign-In failed: ' + error.message);
         }
     }
 }
 
-// ===== AUTHENTICATION FUNCTIONS =====
 async function handleLogin(event) {
     event.preventDefault();
 
@@ -407,85 +597,49 @@ async function handleLogin(event) {
 
     resetFormErrors(formId);
 
-    // Validation
-    let isValid = true;
-    if (!emailInput.value.trim()) {
-        showInputError('loginEmail', 'Email address is required');
-        isValid = false;
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput.value.trim())) {
-        showInputError('loginEmail', 'Please enter a valid email address');
-        isValid = false;
+    const identifier = emailInput.value.trim();
+    if (!identifier) {
+        showInputError('loginEmail', 'Required');
+        return;
     }
 
-    if (!passwordInput.value) {
-        showInputError('loginPassword', 'Password is required');
-        isValid = false;
-    }
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier);
+    const loginData = { password: passwordInput.value };
+    if (isEmail) loginData.email = identifier;
+    else loginData.phone = identifier;
 
-    if (!isValid) return;
-
-    // API Call
     setLoadingState(submitBtn, true);
 
     try {
-        const response = await API.Auth.login({
-            email: emailInput.value,
-            password: passwordInput.value
-        });
+        const response = await API.Auth.login(loginData);
 
         if (response.user) {
             currentUserCache = response.user;
-
-            // ✅ Sync tokens using TokenManager
-            if (response.token || response.accessToken) {
-                const finalToken = response.accessToken || response.token;
-                if (typeof API !== 'undefined' && API.Token) {
-                    API.Token.set(finalToken);
-                } else {
-                    localStorage.setItem('accessToken', finalToken);
-                    localStorage.setItem('token', finalToken);
-                    localStorage.setItem('jwt_token', finalToken);
-                }
+            const token = response.accessToken || response.token;
+            if (token) {
+                if (typeof API !== 'undefined' && API.Token) API.Token.set(token);
+                else localStorage.setItem('accessToken', token);
             }
 
             localStorage.setItem('abc_books_current_user', JSON.stringify(response.user));
-            console.log('✅ User saved to localStorage:', response.user);
-
             closeLoginModal();
             await updateUserUI();
-            await loadUserData();
-
+            
             if (typeof showNotification === 'function') {
                 showNotification(`Welcome back, ${response.user.name}!`, 'success');
             }
 
-            // ✅ SYNC GUEST CART
             await syncGuestCart(response.user.id);
-
             await processPendingAction();
         }
     } catch (error) {
         console.error('Login error:', error);
-        
-        // Handle unverified account OTP flow directly from error
-        if (error.message.includes('Account not verified') || error.message.includes('requiresOtp')) {
+        if (error.message.includes('not verified') || error.message.includes('Otp')) {
             closeLoginModal();
-            showOTPModal(emailInput.value, 'register');
+            showOTPModal(identifier, 'register');
             return;
         }
-
-        // Wipe local ghosts on failed login attempts to prevent UI desync
-        clearUserCache();
-        localStorage.removeItem('abc_books_current_user');
-        if (typeof updateUserUI === 'function') updateUserUI();
-
-        if (error.message.toLowerCase().includes('password')) {
-            showInputError('loginPassword', 'Incorrect password');
-        } else if (error.message.toLowerCase().includes('phone') || error.message.toLowerCase().includes('email') || error.message.toLowerCase().includes('found')) {
-            showInputError('loginEmail', 'No account found with this email');
-        } else {
-            showFormBannerError(formId, error.message || 'Login failed. Please try again.');
-        }
+        showFormBannerError(formId, error.message || 'Login failed');
     } finally {
         setLoadingState(submitBtn, false);
     }
@@ -508,24 +662,19 @@ async function handleSignup(event) {
     if (phoneInput && !phoneInput.value.trim()) { showInputError('signupPhone', 'Required'); isValid = false; }
     if (passwordInput.value.length < 6) { showInputError('signupPassword', 'Min 6 chars'); isValid = false; }
     if (passwordInput.value !== confirmInput.value) { showInputError('signupConfirmPassword', 'Mismatch'); isValid = false; }
+    
     if (!isValid) return;
 
     setLoadingState(submitBtn, true);
+
     try {
         const payload = {
             name: nameInput.value,
             email: emailInput.value,
-            password: passwordInput.value,
-            phone: phoneInput ? phoneInput.value : ''
+            phone: phoneInput.value,
+            password: passwordInput.value
         };
         const response = await API.Auth.register(payload);
-        closeSignupModal();
-        showOTPModal(payload.phone, 'register');
-    } catch (error) {
-        showFormBannerError(formId, error.message || 'Registration failed');
-    } finally {
-        setLoadingState(submitBtn, false);
-    }
 }
 async function handleForgotPassword(event) {
     event.preventDefault();
@@ -1517,5 +1666,24 @@ async function handleOTPVerification(event) {
         document.getElementById('otpFormError').style.display = 'flex';
     } finally {
         setLoadingState(submitBtn, false);
+    }
+}
+
+async function resendOTP() {
+    const phone = document.getElementById('otpPhone').value;
+    if (!phone) return;
+    
+    try {
+        showNotification('Resending OTP...', 'info');
+        const res = await fetch('/api/auth/resend-otp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to resend OTP');
+        showNotification('New OTP sent successfully!', 'success');
+    } catch (err) {
+        showNotification(err.message, 'error');
     }
 }

@@ -44,7 +44,6 @@ div {
         max-width: 100% !important;
         padding-left: 12px !important;
         padding-right: 12px !important;
-        overflow: hidden !important;
         margin: 0 auto !important;
     }
 
@@ -101,43 +100,36 @@ div {
     }
 
     .header-content {
-        padding: 0 4px;
-        gap: 8px;
-        flex-wrap: nowrap;
+        display: grid !important;
+        grid-template-columns: auto 1fr auto !important;
+        grid-template-areas: 
+            "menu logo actions"
+            "search search search" !important;
+        padding: 8px 4px !important;
+        gap: 10px !important;
+        align-items: center !important;
+        min-height: 100px !important;
     }
 
     .mobile-menu-btn {
+        grid-area: menu !important;
         display: flex !important;
-        align-items: center;
-        justify-content: center;
-        width: 44px;
-        height: 44px;
-        min-width: 44px;
-        min-height: 44px;
-        margin-right: 4px;
-        padding: 10px;
-        font-size: 22px;
-        color: var(--primary);
-        flex-shrink: 0;
+        margin-right: 0 !important;
     }
 
     .logo {
-        flex-shrink: 1;
-        min-width: 0;
+        grid-area: logo !important;
+        justify-self: center !important;
+        margin-right: 0 !important;
     }
 
     .logo-img {
-        height: 36px;
+        height: 36px !important;
     }
-
-    .logo-icon {
-        width: 36px;
-        height: 36px;
-        font-size: 14px;
-    }
-
-    .logo-text .logo-sub {
-        font-size: 9px;
+    
+    .header-actions {
+        grid-area: actions !important;
+        justify-self: end !important;
     }
 
     /* Hide button text on mobile, show only icons */
@@ -162,9 +154,32 @@ div {
         flex-shrink: 0;
     }
 
-    /* Search wrapper mobile */
+    /* Search wrapper mobile - make it full width in second row */
     .search-wrapper {
-        display: none;
+        grid-area: search !important;
+        display: flex !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 4px 0 !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+
+    .search-bar {
+        padding: 2px 4px 2px 14px;
+        height: 40px;
+        border-width: 1.5px;
+    }
+
+    .search-bar input {
+        padding: 6px 8px;
+        font-size: 13px;
+    }
+
+    .search-btn {
+        padding: 0 15px;
+        height: 32px;
+        font-size: 12px;
     }
 
     .mobile-nav-sidebar {

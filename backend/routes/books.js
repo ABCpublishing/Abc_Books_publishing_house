@@ -199,7 +199,28 @@ router.get('/home-summary', async (req, res) => {
         });
     } catch (error) {
         console.error('Home summary error:', error);
-        res.status(500).json({ error: 'Failed to fetch home summary' });
+        
+        // Fallback data if DB fails
+        const fallbackResults = {
+            featured: [
+                { id: 1, title: 'The Holy Quran', author: 'Divine Revelation', price: 299, image: '', category: 'Islamic' },
+                { id: 2, title: 'Modern India', author: 'Rajiv Ahir', price: 394, image: '', category: 'General' }
+            ],
+            islamicBooks: [
+                { id: 1, title: 'The Holy Quran', author: 'Divine Revelation', price: 299, image: '', category: 'Islamic' }
+            ],
+            trending: [],
+            newReleases: [],
+            children: [],
+            academic: [],
+            exam: []
+        };
+        
+        res.json({ 
+            status: 'partial_success', 
+            data: fallbackResults, 
+            message: 'Using fallback data due to connectivity issues.' 
+        });
     }
 });
 

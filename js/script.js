@@ -916,6 +916,11 @@ async function initializeWebsite() {
     try {
         console.log('🚀 MASTER INITIALIZATION START...');
         
+        // Show skeletons early
+        showSkeletons('featuredBooks', 4);
+        showSkeletons('islamicBooksGrid', 4);
+        showSkeletons('trendingBooks', 5);
+
         // 1. Fetch EVERYTHING in ONE single request (Master Level Performance)
         const homeData = await getHomeData();
         console.log('📦 Home data received:', Object.keys(homeData));
