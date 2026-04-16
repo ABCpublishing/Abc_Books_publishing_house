@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <title>Shop Box Sets | ABC Books</title>
+    <meta name="description" content="Shop entire series and complete box sets at unbeatable prices.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/styles-responsive.css">
+    <link rel="stylesheet" href="/css/pages.css">
+    <link rel="stylesheet" href="/css/user-ui.css">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+        .box-sets-main {
+            padding: 40px 0 80px;
+            background: #fafafa;
+        }
+
+        .box-sets-page-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .page-header {
+            background: linear-gradient(rgba(10, 10, 10, 0.7), rgba(10, 10, 10, 0.7)), url('/images/header-bg.jpg') center/cover;
+            padding: 60px 0;
+            color: #fff;
+            text-align: center;
+        }
+
+        .page-header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            font-family: 'Playfair Display', serif;
+        }
+
+        .page-header p {
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header Component (Consistent) -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <button class="mobile-menu-btn" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></button>
+                <a href="/index.html" class="logo">
+                    <img src="/favicon.svg" alt="ABC Books" class="logo-img">
+                    <div class="logo-text">
+                        <span class="logo-sub">Publishing House</span>
+                    </div>
+                </a>
+                <div class="search-wrapper">
+                    <div class="search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Search books, authors...">
+                        <button class="search-btn">Search</button>
+                    </div>
+                </div>
+                <div class="header-actions">
+                     <!-- User Account - Shows Login/Signup OR User icon when logged in -->
+                     <div id="authButtons" class="auth-buttons">
+                        <button class="action-btn" onclick="showLoginModal()" title="Sign In">
+                            <i class="fas fa-sign-in-alt"></i>
+                            <span>Login</span>
+                        </button>
+                    </div>
+                    <div id="userAccount" class="user-account" style="display: none;">
+                        <button class="action-btn" onclick="toggleUserMenu()" title="My Account">
+                            <i class="fas fa-user-circle"></i>
+                            <span id="userName">Account</span>
+                        </button>
+                        <div class="user-dropdown" id="userDropdown">
+                            <a href="#" onclick="viewOrders()"><i class="fas fa-box"></i> My Orders</a>
+                            <a href="#" onclick="viewWishlist()"><i class="fas fa-heart"></i> My Wishlist</a>
+                            <a href="#" onclick="viewProfile()"><i class="fas fa-user-edit"></i> Edit Profile</a>
+                            <a href="#" onclick="userLogout()"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                        </div>
+                    </div>
+                    <button class="action-btn" onclick="toggleWishlist()" title="Wishlist">
+                        <i class="fas fa-heart"></i>
+                        <span>Wishlist</span>
+                        <span class="badge" id="wishlistCount">0</span>
+                    </button>
+                    <button class="action-btn cart-btn" onclick="toggleCart()" title="Shopping Cart">
+                        <i class="fas fa-shopping-bag"></i>
+                        <span>Cart</span>
+                        <span class="badge" id="cartCount">0</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Page Header -->
+    <section class="page-header">
+        <div class="container">
+            <nav class="breadcrumb">
+                <a href="/index.html" style="color: #fff;">Home</a>
+                <i class="fas fa-chevron-right" style="font-size: 10px; margin: 0 8px;"></i>
+                <span>Box Sets</span>
+            </nav>
+            <h1><i class="fas fa-box-open"></i> Complete Box Sets</h1>
+            <p>Get entire series at unbeatable prices. Save up to 40% on bestselling collections.</p>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="box-sets-main">
+        <div class="container">
+            <!-- Box Sets Grid -->
+            <div id="boxSetsPageGrid" class="box-sets-page-grid">
+                <!-- Items will be loaded here dynamically by JavaScript -->
+                <div style="grid-column: 1/-1; text-align: center; padding: 50px;"><i class="fas fa-spinner fa-spin" style="font-size: 2em; color: #8B0000;"></i> Loading box sets...</div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer Component (Consistent) -->
+    <footer class="footer">
+        <div class="footer-top">
+            <div class="container">
+                <div class="footer-grid">
+                    <div class="footer-col brand-col">
+                        <div class="footer-logo">
+                            <img src="/images/logo.svg" alt="ABC Books" class="logo-img">
+                            <div class="logo-text">
+                                <span class="logo-sub">Publishing House</span>
+                            </div>
+                        </div>
+                        <p>India's most trusted online bookstore. Discover millions of books at unbeatable prices with free shipping nationwide.</p>
+                    </div>
+                    <div class="footer-col">
+                        <h4>Quick Links</h4>
+                        <ul>
+                            <li><a href="/index.html">Home</a></li>
+                            <li><a href="/pages/about.html">About Us</a></li>
+                            <li><a href="/pages/contact.html">Contact Us</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <div class="container">
+                <div class="footer-bottom-content">
+                    <p>&copy; 2026 ABC Books. All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Include core global sidebars from user-ui -->
+    <div id="cartOverlay" class="sidebar-overlay" onclick="closeCart()"></div>
+    <div id="cartPanel" class="sidebar-panel cart-panel">
+        <div class="sidebar-header">
+            <h3><i class="fas fa-shopping-bag"></i> Shopping Cart</h3>
+            <button class="close-sidebar" onclick="closeCart()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="sidebar-content" id="cartContent"></div>
+    </div>
+    
+    <div id="wishlistOverlay" class="sidebar-overlay" onclick="closeWishlist()"></div>
+    <div id="wishlistPanel" class="sidebar-panel wishlist-panel">
+        <div class="sidebar-header">
+            <h3><i class="fas fa-heart"></i> My Wishlist</h3>
+            <button class="close-sidebar" onclick="closeWishlist()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="sidebar-content" id="wishlistContent"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/js/services/api.js?v=2.4"></script>
+    <script src="/js/auth/user-auth-api.js?v=2.4"></script>
+    <script src="/js/data/books-data.js?v=2.4"></script>
+    <script src="/js/script.js?v=2.8"></script>
+    <script src="/js/mobile-menu.js?v=2.3"></script>
+
+    <!-- Specific JS for Box Sets Page -->
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const container = document.getElementById('boxSetsPageGrid');
+            try {
+                // Fetch Box Sets using existing utility
+                const boxSets = await getBooksForSection('boxSets');
+                
+                if (boxSets && boxSets.length > 0) {
+                    container.innerHTML = boxSets.map(book => createBookCard(book)).join('');
+                } else {
+                    container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 50px;">No Box Sets available at the moment. Please check back later!</div>';
+                }
+            } catch (err) {
+                console.error("Error loading Box Sets", err);
+                container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 50px; color: red;">Failed to load Error.</div>';
+            }
+        });
+    </script>
+</body>
+</html>
