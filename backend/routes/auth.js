@@ -234,9 +234,14 @@ router.post('/forgot-password', async (req, res) => {
         // Attempt to send via Resend if configured
         const emailSent = await emailService.sendPasswordResetEmail(email, resetLink);
 
+        // Security: Remove resetLink from response so it's only available via email
+        // In local development, we'll log it to console for testing
+        if (process.env.NODE_ENV !== 'production') {
+            console.log(`[DEV] Reset Link: ${resetLink}`);
+        }
+
         res.json({
-            message: 'Password reset link generated successfully.',
-            resetLink,
+            message: 'If an account exists with this email, reset instructions have been sent.',
             emailSent
         });
     } catch (error) {

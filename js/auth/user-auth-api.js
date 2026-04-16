@@ -381,6 +381,9 @@ async function handleGoogleSignIn(response) {
                 showNotification(`Welcome, ${result.user.name}!`, 'success');
             }
 
+            // ✅ SYNC GUEST CART
+            await syncGuestCart(result.user.id);
+
             await processPendingAction();
         }
     } catch (error) {
@@ -433,14 +436,16 @@ async function handleLogin(event) {
         if (response.user) {
             currentUserCache = response.user;
 
-            // ✅ CRITICAL RUNTIME FIX: Directly force token write to localStorage 
-            // Ensures persistence even if TokenManager fails to sync
+            // ✅ Sync tokens using TokenManager
             if (response.token || response.accessToken) {
                 const finalToken = response.accessToken || response.token;
-                localStorage.setItem('accessToken', finalToken);
-                localStorage.setItem('token', finalToken);
-                localStorage.setItem('jwt_token', finalToken);
-                console.log('✅ Tokens securely written to localStorage:', finalToken.substring(0, 15) + '...');
+                if (typeof API !== 'undefined' && API.Token) {
+                    API.Token.set(finalToken);
+                } else {
+                    localStorage.setItem('accessToken', finalToken);
+                    localStorage.setItem('token', finalToken);
+                    localStorage.setItem('jwt_token', finalToken);
+                }
             }
 
             localStorage.setItem('abc_books_current_user', JSON.stringify(response.user));
@@ -453,6 +458,9 @@ async function handleLogin(event) {
             if (typeof showNotification === 'function') {
                 showNotification(`Welcome back, ${response.user.name}!`, 'success');
             }
+
+            // ✅ SYNC GUEST CART
+            await syncGuestCart(response.user.id);
 
             await processPendingAction();
         }
@@ -594,6 +602,58 @@ async function handleForgotPassword(event) {
         }
     } finally {
         setLoadingState(submitBtn, false);
+    }
+}
+
+// ===== GUEST CART SYNCHRONIZATION =====
+/**
+ * Merges localStorage cart items into the database cart after login
+ * @param {number} userId - The logged-in user's ID
+ */
+async function syncGuestCart(userId) {
+    if (!userId) return;
+    
+    console.log('🔄 Starting guest cart synchronization for user:', userId);
+    
+    try {
+        const localCart = JSON.parse(localStorage.getItem('abc_books_cart') || '[]');
+        if (localCart.length === 0) {
+            console.log('ℹ️ No guest cart items to sync.');
+            return;
+        }
+
+        console.log(`📦 Found ${localCart.length} items in guest cart to sync.`);
+        
+        // Use a small delay to ensure tokens are ready
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        let syncCount = 0;
+        for (const item of localCart) {
+            try {
+                // book_id is stored as 'id' in localStorage format
+                const bId = item.book_id || item.id;
+                if (!bId) continue;
+
+                await API.Cart.add({
+                    book_id: bId,
+                    quantity: item.quantity || 1
+                });
+                syncCount++;
+            } catch (err) {
+                console.warn(`⚠️ Failed to sync item ${item.title}:`, err.message);
+            }
+        }
+
+        console.log(`✅ Successfully synced ${syncCount}/${localCart.length} items to database.`);
+        
+        // Refresh the cart UI
+        await updateCartCount();
+        
+        if (syncCount > 0 && typeof showNotification === 'function') {
+            showNotification(`Synchronized ${syncCount} items from your guest cart.`, 'info');
+        }
+    } catch (error) {
+        console.error('❌ Error during guest cart sync:', error);
     }
 }
 
@@ -941,7 +1001,25 @@ async function loadCartItems() {
         if (user && user.id !== -1) {
             try {
                 const response = await API.Cart.get(user.id);
-                cart = response.cart || response || [];
+                const apiItems = response.cart || response || [];
+                
+                if (Array.isArray(apiItems) && apiItems.length > 0) {
+                    // Sync API items to localStorage format for consistency
+                    // Local storage format ALWAYS uses book_id as the 'id' property
+                    const syncedCart = apiItems.map(item => ({
+                        id: item.book_id || item.id, // THE BOOK ID
+                        cart_id: item.id, // THE DB PK
+                        book_id: item.book_id || item.id,
+                        title: item.title,
+                        author: item.author || 'ABC Publishing',
+                        price: parseFloat(item.price) || 0,
+                        image: item.image,
+                        quantity: parseInt(item.quantity) || 1
+                    }));
+                    
+                    localStorage.setItem('abc_books_cart', JSON.stringify(syncedCart));
+                    cart = syncedCart;
+                }
             } catch (apiErr) {
                 console.warn('API cart load failed, using localStorage:', apiErr.message);
             }
@@ -961,20 +1039,23 @@ async function loadCartItems() {
         content.innerHTML = cart.map(item => {
             const price = parseFloat(item.price) || 0;
             const qty = parseInt(item.quantity) || 1;
+            const bId = item.book_id || item.id;
+            const cId = item.cart_id || item.id; // Corrected to use cart_id if available
+
             return `
                 <div class="cart-item">
                     <img src="${item.image}" alt="${item.title}" onerror="this.src='https://via.placeholder.com/50x70?text=Book'">
                     <div class="item-details">
                         <h4>${item.title}</h4>
-                        <p>${item.author}</p>
+                        <p>${item.author || 'ABC Publishing'}</p>
                         <div class="item-price">₹${price.toFixed(2)}</div>
                         <div class="item-quantity">
-                            <button onclick="updateQuantity('${item.id}', ${qty - 1})">-</button>
+                            <button onclick="updateQuantity('${cId}', ${qty - 1}, '${bId}')">-</button>
                             <span>${qty}</span>
-                            <button onclick="updateQuantity('${item.id}', ${qty + 1})">+</button>
+                            <button onclick="updateQuantity('${cId}', ${qty + 1}, '${bId}')">+</button>
                         </div>
                     </div>
-                    <button class="btn-remove" onclick="removeFromCart('${item.id}')">
+                    <button class="btn-remove" onclick="removeFromCart('${cId}', '${bId}')">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
@@ -995,10 +1076,10 @@ async function loadCartItems() {
                         <img src="${item.image}" alt="${item.title}" onerror="this.src='https://via.placeholder.com/50x70?text=Book'">
                         <div class="item-details">
                             <h4>${item.title}</h4>
-                            <p>${item.author || ''}</p>
+                            <p>${item.author || 'ABC Publishing'}</p>
                             <div class="item-price">₹${price.toFixed(2)}</div>
                         </div>
-                        <button class="btn-remove" onclick="removeFromCart('${item.id}')">
+                        <button class="btn-remove" onclick="removeFromCart('${item.id}', '${item.id}')">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
@@ -1061,19 +1142,25 @@ async function addToCart(bookId, bookData) {
     }
 }
 
-async function removeFromCart(cartId) {
-    console.log('🗑️ Global remove from cart:', cartId);
+async function removeFromCart(cartId, bookId) {
+    console.log('🗑️ Global remove from cart:', { cartId, bookId });
     try {
-        // Always update localStorage first
+        // ALWAYS update localStorage using bookId (since guest mode uses book IDs as keys)
+        const targetBookId = bookId || cartId;
         let localCart = JSON.parse(localStorage.getItem('abc_books_cart') || '[]');
-        localCart = localCart.filter(item => String(item.id) !== String(cartId));
+        localCart = localCart.filter(item => String(item.id) !== String(targetBookId));
         localStorage.setItem('abc_books_cart', JSON.stringify(localCart));
 
-        // Sync with API if logged in
+        // Sync with API if logged in (using cart PK)
         const user = await getCurrentUser();
-        if (user && user.id !== -1) {
+        if (user && user.id !== -1 && cartId) {
             try {
-                await API.Cart.remove(cartId);
+                // If cartId is a number (DB PK), call API. 
+                // If it's the same as bookId, it might just be the guest ID.
+                // We only call API delete if it's likely a real PK.
+                if (!isNaN(parseInt(cartId)) && String(cartId).length < 10) { 
+                    await API.Cart.remove(cartId);
+                }
             } catch (apiErr) {
                 console.warn('API cart remove failed:', apiErr.message);
             }
@@ -1092,16 +1179,17 @@ async function removeFromCart(cartId) {
     }
 }
 
-async function updateQuantity(cartId, newQuantity) {
+async function updateQuantity(cartId, newQuantity, bookId) {
     if (newQuantity < 1) {
-        await removeFromCart(cartId);
+        await removeFromCart(cartId, bookId);
         return;
     }
 
     try {
         // Update localStorage
+        const targetBookId = bookId || cartId;
         let localCart = JSON.parse(localStorage.getItem('abc_books_cart') || '[]');
-        const idx = localCart.findIndex(item => String(item.id) === String(cartId));
+        const idx = localCart.findIndex(item => String(item.id) === String(targetBookId));
         if (idx >= 0) {
             localCart[idx].quantity = newQuantity;
             localStorage.setItem('abc_books_cart', JSON.stringify(localCart));
@@ -1109,9 +1197,11 @@ async function updateQuantity(cartId, newQuantity) {
 
         // Sync with API if logged in
         const user = await getCurrentUser();
-        if (user && user.id !== -1) {
+        if (user && user.id !== -1 && cartId) {
             try {
-                await API.Cart.update(cartId, newQuantity);
+                if (!isNaN(parseInt(cartId)) && String(cartId).length < 10) {
+                    await API.Cart.update(cartId, newQuantity);
+                }
             } catch (apiErr) {
                 console.warn('API quantity update failed:', apiErr.message);
             }

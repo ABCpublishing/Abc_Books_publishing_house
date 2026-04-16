@@ -99,16 +99,21 @@ async function loadCartItems() {
 
             if (apiCart && Array.isArray(apiCart) && apiCart.length > 0) {
                 // Transform API cart items to match expected format
+                // Local storage format ALWAYS uses book_id as the 'id' property
                 cartItems = apiCart.map(item => ({
-                    id: item.id, // KEEP the primary key for the cart entry so deletion works on the server
-                    book_id: item.book_id || item.id, // Store book_id separately if needed
+                    id: item.book_id || item.id, // THE BOOK ID
+                    cart_id: item.id, // THE DB PK
+                    book_id: item.book_id || item.id,
                     title: item.title || 'Book',
-                    author: item.author || 'Unknown Author',
+                    author: item.author || 'ABC Publishing',
                     price: parseFloat(item.price) || 0,
                     image: item.image || '',
-                    quantity: item.quantity || 1
+                    quantity: parseInt(item.quantity) || 1
                 }));
-                console.log('✅ Loaded', cartItems.length, 'items from API');
+                
+                // Keep local storage in sync
+                localStorage.setItem('abc_books_cart', JSON.stringify(cartItems));
+                console.log('✅ Loaded and synced', cartItems.length, 'items from API');
             }
         } catch (apiError) {
             console.log('⚠️ API cart load failed:', apiError.message);
@@ -138,27 +143,33 @@ async function loadCartItems() {
         return;
     }
 
-    container.innerHTML = cartItems.map(item => `
-        <div class="cart-item">
-            <img src="${item.image}" alt="${item.title}"
-                onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22150%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22100%22 height=%22150%22/%3E%3C/svg%3E'">
-            <div class="cart-item-details">
-                <h4>${item.title}</h4>
-                <p class="author">${item.author || 'Unknown Author'}</p>
-                <div class="price-qty">
-                    <span class="price">₹${item.price}</span>
-                    <div class="checkout-qty-controls">
-                        <button class="qty-btn" onclick="updateItemQuantity('${item.id}', ${(item.quantity || 1) - 1})">-</button>
-                        <span class="qty">${item.quantity || 1}</span>
-                        <button class="qty-btn" onclick="updateItemQuantity('${item.id}', ${(item.quantity || 1) + 1})">+</button>
+    container.innerHTML = cartItems.map(item => {
+        const cId = item.cart_id || item.id;
+        const bId = item.book_id || item.id;
+        const qty = item.quantity || 1;
+        
+        return `
+            <div class="cart-item">
+                <img src="${item.image}" alt="${item.title}"
+                    onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22150%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22100%22 height=%22150%22/%3E%3C/svg%3E'">
+                <div class="cart-item-details">
+                    <h4>${item.title}</h4>
+                    <p class="author">${item.author || 'ABC Publishing'}</p>
+                    <div class="price-qty">
+                        <span class="price">₹${item.price}</span>
+                        <div class="checkout-qty-controls">
+                            <button class="qty-btn" onclick="updateItemQuantity('${cId}', ${qty - 1}, '${bId}')">-</button>
+                            <span class="qty">${qty}</span>
+                            <button class="qty-btn" onclick="updateItemQuantity('${cId}', ${qty + 1}, '${bId}')">+</button>
+                        </div>
                     </div>
                 </div>
+                <button class="remove-btn" onclick="removeItem('${cId}', '${bId}')" title="Remove Product">
+                    <i class="fas fa-trash"></i>
+                </button>
             </div>
-            <button class="remove-btn" onclick="removeItem('${item.id}')" title="Remove Product">
-                <i class="fas fa-trash"></i>
-            </button>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 // Load summary items
@@ -215,22 +226,25 @@ function calculateTotals() {
 }
 
 // Remove item from cart
-async function removeItem(bookId) {
-    console.log('🗑️ Removing item from cart:', bookId);
+async function removeItem(cartId, bookId) {
+    console.log('🗑️ Removing item from cart:', { cartId, bookId });
 
     // 1. Update local array immediately for responsive UI
-    // Use String comparison to handle both numeric and string IDs
-    cartItems = cartItems.filter(item => String(item.id) !== String(bookId));
+    const targetBookId = bookId || cartId;
+    cartItems = cartItems.filter(item => String(item.id) !== String(targetBookId));
     
     // 2. Update localStorage (backup)
     localStorage.setItem('abc_books_cart', JSON.stringify(cartItems));
 
     // 3. Try to update API if logged in
     const currentUser = JSON.parse(localStorage.getItem('abc_books_current_user') || 'null');
-    if (typeof API !== 'undefined' && API.Cart && currentUser && currentUser.id) {
+    if (typeof API !== 'undefined' && API.Cart && currentUser && currentUser.id && cartId) {
         try {
-            await API.Cart.remove(bookId);
-            console.log('✅ Removed item from API cart');
+            // Only call API if it looks like a database reciprocal ID (avoiding book IDs)
+            if (!isNaN(parseInt(cartId)) && String(cartId).length < 10) {
+                await API.Cart.remove(cartId);
+                console.log('✅ Removed item from API cart');
+            }
         } catch (error) {
             console.error('❌ Failed to remove item from API cart:', error.message);
         }
@@ -252,15 +266,16 @@ async function removeItem(bookId) {
 }
 
 // Update quantity from checkout page
-async function updateItemQuantity(cartId, newQuantity) {
+async function updateItemQuantity(cartId, newQuantity, bookId) {
     if (newQuantity < 1) {
-        return removeItem(cartId);
+        return removeItem(cartId, bookId);
     }
 
-    console.log('🔄 Updating checkout item quantity:', { cartId, newQuantity });
+    console.log('🔄 Updating checkout item quantity:', { cartId, bookId, newQuantity });
 
     // Update locally for speed
-    const itemIndex = cartItems.findIndex(item => String(item.id) === String(cartId));
+    const targetBookId = bookId || cartId;
+    const itemIndex = cartItems.findIndex(item => String(item.id) === String(targetBookId));
     if (itemIndex >= 0) {
         cartItems[itemIndex].quantity = newQuantity;
         localStorage.setItem('abc_books_cart', JSON.stringify(cartItems));
@@ -268,11 +283,15 @@ async function updateItemQuantity(cartId, newQuantity) {
 
     // Update API if logged in
     const user = JSON.parse(localStorage.getItem('abc_books_current_user') || 'null');
-    if (user && user.id && typeof API !== 'undefined' && API.Cart) {
+    if (user && user.id && typeof API !== 'undefined' && API.Cart && cartId) {
         try {
-            await API.Cart.update(cartId, newQuantity);
+            // Only call API if it looks like a DB PK
+            if (!isNaN(parseInt(cartId)) && String(cartId).length < 10) {
+                await API.Cart.update(cartId, newQuantity);
+                console.log('✅ Updated quantity in API');
+            }
         } catch (error) {
-            console.error('❌ Failed to update API cart quantity:', error);
+            console.error('❌ Failed to update quantity in API:', error.message);
         }
     }
 

@@ -15,8 +15,37 @@ const DOMAIN = process.env.MAILGUN_DOMAIN;
 const FROM_EMAIL = `ABC Books <support@${DOMAIN || 'abcbooks.store'}>`;
 
 module.exports = {
-    sendVerificationEmail: async () => {
-        console.log('📧 Email service: user auto-verified on registration.');
+    sendVerificationEmail: async (toEmail, verifyLink) => {
+        if (!mg) {
+            console.log('📧 Mailgun not configured. Verification link:', verifyLink);
+            return false;
+        }
+
+        try {
+            await mg.messages.create(DOMAIN, {
+                from: FROM_EMAIL,
+                to: [toEmail],
+                subject: 'Verify Your Email - ABC Books',
+                html: `
+                    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+                        <h2 style="color: #e42b26; text-align: center;">Welcome to ABC Books!</h2>
+                        <p>Thank you for joining our community of book lovers. Please verify your email address to get the full experience.</p>
+                        <p>Click the button below to verify your account:</p>
+                        <div style="text-align: center; margin: 30px 0;">
+                            <a href="${verifyLink}" style="display:inline-block;padding:12px 25px;background:#e42b26;color:white;text-decoration:none;border-radius:5px;font-weight: bold;">Verify My Email</a>
+                        </div>
+                        <p style="color: #666; font-size: 14px;">If you didn't create an account, you can safely ignore this email.</p>
+                        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+                        <p style="text-align: center; font-size: 12px; color: #999;">ABC Publishing House</p>
+                    </div>
+                `
+            });
+            console.log('📧 Verification email sent via Mailgun to:', toEmail);
+            return true;
+        } catch (error) {
+            console.error('Error sending verification email via Mailgun:', error);
+            return false;
+        }
     },
 
     sendPasswordResetEmail: async (toEmail, resetLink) => {

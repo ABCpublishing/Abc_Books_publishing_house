@@ -269,6 +269,21 @@ function navigateToSection(section) {
         window.location.hash = section;
     }
 
+    // Handle real-time orders interval
+    if (window.orderRefreshInterval) {
+        clearInterval(window.orderRefreshInterval);
+        window.orderRefreshInterval = null;
+    }
+    if (section === 'orders') {
+        window.orderRefreshInterval = setInterval(() => {
+            // Only refresh if order details modal is not open
+            const modal = document.getElementById('orderModal');
+            if (modal && !modal.classList.contains('active')) {
+                renderOrdersTable(true);
+            }
+        }, 15000); // Poll every 15 seconds
+    }
+
     // Load section data
     loadSectionData(section);
 }
@@ -536,10 +551,12 @@ function renderPagesTable() {
 }
 
 // ===== RENDER ORDERS TABLE =====
-async function renderOrdersTable() {
+async function renderOrdersTable(isSilent = false) {
     const tbody = document.getElementById('ordersTableBody');
     if (!tbody) return;
-    tbody.innerHTML = '<tr><td colspan="7" class="no-data"><i class="fas fa-spinner fa-spin"></i> Loading orders...</td></tr>';
+    if (!isSilent) {
+        tbody.innerHTML = '<tr><td colspan="7" class="no-data"><i class="fas fa-spinner fa-spin"></i> Loading orders...</td></tr>';
+    }
 
     try {
         const data = await API.Orders.getAll();

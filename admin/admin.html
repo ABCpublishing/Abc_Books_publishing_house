@@ -428,10 +428,14 @@
                 <section id="ordersSection" class="content-section">
                     <div class="section-header">
                         <h2>Orders Management</h2>
-                        <button class="btn-primary" onclick="alert('Add Order feature coming soon!')">
-                            <i class="fas fa-plus"></i>
-                            Create Order
-                        </button>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn-secondary" onclick="renderOrdersTable()">
+                                <i class="fas fa-sync-alt"></i> Refresh Orders
+                            </button>
+                            <button class="btn-primary" onclick="alert('Add Order feature coming soon!')">
+                                <i class="fas fa-plus"></i> Create Order
+                            </button>
+                        </div>
                     </div>
                     <div class="table-container">
                         <table class="data-table">
